@@ -1,0 +1,30 @@
+Pick colors from anywhere using the built-in color picker.
+
+
+■ Features
+
+- Quickly copy, paste, and convert colors in Hex, HSL, and RGB format
+- Show as a normal app or in the menu bar
+- Toggle it from anywhere with a global keyboard shortcut
+- Make the window stay on top of all other windows
+- Launch it at login
+
+
+■ Keyboard shortcuts
+
+You can use the following keyboard shortcuts in the app:
+
+- Pick color: Command+p
+- Copy as Hex: Shift+Command+h
+- Copy as HSL: Shift+Command+l
+- Copy as RGB: Shift+Command+r
+
+
+■ Support
+
+Use the feedback button in the “Help” menu in the app.
+
+
+■ Open-source
+
+The app is open-source on GitHub (see the website).

@@ -1,0 +1,14 @@
+{
+	"ApplicationDescription": "The macOS color picker as an app with more features",
+	"DeveloperName": "Sindre Sorhus",
+	"Website": "https://sindresorhus.com/system-color-picker",
+	"Connections" : [
+		{
+			"Host" : "*.appcenter.ms",
+			"NetworkProtocol" : "TCP",
+			"Port" : "443",
+			"Purpose" : "System Color Picker sends crash reports to this server.",
+			"DenyConsequences" : "If you deny this connection, crash reports will not be sent and bugs might stay unfixed."
+		}
+	]
+}

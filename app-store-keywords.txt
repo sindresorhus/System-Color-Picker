@@ -1,0 +1,1 @@
+color,picker,pick,system,colour,sample,sampler,builtin,wheel,rgb,hsl,hex,css,menu,bar,menubar
