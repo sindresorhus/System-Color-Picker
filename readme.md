@@ -61,6 +61,10 @@ Right-click the color wheel. You probably want to select “sRGB”.
 
 Note that the color strings will always be converted to [sRGB](https://en.wikipedia.org/wiki/SRGB) color space.
 
+#### Can you support `SwiftUI.Color` / `UIColor` / `NSColor` formats?
+
+The best practice is to use [Asset Catalog for colors](https://devblog.xero.com/managing-ui-colours-with-ios-11-asset-catalogs-16500ba48205) instead of hard-coding the values in code. If you really want to hard-code colors, the [Scala color picker plugin](https://bjango.com/mac/skalacolor/) supports `UIColor` and `NSColor`.
+
 #### Can I contribute localizations?
 
 I don't have any immediate plans to localize the app.
