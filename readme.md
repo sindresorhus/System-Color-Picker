@@ -33,6 +33,7 @@ You can use the following keyboard shortcuts in the app:
 - Copy as Hex: <kbd>Shift</kbd> <kbd>Command</kbd> <kbd>h</kbd>
 - Copy as HSL: <kbd>Shift</kbd> <kbd>Command</kbd> <kbd>l</kbd>
 - Copy as RGB: <kbd>Shift</kbd> <kbd>Command</kbd> <kbd>r</kbd>
+- Paste color: <kbd>Shift</kbd> <kbd>Command</kbd> <kbd>v</kbd> *(In the format Hex, HSL, or RGB)*
 
 ## Plugins
 
@@ -50,6 +51,16 @@ The built-in color picker supports plugins:
 
 ## FAQ
 
+#### The color changes if I copy and then paste it
+
+That is because the default color space in the picker is [Display P3](https://en.wikipedia.org/wiki/DCI-P3), but the color space used for the CSS color formats is [sRGB](https://en.wikipedia.org/wiki/SRGB) (browsers do not yet [handle color spaces](https://css-tricks.com/the-expanding-gamut-of-color-on-the-web/)).
+
+#### How do I change the color space?
+
+Right-click the color wheel. You probably want to select “sRGB”.
+
+Note that the color strings will always be converted to [sRGB](https://en.wikipedia.org/wiki/SRGB) color space.
+
 #### Can I contribute localizations?
 
 I don't have any immediate plans to localize the app.
@@ -66,7 +77,3 @@ I don't have any immediate plans to localize the app.
 - [Gifski](https://github.com/sindresorhus/Gifski) - Convert videos to high-quality GIFs
 - [Plash](https://github.com/sindresorhus/Plash) - Make any website your Mac desktop wallpaper
 - [More apps…](https://sindresorhus.com/apps)
-
-## Related
-
-- [Website](https://sindresorhus.com/system-color-picker)

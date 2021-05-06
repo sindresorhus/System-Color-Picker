@@ -18,6 +18,7 @@ You can use the following keyboard shortcuts in the app:
 - Copy as Hex: Shift+Command+h
 - Copy as HSL: Shift+Command+l
 - Copy as RGB: Shift+Command+r
+- Paste color: Shift+Command+v (In the format Hex, HSL, or RGB)
 
 
 ■ Support

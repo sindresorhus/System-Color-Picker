@@ -27,7 +27,7 @@ struct ColorPickerView: View {
 						if
 							isTextFieldFocused,
 							!isPreventingUpdate,
-							let newColor = NSColor(hexString: $0)
+							let newColor = NSColor(hexString: $0.trimmingCharacters(in: .whitespaces))
 						{
 							colorPanel.color = newColor
 						}
@@ -57,7 +57,7 @@ struct ColorPickerView: View {
 						if
 							isTextFieldFocused,
 							!isPreventingUpdate,
-							let newColor = NSColor(cssHSLString: $0)
+							let newColor = NSColor(cssHSLString: $0.trimmingCharacters(in: .whitespaces))
 						{
 							colorPanel.color = newColor
 						}
@@ -87,7 +87,7 @@ struct ColorPickerView: View {
 						if
 							isTextFieldFocused,
 							!isPreventingUpdate,
-							let newColor = NSColor(cssRGBString: $0)
+							let newColor = NSColor(cssRGBString: $0.trimmingCharacters(in: .whitespaces))
 						{
 							colorPanel.color = newColor
 						}

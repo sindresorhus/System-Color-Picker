@@ -497,11 +497,58 @@ extension NSColor {
 		}
 
 		self.init(
-			srgbRed: red.cgFloat,
-			green: green.cgFloat,
-			blue: blue.cgFloat,
+			srgbRed: red.cgFloat / 255,
+			green: green.cgFloat / 255,
+			blue: blue.cgFloat / 255,
 			alpha: 1
 		)
+	}
+}
+
+
+extension NSColor {
+	/**
+	Create a color from a CSS color string in the format Hex, HSL, or RGB.
+
+	Assumes `sRGB` color space.
+	*/
+	static func from(cssString: String) -> NSColor? {
+		if let color = NSColor(hexString: cssString) {
+			return color
+		}
+
+		if let color = NSColor(cssRGBString: cssString) {
+			return color
+		}
+
+		if let color = NSColor(cssHSLString: cssString) {
+			return color
+		}
+
+		return nil
+	}
+}
+
+
+extension NSColor {
+	/**
+	Loosely gets a color from the pasteboard.
+
+	It first tries to get an actual `NSColor` and then tries to parse a CSS string (ignoring leading/trailing whitespace) for Hex, HSL, and RGB.
+	*/
+	static func fromPasteboardGraceful(_ pasteboard: NSPasteboard) -> NSColor? {
+		if let color = self.init(from: pasteboard) {
+			return color
+		}
+
+		guard
+			let string = pasteboard.string(forType: .string)?.trimmingCharacters(in: .whitespaces),
+			let color = from(cssString: string)
+		else {
+			return nil
+		}
+
+		return color
 	}
 }
 

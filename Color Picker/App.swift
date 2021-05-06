@@ -31,6 +31,15 @@ struct AppMain: App {
 						appState.colorPanel.rgbColorString.copyToPasteboard()
 					}
 						.keyboardShortcut("R")
+					Button("Paste Color") {
+						guard let color = NSColor.fromPasteboardGraceful(.general) else {
+							return
+						}
+
+						appState.colorPanel.color = color
+					}
+						.keyboardShortcut("V")
+						// TODO: I need to use `FocusedBinding` to disable this when `NSColor.fromPasteboardGraceful(.general) == nil`.
 				}
 				CommandGroup(replacing: .help) {
 					// TODO: Use `Link` when it's supported here.
