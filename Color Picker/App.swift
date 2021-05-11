@@ -4,6 +4,7 @@ import SwiftUI
 struct AppMain: App {
 	@NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 	@StateObject private var appState = AppState.shared
+	@StateObject private var pasteboardObserver = NSPasteboard.SimpleObservable(.general, onlyWhileAppIsActive: true)
 
 	var body: some Scene {
 		WindowGroup {
@@ -15,7 +16,7 @@ struct AppMain: App {
 				CommandGroup(replacing: .newItem) {}
 				CommandMenu("Color") {
 					Button("Pick") {
-						appState.colorPanel.showColorSampler()
+						appState.pickColor()
 					}
 						.keyboardShortcut("p")
 					Divider()
@@ -31,15 +32,12 @@ struct AppMain: App {
 						appState.colorPanel.rgbColorString.copyToPasteboard()
 					}
 						.keyboardShortcut("R")
-					Button("Paste Color") {
-						guard let color = NSColor.fromPasteboardGraceful(.general) else {
-							return
-						}
-
-						appState.colorPanel.color = color
+					Button("Paste") {
+						appState.pasteColor()
 					}
+						.help("Paste color in the format Hex, HSL, or RGB")
 						.keyboardShortcut("V")
-						// TODO: I need to use `FocusedBinding` to disable this when `NSColor.fromPasteboardGraceful(.general) == nil`.
+						.disabled(NSColor.fromPasteboardGraceful(.general) == nil)
 				}
 				CommandGroup(replacing: .help) {
 					// TODO: Use `Link` when it's supported here.

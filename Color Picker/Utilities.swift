@@ -1386,3 +1386,191 @@ extension View {
 		}
 	}
 }
+
+
+extension NSView {
+	/// Get a subview matching a condition.
+	func firstSubview(deep: Bool = false, where matches: (NSView) -> Bool) -> NSView? {
+		for subview in subviews {
+			if matches(subview) {
+				return subview
+			}
+
+			if deep, let match = subview.firstSubview(deep: deep, where: matches) {
+				return match
+			}
+		}
+
+		return nil
+	}
+}
+
+
+extension NSObject {
+	// Note: It's intentionally a getter to get the dynamic self.
+	/// Returns the class name without module name.
+	static var simpleClassName: String { String(describing: self) }
+
+	/// Returns the class name of the instance without module name.
+	var simpleClassName: String { Self.simpleClassName }
+}
+
+
+enum SSPublishers {
+	/// Publishes when the app becomes active/inactive.
+	static var appIsActive: AnyPublisher<Bool, Never> {
+		Publishers.Merge(
+			NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
+				.map { _ in true },
+			NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)
+				.map { _ in false }
+		)
+			.eraseToAnyPublisher()
+	}
+}
+
+
+private struct AppearOnScreenView: NSViewControllerRepresentable {
+	final class ViewController: NSViewController {
+		var onViewDidAppear: (() -> Void)?
+		var onViewDidDisappear: (() -> Void)?
+
+		init() {
+			super.init(nibName: nil, bundle: nil)
+		}
+
+		@available(*, unavailable)
+		required init?(coder: NSCoder) {
+			fatalError("Not implemented")
+		}
+
+		override func loadView() {
+			view = NSView()
+		}
+
+		override func viewDidAppear() {
+			onViewDidAppear?()
+		}
+
+		override func viewDidDisappear() {
+			onViewDidDisappear?()
+		}
+	}
+
+	var onViewDidAppear: (() -> Void)?
+	var onViewDidDisappear: (() -> Void)?
+
+	func makeNSViewController(context: Context) -> ViewController {
+		let viewController = ViewController()
+		viewController.onViewDidAppear = onViewDidAppear
+		viewController.onViewDidDisappear = onViewDidDisappear
+		return viewController
+	}
+
+	func updateNSViewController(_ controller: ViewController, context: Context) {}
+}
+
+extension View {
+	/**
+	Called each time the view appears on screen.
+
+	This is different from `.onAppear` which is only called when the view appears in the SwiftUI view hierarchy.
+	*/
+	func onAppearOnScreen(_ perform: @escaping () -> Void) -> some View {
+		background(AppearOnScreenView(onViewDidAppear: perform))
+	}
+
+	/**
+	Called each time the view disappears from screen.
+
+	This is different from `.onDisappear` which is only called when the view disappears from the SwiftUI view hierarchy.
+	*/
+	func onDisappearFromScreen(_ perform: @escaping () -> Void) -> some View {
+		background(AppearOnScreenView(onViewDidDisappear: perform))
+	}
+}
+
+
+extension NSPasteboard {
+	/// Returns a publisher that emits when the pasteboard changes.
+	var simplePublisher: AnyPublisher<Void, Never> {
+		Timer.publish(every: 0.2, tolerance: 0.1, on: .main, in: .common)
+			.autoconnect()
+			.prepend([]) // We want the publisher to also emit immediately when someone subscribes.
+			.compactMap { [weak self] _ in
+				self?.changeCount
+			}
+			.removeDuplicates()
+			.map { _ in }
+			.eraseToAnyPublisher()
+	}
+}
+
+extension NSPasteboard {
+	/// An observable object that publishes updates when the given pasteboard changes.
+	final class SimpleObservable: ObservableObject {
+		private var cancellables = Set<AnyCancellable>()
+		private var pasteboardPublisherCancellable: AnyCancellable?
+		private let onlyWhenAppIsActive: Bool
+
+		@Published var pasteboard: NSPasteboard {
+			didSet {
+				if onlyWhenAppIsActive, !NSApp.isActive {
+					stop()
+					return
+				}
+
+				start()
+			}
+		}
+
+		/**
+		It starts listening to changes automatically, as long as `onlyWhenAppIsActive` is not `true`.
+
+		- Parameters:
+			- pasteboard: The pasteboard to listen to changes.
+			- onlyWhenAppIsActive: Only listen to changes while the app is active.
+		*/
+		init(_ pasteboard: NSPasteboard, onlyWhileAppIsActive: Bool = false) {
+			self.pasteboard = pasteboard
+			self.onlyWhenAppIsActive = onlyWhileAppIsActive
+
+			if onlyWhileAppIsActive {
+				SSPublishers.appIsActive
+					.sink { [weak self] isActive in
+						guard let self = self else {
+							return
+						}
+
+						if isActive {
+							self.start()
+						} else {
+							self.stop()
+						}
+					}
+					.store(in: &cancellables)
+
+				if NSApp.isActive {
+					start()
+				}
+			} else {
+				start()
+			}
+		}
+
+		@discardableResult
+		func start() -> Self {
+			pasteboardPublisherCancellable = pasteboard.simplePublisher.sink { [weak self] in
+				self?.objectWillChange.send()
+			}
+
+			return self
+		}
+
+		@discardableResult
+		func stop() -> Self {
+			pasteboardPublisherCancellable = nil
+			return self
+		}
+	}
+}

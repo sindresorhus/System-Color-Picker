@@ -6,6 +6,8 @@ final class ColorPanel: NSColorPanel, NSWindowDelegate {
 	override var canBecomeKey: Bool { true }
 
 	override func makeKeyAndOrderFront(_ sender: Any?) {
+		hideNativePickerButton()
+
 		super.makeKeyAndOrderFront(sender)
 
 		if Defaults[.showColorSamplerOnOpen] {
@@ -20,5 +22,15 @@ final class ColorPanel: NSColorPanel, NSWindowDelegate {
 		if !Defaults[.showInMenuBar] {
 			SSApp.quit()
 		}
+	}
+
+	private func hideNativePickerButton() {
+		let pickerButton = contentView?
+			.firstSubview(deep: true) { $0.simpleClassName == "NSButtonImageView" }?
+			.superview
+
+		assert(pickerButton != nil)
+
+		pickerButton?.isHidden = true
 	}
 }

@@ -23,7 +23,9 @@ final class AppState: ObservableObject {
 			.fullScreenAuxiliary
 		]
 
-		let accessoryView = NSHostingView(rootView: ColorPickerView(colorPanel: colorPanel))
+		let view = ColorPickerView(colorPanel: colorPanel)
+			.environmentObject(self)
+		let accessoryView = NSHostingView(rootView: view)
 		colorPanel.accessoryView = accessoryView
 		accessoryView.constrainEdgesToSuperview()
 
@@ -104,5 +106,26 @@ final class AppState: ObservableObject {
 		KeyboardShortcuts.onKeyUp(for: .toggleWindow) { [weak self] in
 			self?.colorPanel.toggle()
 		}
+	}
+
+	func pickColor() {
+		NSColorSampler().show { [weak self] in
+			guard
+				let self = self,
+				let color = $0
+			else {
+				return
+			}
+
+			self.colorPanel.color = color
+		}
+	}
+
+	func pasteColor() {
+		guard let color = NSColor.fromPasteboardGraceful(.general) else {
+			return
+		}
+
+		colorPanel.color = color
 	}
 }

@@ -1,6 +1,38 @@
 import SwiftUI
 import Defaults
 
+private struct BarView: View {
+	@EnvironmentObject private var appState: AppState
+	@StateObject private var pasteboardObserver = NSPasteboard.SimpleObservable(.general).stop()
+
+	var body: some View {
+		HStack {
+			Button {
+				appState.pickColor()
+			} label: {
+				Image(systemName: "eyedropper")
+			}
+				.help("Pick color")
+				.keyboardShortcut("p")
+			Button {
+				appState.pasteColor()
+			} label: {
+				Image(systemName: "paintbrush.fill")
+			}
+				.help("Paste color in the format Hex, HSL, or RGB")
+				.keyboardShortcut("V")
+				.disabled(NSColor.fromPasteboardGraceful(.general) == nil)
+			Spacer()
+		}
+			.onAppearOnScreen {
+				pasteboardObserver.start()
+			}
+			.onDisappearFromScreen {
+				pasteboardObserver.stop()
+			}
+	}
+}
+
 struct ColorPickerView: View {
 	@Default(.uppercaseHexColor) private var uppercaseHexColor
 	@Default(.legacyColorSyntax) private var legacyColorSyntax
@@ -14,6 +46,7 @@ struct ColorPickerView: View {
 
 	var body: some View {
 		VStack {
+			BarView()
 			HStack {
 				NativeTextField(
 					text: $hexColor,
@@ -22,7 +55,6 @@ struct ColorPickerView: View {
 					isFocused: $isTextFieldFocused
 				)
 					.controlSize(.large)
-					.frame(width: 200)
 					.onChange(of: hexColor) {
 						if
 							isTextFieldFocused,
@@ -52,7 +84,6 @@ struct ColorPickerView: View {
 					isFocused: $isTextFieldFocused
 				)
 					.controlSize(.large)
-					.frame(width: 200)
 					.onChange(of: hslColor) {
 						if
 							isTextFieldFocused,
@@ -82,7 +113,6 @@ struct ColorPickerView: View {
 					isFocused: $isTextFieldFocused
 				)
 					.controlSize(.large)
-					.frame(width: 200)
 					.onChange(of: rgbColor) {
 						if
 							isTextFieldFocused,
@@ -106,7 +136,8 @@ struct ColorPickerView: View {
 			}
 		}
 			.padding(9)
-			.frame(maxWidth: .infinity)
+			// 244 makes `HSL` always fit in the text field.
+			.frame(minWidth: 244, maxWidth: .infinity)
 			.onAppear {
 				updateColorsFromPanel()
 			}
