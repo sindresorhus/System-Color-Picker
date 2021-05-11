@@ -8,12 +8,13 @@ import AppCenterCrashes
 final class AppState: ObservableObject {
 	static let shared = AppState()
 
-	lazy var colorPanel: ColorPanel = {
+	private(set) lazy var colorPanel: ColorPanel = {
 		let colorPanel = ColorPanel()
 		colorPanel.titleVisibility = .hidden
 		colorPanel.hidesOnDeactivate = false
 		colorPanel.isFloatingPanel = false
 		colorPanel.isRestorable = false
+		colorPanel.styleMask.remove(.utilityWindow)
 		colorPanel.standardWindowButton(.miniaturizeButton)?.isHidden = true
 		colorPanel.standardWindowButton(.zoomButton)?.isHidden = true
 		colorPanel.tabbingMode = .disallowed
@@ -43,7 +44,7 @@ final class AppState: ObservableObject {
 		$0.addQuitItem()
 	}
 
-	lazy var statusItem = with(NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)) {
+	private(set) lazy var statusItem = with(NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)) {
 		$0.isVisible = false
 		$0.button!.image = NSImage(systemSymbolName: "drop.fill", accessibilityDescription: nil)
 		$0.button!.sendAction(on: [.leftMouseUp, .rightMouseUp])
