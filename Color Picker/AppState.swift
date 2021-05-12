@@ -108,6 +108,19 @@ final class AppState: ObservableObject {
 		}
 	}
 
+	private func copyColorIfNeeded() {
+		switch Defaults[.colorFormatToCopyAfterPicking] {
+		case .none:
+			break
+		case .hex:
+			colorPanel.hexColorString.copyToPasteboard()
+		case .hsl:
+			colorPanel.hslColorString.copyToPasteboard()
+		case .rgb:
+			colorPanel.rgbColorString.copyToPasteboard()
+		}
+	}
+
 	func pickColor() {
 		NSColorSampler().show { [weak self] in
 			guard
@@ -118,6 +131,7 @@ final class AppState: ObservableObject {
 			}
 
 			self.colorPanel.color = color
+			self.copyColorIfNeeded()
 		}
 	}
 

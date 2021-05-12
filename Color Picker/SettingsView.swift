@@ -24,6 +24,19 @@ private struct ShowInMenuBarSetting: View {
 	}
 }
 
+private struct CopyColorFormatSetting: View {
+	@Default(.colorFormatToCopyAfterPicking) private var colorFormat
+
+	var body: some View {
+		EnumPicker("Copy color after picking:", enumBinding: $colorFormat) { element, _ in
+			Text(element.title)
+			if element == .none {
+				Divider()
+			}
+		}
+	}
+}
+
 private struct KeyboardShortcutSetting: View {
 	@Default(.showInMenuBar) private var showInMenuBar
 
@@ -51,8 +64,8 @@ struct SettingsView: View {
 	var body: some View {
 		Form {
 			VStack(alignment: .leading) {
-				ShowInMenuBarSetting()
 				LaunchAtLogin.Toggle()
+				ShowInMenuBarSetting()
 				Defaults.Toggle("Stay on top", key: .stayOnTop)
 					.help("Make the color picker window stay on top of all other windows.")
 				Defaults.Toggle("Show color sampler when opening window", key: .showColorSamplerOnOpen)
@@ -60,6 +73,9 @@ struct SettingsView: View {
 				Defaults.Toggle("Uppercase Hex color", key: .uppercaseHexColor)
 				Defaults.Toggle("Use legacy syntax for HSL and RGB", key: .legacyColorSyntax)
 					.help("Use the legacy “hsl(198, 28%, 50%)” syntax instead of the modern “hsl(198deg 28% 50%)” syntax. This setting is meant for users that need to support older browsers. All modern browsers support the modern syntax.")
+				Divider()
+					.padding(.vertical)
+				CopyColorFormatSetting()
 				Divider()
 					.padding(.vertical)
 				KeyboardShortcutSetting()
