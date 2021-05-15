@@ -75,6 +75,9 @@ final class AppState: ObservableObject {
 		)
 
 		DispatchQueue.main.async { [self] in
+			// Make the invisible native SwitUI window not block access to the desktop.
+			NSApp.windows.first?.ignoresMouseEvents = true
+
 			setUpEvents()
 			showWelcomeScreenIfNeeded()
 		}
