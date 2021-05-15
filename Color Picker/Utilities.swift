@@ -355,7 +355,7 @@ extension NSColor {
 
 	/// - Important: Ensure you use a compatible color space, otherwise it will just be black.
 	var hsla: HSLA {
-		let hsba = self.hsba
+		let hsba = hsba
 
 		var saturation = hsba.saturation * hsba.brightness
 		var lightness = (2.0 - hsba.saturation) * hsba.brightness
@@ -648,25 +648,25 @@ extension NSColor {
 
 			return string
 		case .hsl:
-			let hsla = self.hsla
+			let hsla = hsla
 			let hue = Int((hsla.hue * 360).rounded())
 			let saturation = Int((hsla.saturation * 100).rounded())
 			let lightness = Int((hsla.lightness * 100).rounded())
 			return String(format: "hsl(%ddeg %d%% %d%%)", hue, saturation, lightness)
 		case .rgb:
-			let rgba = self.rgba
+			let rgba = rgba
 			let red = Int((rgba.red * 0xFF).rounded())
 			let green = Int((rgba.green * 0xFF).rounded())
 			let blue = Int((rgba.blue * 0xFF).rounded())
 			return String(format: "rgb(%d %d %d)", red, green, blue)
 		case .hslLegacy:
-			let hsla = self.hsla
+			let hsla = hsla
 			let hue = Int((hsla.hue * 360).rounded())
 			let saturation = Int((hsla.saturation * 100).rounded())
 			let lightness = Int((hsla.lightness * 100).rounded())
 			return String(format: "hsl(%d, %d%%, %d%%)", hue, saturation, lightness)
 		case .rgbLegacy:
-			let rgba = self.rgba
+			let rgba = rgba
 			let red = Int((rgba.red * 0xFF).rounded())
 			let green = Int((rgba.green * 0xFF).rounded())
 			let blue = Int((rgba.blue * 0xFF).rounded())
@@ -728,37 +728,6 @@ extension DispatchQueue {
 		} else {
 			main.async(execute: work)
 		}
-	}
-}
-
-
-extension Binding where Value: Equatable {
-	/**
-	Get notified when the binding value changes to a different one.
-
-	Can be useful to manually update non-reactive properties.
-
-	```
-	Toggle(
-		"Foo",
-		isOn: $foo.onChange {
-			bar.isEnabled = $0
-		}
-	)
-	```
-	*/
-	func onChange(_ action: @escaping (Value) -> Void) -> Self {
-		.init(
-			get: { wrappedValue },
-			set: {
-				let oldValue = wrappedValue
-				wrappedValue = $0
-				let newValue = wrappedValue
-				if newValue != oldValue {
-					action(newValue)
-				}
-			}
-		)
 	}
 }
 
@@ -1572,5 +1541,149 @@ extension NSPasteboard {
 			pasteboardPublisherCancellable = nil
 			return self
 		}
+	}
+}
+
+
+extension Binding where Value: CaseIterable & Equatable {
+	/**
+	```
+	enum Priority: String, CaseIterable {
+		case no
+		case low
+		case medium
+		case high
+	}
+
+	// …
+
+	Picker("Priority", selection: $priority.caseIndex) {
+		ForEach(Priority.allCases.indices) { priorityIndex in
+			Text(
+				Priority.allCases[priorityIndex].rawValue.capitalized
+			)
+				.tag(priorityIndex)
+		}
+	}
+	```
+	*/
+	var caseIndex: Binding<Value.AllCases.Index> {
+		.init(
+			get: { Value.allCases.firstIndex(of: wrappedValue)! },
+			set: {
+				wrappedValue = Value.allCases[$0]
+			}
+		)
+	}
+}
+
+
+/**
+Useful in SwiftUI:
+
+```
+ForEach(persons.indexed(), id: \.1.id) { index, person in
+	// …
+}
+```
+*/
+struct IndexedCollection<Base: RandomAccessCollection>: RandomAccessCollection {
+	typealias Index = Base.Index
+	typealias Element = (index: Index, element: Base.Element)
+
+	let base: Base
+	var startIndex: Index { base.startIndex }
+	var endIndex: Index { base.endIndex }
+
+	func index(after index: Index) -> Index {
+		base.index(after: index)
+	}
+
+	func index(before index: Index) -> Index {
+		base.index(before: index)
+	}
+
+	func index(_ index: Index, offsetBy distance: Int) -> Index {
+		base.index(index, offsetBy: distance)
+	}
+
+	subscript(position: Index) -> Element {
+		(index: position, element: base[position])
+	}
+}
+
+extension RandomAccessCollection {
+	/**
+	Returns a sequence with a tuple of both the index and the element.
+
+	- Important: Use this instead of `.enumerated()`. See: https://khanlou.com/2017/03/you-probably-don%27t-want-enumerated/
+	*/
+	func indexed() -> IndexedCollection<Self> {
+		IndexedCollection(base: self)
+	}
+}
+
+
+/**
+Create a `Picker` from an enum.
+
+- Note: The enum must conform to `CaseIterable`.
+
+```
+enum EventIndicatorsInCalendar: String, Codable, CaseIterable {
+	case none
+	case one
+	case maxThree
+
+	var title: String {
+		switch self {
+		case .none:
+			return "None"
+		case .one:
+			return "Single Gray Dot"
+		case .maxThree:
+			return "Up To Three Colored Dots"
+		}
+	}
+}
+
+struct ContentView: View {
+	@Default(.indicateEventsInCalendar) private var indicator
+
+	var body: some View {
+		EnumPicker(
+			"Foo",
+			enumCase: $indicator
+		) { element, isSelected in
+			Text(element.title)
+		}
+	}
+}
+```
+*/
+struct EnumPicker<Enum, Label, Content>: View where Enum: CaseIterable & Equatable, Enum.AllCases.Index: Hashable, Label: View, Content: View {
+	let enumBinding: Binding<Enum>
+	let label: Label
+	@ViewBuilder let content: (Enum, Bool) -> Content
+
+	var body: some View {
+		Picker(selection: enumBinding.caseIndex, label: label) {
+			ForEach(Array(Enum.allCases).indexed(), id: \.0) { index, element in
+				content(element, element == enumBinding.wrappedValue)
+					.tag(index)
+			}
+		}
+	}
+}
+
+extension EnumPicker where Label == Text {
+	init<S>(
+		_ title: S,
+		enumBinding: Binding<Enum>,
+		@ViewBuilder content: @escaping (Enum, Bool) -> Content
+	) where S: StringProtocol {
+		self.enumBinding = enumBinding
+		self.label = Text(title)
+		self.content = content
 	}
 }
