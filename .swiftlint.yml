@@ -158,12 +158,14 @@ identifier_name:
   excluded:
     - 'x'
     - 'y'
+    - 'z'
     - 'a'
     - 'b'
     - 'x1'
     - 'x2'
     - 'y1'
     - 'y2'
+    - 'z2'
 deployment_target:
   macOS_deployment_target: '11'
 custom_rules:

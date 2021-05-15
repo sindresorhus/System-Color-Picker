@@ -29,6 +29,10 @@ final class AppState: ObservableObject {
 		colorPanel.accessoryView = accessoryView
 		accessoryView.constrainEdgesToSuperview()
 
+		// This has to be after adding the accessory view to get correct size.
+		colorPanel.setFrameUsingName(SSApp.name)
+		colorPanel.setFrameAutosaveName(SSApp.name)
+
 		return colorPanel
 	}()
 
@@ -121,6 +125,8 @@ final class AppState: ObservableObject {
 			colorPanel.hslColorString.copyToPasteboard()
 		case .rgb:
 			colorPanel.rgbColorString.copyToPasteboard()
+		case .lch:
+			colorPanel.lchColorString.copyToPasteboard()
 		}
 	}
 
@@ -143,6 +149,6 @@ final class AppState: ObservableObject {
 			return
 		}
 
-		colorPanel.color = color
+		colorPanel.color = color.usingColorSpace(.sRGB) ?? color
 	}
 }

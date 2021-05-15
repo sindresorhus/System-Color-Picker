@@ -5,6 +5,13 @@ import Defaults
 import Regex
 
 
+#if canImport(AppKit)
+typealias XColor = NSColor
+#elseif canImport(UIKit)
+typealias XColor = UIColor
+#endif
+
+
 enum SSApp {
 	static let id = Bundle.main.bundleIdentifier!
 	static let name = Bundle.main.object(forInfoDictionaryKey: kCFBundleNameKey as String) as! String
@@ -286,18 +293,11 @@ extension NSView {
 
 
 extension NSColor {
-	typealias RGBA = (
-		red: Double,
-		green: Double,
-		blue: Double,
-		alpha: Double
-	)
-
-	var rgba: RGBA {
+	var rgb: Colors.RGB {
 		#if canImport(AppKit)
 		guard let color = usingColorSpace(.extendedSRGB) else {
 			assertionFailure("Unsupported color space")
-			return RGBA(0, 0, 0, 0)
+			return .init(red: 0, green: 0, blue: 0, alpha: 0)
 		}
 		#elseif canImport(UIKit)
 		let color = self
@@ -310,19 +310,24 @@ extension NSColor {
 
 		color.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
 
-		return RGBA(red.double, green.double, blue.double, alpha.double)
+		return .init(
+			red: red.double,
+			green: green.double,
+			blue: blue.double,
+			alpha: alpha.double
+		)
 	}
 }
 
 
 extension NSColor {
-	typealias HSBA = (hue: Double, saturation: Double, brightness: Double, alpha: Double)
+	typealias HSB = (hue: Double, saturation: Double, brightness: Double, alpha: Double)
 
-	var hsba: HSBA {
+	var hsb: HSB {
 		#if canImport(AppKit)
 		guard let color = usingColorSpace(.extendedSRGB) else {
 			assertionFailure("Unsupported color space")
-			return HSBA(0, 0, 0, 0)
+			return HSB(0, 0, 0, 0)
 		}
 		#elseif canImport(UIKit)
 		let color = self
@@ -335,7 +340,7 @@ extension NSColor {
 
 		color.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha)
 
-		return HSBA(
+		return HSB(
 			hue: hue.double,
 			saturation: saturation.double,
 			brightness: brightness.double,
@@ -346,19 +351,12 @@ extension NSColor {
 
 
 extension NSColor {
-	typealias HSLA = (
-		hue: Double,
-		saturation: Double,
-		lightness: Double,
-		alpha: Double
-	)
-
 	/// - Important: Ensure you use a compatible color space, otherwise it will just be black.
-	var hsla: HSLA {
-		let hsba = hsba
+	var hsl: Colors.HSL {
+		let hsb = hsb
 
-		var saturation = hsba.saturation * hsba.brightness
-		var lightness = (2.0 - hsba.saturation) * hsba.brightness
+		var saturation = hsb.saturation * hsb.brightness
+		var lightness = (2.0 - hsb.saturation) * hsb.brightness
 
 		let saturationDivider = (lightness <= 1.0 ? lightness : 2.0 - lightness)
 		if saturationDivider != 0 {
@@ -367,11 +365,11 @@ extension NSColor {
 
 		lightness /= 2.0
 
-		return HSLA(
-			hue: hsba.hue,
+		return .init(
+			hue: hsb.hue,
 			saturation: saturation,
 			lightness: lightness,
-			alpha: hsba.alpha
+			alpha: hsb.alpha
 		)
 	}
 
@@ -441,8 +439,9 @@ extension Color {
 
 
 extension NSColor {
-	private static let cssHSLRegex = Regex(#"^\s*hsla?\((?<hue>\d+)(?:deg)?[\s,]*(?<saturation>[\d.]+)%[\s,]*(?<lightness>[\d.]+)%\)\s*$"#)
+	private static let cssHSLRegex = Regex(#"^\s*hsla?\((?<hue>\d+)(?:deg)?[\s,]*(?<saturation>[\d.]+)%[\s,]*(?<lightness>[\d.]+)%\);?\s*$"#)
 
+	// TODO: Should I move this to the `Colors.HSL` struct instead?
 	// TODO: Support `alpha` in HSL (both comma and `/` separated): https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/hsl()
 	// TODO: Write a lot of tests for the regex.
 	/// Assumes `sRGB` color space.
@@ -474,11 +473,12 @@ extension NSColor {
 
 
 extension NSColor {
-	private static let cssRGBRegex = Regex(#"^\s*rgba?\((?<red>[\d.]+)[\s,]*(?<green>[\d.]+)[\s,]*(?<blue>[\d.]+)\)\s*$"#)
+	private static let cssRGBRegex = Regex(#"^\s*rgba?\((?<red>[\d.]+)[\s,]*(?<green>[\d.]+)[\s,]*(?<blue>[\d.]+)\);?\s*$"#)
 
 	// TODO: Need to handle `rgb(10%, 10%, 10%)`.
 	// TODO: Support `alpha` in RGB (both comma and `/` separated): https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/hsl()
 	// TODO: Write a lot of tests for the regex.
+	// Fixture: rgb(27.59% 41.23% 100%)
 	/// Assumes `sRGB` color space.
 	convenience init?(cssRGBString: String) {
 		guard
@@ -506,6 +506,41 @@ extension NSColor {
 }
 
 
+// https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/lch()
+extension NSColor {
+	private static let cssLCHRegex = Regex(#"^\s*lch\((?<lightness>[\d.]+)%\s+(?<chroma>[\d.]+)\s+(?<hue>[\d.]+)(?:deg)?\s*(?<alpha>\/\s+[\d.]+%?)?\)?;?$"#)
+
+	// TODO: Support `alpha`, both percentage and float format. Right now we accept such colors, but ignore the alpha.
+	// TODO: Write a lot of tests for the regex.
+	/// Assumes `sRGB` color space.
+	convenience init?(cssLCHString: String) {
+		guard
+			let match = Self.cssLCHRegex.firstMatch(in: cssLCHString),
+			let lightnessString = match.group(named: "lightness")?.value,
+			let chromaString = match.group(named: "chroma")?.value,
+			let hueString = match.group(named: "hue")?.value,
+			let lightness = Double(lightnessString),
+			let chroma = Double(chromaString),
+			let hue = Double(hueString),
+			(0...100).contains(lightness),
+			chroma >= 0, // Usually max 230, but theoretically unbounded.
+			(0...360).contains(hue)
+		else {
+			return nil
+		}
+
+		let lch = Colors.LCH(
+			lightness: lightness,
+			chroma: chroma,
+			hue: hue,
+			alpha: 1
+		)
+
+		self.init(lch.toRGB())
+	}
+}
+
+
 extension NSColor {
 	/**
 	Create a color from a CSS color string in the format Hex, HSL, or RGB.
@@ -517,11 +552,15 @@ extension NSColor {
 			return color
 		}
 
+		if let color = NSColor(cssHSLString: cssString) {
+			return color
+		}
+
 		if let color = NSColor(cssRGBString: cssString) {
 			return color
 		}
 
-		if let color = NSColor(cssHSLString: cssString) {
+		if let color = NSColor(cssLCHString: cssString) {
 			return color
 		}
 
@@ -628,6 +667,7 @@ extension NSColor {
 		case hex(isUppercased: Bool = false, hasPrefix: Bool = false)
 		case hsl
 		case rgb
+		case lch
 		case hslLegacy
 		case rgbLegacy
 	}
@@ -648,28 +688,36 @@ extension NSColor {
 
 			return string
 		case .hsl:
-			let hsla = hsla
-			let hue = Int((hsla.hue * 360).rounded())
-			let saturation = Int((hsla.saturation * 100).rounded())
-			let lightness = Int((hsla.lightness * 100).rounded())
+			let hsl = hsl
+			let hue = Int((hsl.hue * 360).rounded())
+			let saturation = Int((hsl.saturation * 100).rounded())
+			let lightness = Int((hsl.lightness * 100).rounded())
 			return String(format: "hsl(%ddeg %d%% %d%%)", hue, saturation, lightness)
 		case .rgb:
-			let rgba = rgba
-			let red = Int((rgba.red * 0xFF).rounded())
-			let green = Int((rgba.green * 0xFF).rounded())
-			let blue = Int((rgba.blue * 0xFF).rounded())
+			let rgb = rgb
+			let red = Int((rgb.red * 0xFF).rounded())
+			let green = Int((rgb.green * 0xFF).rounded())
+			let blue = Int((rgb.blue * 0xFF).rounded())
 			return String(format: "rgb(%d %d %d)", red, green, blue)
+		case .lch:
+			let lch = rgb.toLCH()
+			print("RGB", rgb)
+			print("LCH", lch)
+			let lightness = Int(lch.lightness.rounded())
+			let chroma = Int(lch.chroma.rounded())
+			let hue = Int(lch.hue.rounded())
+			return String(format: "lch(%d%% %d %ddeg)", lightness, chroma, hue)
 		case .hslLegacy:
-			let hsla = hsla
-			let hue = Int((hsla.hue * 360).rounded())
-			let saturation = Int((hsla.saturation * 100).rounded())
-			let lightness = Int((hsla.lightness * 100).rounded())
+			let hsl = hsl
+			let hue = Int((hsl.hue * 360).rounded())
+			let saturation = Int((hsl.saturation * 100).rounded())
+			let lightness = Int((hsl.lightness * 100).rounded())
 			return String(format: "hsl(%d, %d%%, %d%%)", hue, saturation, lightness)
 		case .rgbLegacy:
-			let rgba = rgba
-			let red = Int((rgba.red * 0xFF).rounded())
-			let green = Int((rgba.green * 0xFF).rounded())
-			let blue = Int((rgba.blue * 0xFF).rounded())
+			let rgb = rgb
+			let red = Int((rgb.red * 0xFF).rounded())
+			let green = Int((rgb.green * 0xFF).rounded())
+			let blue = Int((rgb.blue * 0xFF).rounded())
 			return String(format: "rgb(%d, %d, %d)", red, green, blue)
 		}
 	}
@@ -1685,5 +1733,318 @@ extension EnumPicker where Label == Text {
 		self.enumBinding = enumBinding
 		self.label = Text(title)
 		self.content = content
+	}
+}
+
+
+// TODO: I plan to extract this out into a Swift package when it's more mature.
+enum Colors {}
+
+extension Colors {
+	/**
+	RGB color in the `extendedSRGB` color space.
+
+	The components are usually in the range `0...1` but could extend it (except `alpha`).
+	*/
+	struct RGB: Hashable {
+		let red: Double
+		let green: Double
+		let blue: Double
+		let alpha: Double
+	}
+
+	/**
+	HSL color.
+
+	The components are in the range `0...1`.
+	*/
+	struct HSL: Hashable {
+		let hue: Double
+		let saturation: Double
+		let lightness: Double
+		let alpha: Double
+	}
+
+	struct LCH: Hashable {
+		/// Range: `0...100`
+		let lightness: Double
+
+		/// Range: `0...132` *(Could be higher)*
+		let chroma: Double
+
+		/// Range: `0...360`
+		let hue: Double
+
+		/// Range: `0...1`
+		let alpha: Double
+	}
+}
+
+extension XColor {
+	/// Initialize from a `RGB` color.
+	convenience init(_ rgbColor: Colors.RGB) {
+		self.init(
+			red: rgbColor.red.cgFloat,
+			green: rgbColor.green.cgFloat,
+			blue: rgbColor.blue.cgFloat,
+			alpha: rgbColor.alpha.cgFloat
+		)
+	}
+}
+
+extension Colors.RGB {
+	/// Convert sRGB to LCH.
+	func toLCH() -> Colors.LCH {
+		// Algorithm: https://www.w3.org/TR/css-color-4/#rgb-to-lab
+
+		// Convert from sRGB to linear-light sRGB (undo gamma encoding).
+		let red = Colors.sRGBToLinearSRGB(colorComponent: red)
+		let green = Colors.sRGBToLinearSRGB(colorComponent: green)
+		let blue = Colors.sRGBToLinearSRGB(colorComponent: blue)
+
+		// Convert from linear sRGB to D65-adapted XYZ.
+		let xyz = Colors.linearSRGBToXYZ(red: red, green: green, blue: blue)
+
+		// Convert from a D65 whitepoint (used by sRGB) to the D50 whitepoint used in Lab, with the Bradford transform.
+		let xyz2 = Colors.d65ToD50(x: xyz.x, y: xyz.y, z: xyz.z)
+
+		// Convert D50-adapted XYZ to Lab.
+		let lab = Colors.xyzToLab(x: xyz2.x, y: xyz2.y, z: xyz2.z)
+
+		// Convert Lab to LCH.
+		let lch = Colors.labToLCH(lightness: lab.lightness, a: lab.a, b: lab.b)
+
+		return .init(
+			lightness: lch.lightness,
+			chroma: lch.chroma,
+			hue: lch.hue,
+			alpha: alpha
+		)
+	}
+
+	// Convert to NSColor/UIColor.
+	func toXColor() -> XColor { .init(self) }
+}
+
+extension Colors.LCH {
+	/// Convert LCH to sRGB.
+	func toRGB() -> Colors.RGB {
+		// Algorithm: https://www.w3.org/TR/css-color-4/#lab-to-rgb
+
+		// Convert LCH to Lab.
+		let lab = Colors.lchToLab(lightness: lightness, chroma: chroma, hue: hue)
+
+		// Convert Lab to D50-adapted XYZ.
+		let xyz = Colors.labToXYZ(lightness: lab.lightness, a: lab.a, b: lab.b)
+
+		// Convert from a D50 whitepoint (used by Lab) to the D65 whitepoint used in sRGB, with the Bradford transform.
+		let xyz2 = Colors.d50ToD65(x: xyz.x, y: xyz.y, z: xyz.z)
+
+		// Convert from D65-adapted XYZ to linear-light sRGB.
+		let rgb = Colors.xyzToLinearSRGB(x: xyz2.x, y: xyz2.y, z: xyz2.z)
+
+		// Convert from linear-light sRGB to sRGB (do gamma encoding).
+		let red = Colors.linearSRGBToSRGB(colorComponent: rgb.red)
+		let green = Colors.linearSRGBToSRGB(colorComponent: rgb.green)
+		let blue = Colors.linearSRGBToSRGB(colorComponent: rgb.blue)
+
+		return .init(
+			red: red,
+			green: green,
+			blue: blue,
+			alpha: alpha
+		)
+	}
+}
+
+extension Colors {
+	/**
+	Convert a color component of a gamma-corrected form of sRGB to linear-light sRGB.
+
+	https://en.wikipedia.org/wiki/SRGB
+	*/
+	fileprivate static func sRGBToLinearSRGB(colorComponent: Double) -> Double {
+		colorComponent > 0.040_45
+			? pow((colorComponent + 0.055) / 1.055, 2.40)
+			: (colorComponent / 12.92)
+	}
+
+	/**
+	Convert a color component of a linear-light sRGB to a gamma-corrected form.
+
+	https://en.wikipedia.org/wiki/SRGB
+	*/
+	fileprivate static func linearSRGBToSRGB(colorComponent: Double) -> Double {
+		colorComponent > 0.003_130_8
+			? (pow(colorComponent, 1.0 / 2.4) * 1.055 - 0.055)
+			: (colorComponent * 12.92)
+	}
+
+	/**
+	Convert a linear-light sRGB to XYZ, using sRGB's own white, D65 (no chromatic adaptation).
+
+	- http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
+	- https://www.image-engineering.de/library/technotes/958-how-to-convert-between-srgb-and-ciexyz
+	*/
+	fileprivate static func linearSRGBToXYZ(
+		red: Double,
+		green: Double,
+		blue: Double
+	) -> (x: Double, y: Double, z: Double) {
+		(
+			x: (red * 0.412_456_4) + (green * 0.357_576_1) + (blue * 0.180_437_5),
+			y: (red * 0.212_672_9) + (green * 0.715_152_2) + (blue * 0.072_175_0),
+			z: (red * 0.019_333_9) + (green * 0.119_192_0) + (blue * 0.950_304_1)
+		)
+	}
+
+	/**
+	Convert D65-adapted XYZ to linear-light sRGB.
+	*/
+	fileprivate static func xyzToLinearSRGB(
+		x: Double,
+		y: Double,
+		z: Double
+	) -> (red: Double, green: Double, blue: Double) {
+		(
+			red: (x * 3.240_454_2) + (y * -1.537_138_5) + (z * -0.498_531_4),
+			green: (x * -0.969_266_0) + (y * 1.876_010_8) + (z * 0.041_556_0),
+			blue: (x * 0.055_643_4) + (y * -0.204_025_9) + (z * 1.057_225_2)
+		)
+	}
+
+	/**
+	Bradford chromatic adaptation from D65 to D50 for XYZ.
+
+	http://www.brucelindbloom.com/index.html?Eqn_ChromAdapt.html
+	*/
+	fileprivate static func d65ToD50(
+		x: Double,
+		y: Double,
+		z: Double
+	) -> (x: Double, y: Double, z: Double) {
+		(
+			x: (x * 1.047_811_2) + (y * 0.022_886_6) + (z * -0.050_127_0),
+			y: (x * 0.029_542_4) + (y * 0.990_484_4) + (z * -0.017_049_1),
+			z: (x * -0.009_234_5) + (y * 0.015_043_6) + (z * 0.752_131_6)
+		)
+	}
+
+	/**
+	Bradford chromatic adaptation from D50 to D65 for XYZ.
+
+	http://www.brucelindbloom.com/index.html?Eqn_ChromAdapt.html
+	*/
+	fileprivate static func d50ToD65(
+		x: Double,
+		y: Double,
+		z: Double
+	) -> (x: Double, y: Double, z: Double) {
+		(
+			x: (x * 0.955_576_6) + (y * -0.023_039_3) + (z * 0.063_163_6),
+			y: (x * -0.028_289_5) + (y * 1.009_941_6) + (z * 0.021_007_7),
+			z: (x * 0.012_298_2) + (y * -0.020_483_0) + (z * 1.329_909_8)
+		)
+	}
+
+	/**
+	Convert D50-adapted XYZ to Lab.
+	*/
+	fileprivate static func xyzToLab(
+		x: Double,
+		y: Double,
+		z: Double
+	) -> (lightness: Double, a: Double, b: Double) {
+		// Assuming XYZ is relative to D50, convert to CIE Lab
+		// from CIE standard, which now defines these as a rational fraction.
+		// swiftlint:disable identifier_name
+		let ε = 216.0 / 24_389.0 // 6^3 / 29^3
+		let κ = 24_389.0 / 27.0 // 29^3 / 3^3
+		// swiftlint:enable identifier_name
+
+		// Compute XYZ scaled relative to reference white.
+		let scaledX = x / 0.964_22
+		let scaledY = y / 1.0
+		let scaledZ = z / 0.825_21
+
+		func computeF(_ value: Double) -> Double {
+			value > ε ? cbrt(value) : (κ * value + 16) / 116
+		}
+
+		let fX = computeF(scaledX)
+		let fY = computeF(scaledY)
+		let fZ = computeF(scaledZ)
+
+		return (
+			lightness: (116 * fY) - 16,
+			a: 500 * (fX - fY),
+			b: 200 * (fY - fZ)
+		)
+	}
+
+	/**
+	Convert Lab to D50-adapted XYZ.
+	*/
+	fileprivate static func labToXYZ(
+		lightness: Double,
+		a: Double,
+		b: Double
+	) -> (x: Double, y: Double, z: Double) {
+		// http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
+
+		// swiftlint:disable identifier_name
+		let κ = 24_389.0 / 27.0; // 29^3 / 3^3
+		let ε = 216.0 / 24_389.0; // 6^3 / 29^3
+		// swiftlint:enable identifier_name
+
+		// Compute f, starting with the luminance-related term.
+		let fY = (lightness + 16) / 116
+		let fX = a / 500 + fY
+		let fZ = fY - b / 200
+
+		let x = pow(fX, 3) > ε ? pow(fX, 3) : (116 * fX - 16) / κ
+		let y = lightness > (κ * ε) ? pow((lightness + 16) / 116, 3) : lightness / κ
+		let z = pow(fZ, 3) > ε ? pow(fZ, 3) : (116 * fZ - 16) / κ
+
+		// Scaled by reference white.
+		return (
+			x: x * 0.964_22,
+			y: y * 1.0,
+			z: z * 0.825_21
+		)
+	}
+
+	/**
+	Convert Lab to LCH.
+
+	The returned `hue` is in degrees (`0...360`).
+	*/
+	fileprivate static func labToLCH(
+		lightness: Double,
+		a: Double,
+		b: Double
+	) -> (lightness: Double, chroma: Double, hue: Double) {
+		let hue = atan2(b, a) * 180 / .pi
+
+		return (
+			lightness: lightness,
+			chroma: sqrt(pow(a, 2) + pow(b, 2)),
+			hue: hue >= 0 ? hue : hue + 360
+		)
+	}
+
+	/**
+	Convert LCH to Lab.
+	*/
+	fileprivate static func lchToLab(
+		lightness: Double,
+		chroma: Double,
+		hue: Double
+	) -> (lightness: Double, a: Double, b: Double) {
+		(
+			lightness: lightness,
+			a: chroma * cos(hue * .pi / 180),
+			b: chroma * sin(hue * .pi / 180)
+		)
 	}
 }

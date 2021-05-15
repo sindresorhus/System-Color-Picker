@@ -19,7 +19,7 @@ Requires macOS 11 or later.
 
 ## Features
 
-- Quickly copy, paste, and convert colors in Hex, HSL, and RGB format
+- Quickly copy, paste, and convert colors in Hex, HSL, RGB, LCH format
 - Show as a normal app or in the menu bar
 - Toggle it from anywhere with a global keyboard shortcut
 - Make the window stay on top of all other windows
@@ -31,9 +31,10 @@ You can use the following keyboard shortcuts in the app:
 
 - Pick color: <kbd>Command</kbd> <kbd>p</kbd>
 - Copy as Hex: <kbd>Shift</kbd> <kbd>Command</kbd> <kbd>h</kbd>
-- Copy as HSL: <kbd>Shift</kbd> <kbd>Command</kbd> <kbd>l</kbd>
+- Copy as HSL: <kbd>Shift</kbd> <kbd>Command</kbd> <kbd>s</kbd>
 - Copy as RGB: <kbd>Shift</kbd> <kbd>Command</kbd> <kbd>r</kbd>
-- Paste color: <kbd>Shift</kbd> <kbd>Command</kbd> <kbd>v</kbd> *(In the format Hex, HSL, or RGB)*
+- Copy as LCH: <kbd>Shift</kbd> <kbd>Command</kbd> <kbd>l</kbd>
+- Paste color: <kbd>Shift</kbd> <kbd>Command</kbd> <kbd>v</kbd> *(In the format Hex, HSL, RGB, or LCH)*
 
 ## Plugins
 
@@ -50,6 +51,10 @@ The built-in color picker supports plugins:
 ![](Stuff/screenshot2.jpg)
 
 ## FAQ
+
+#### What is LCH color?
+
+[It's a more human-friendly color format.](https://lea.verou.me/2020/04/lch-colors-in-css-what-why-and-how/)
 
 #### The color changes if I copy and then paste it
 

@@ -19,7 +19,7 @@ private struct BarView: View {
 			} label: {
 				Image(systemName: "paintbrush.fill")
 			}
-				.help("Paste color in the format Hex, HSL, or RGB")
+				.help("Paste color in the format Hex, HSL, RGB, or LCH")
 				.keyboardShortcut("V")
 				.disabled(NSColor.fromPasteboardGraceful(.general) == nil)
 			Spacer()
@@ -39,6 +39,7 @@ struct ColorPickerView: View {
 	@State private var hexColor = ""
 	@State private var hslColor = ""
 	@State private var rgbColor = ""
+	@State private var lchColor = ""
 	@State private var isPreventingUpdate = false
 	@State private var isTextFieldFocused = false
 
@@ -103,7 +104,7 @@ struct ColorPickerView: View {
 					Image(systemName: "doc.on.doc.fill")
 						.controlSize(.small)
 				}
-					.keyboardShortcut("L")
+					.keyboardShortcut("S")
 			}
 			HStack {
 				NativeTextField(
@@ -134,6 +135,35 @@ struct ColorPickerView: View {
 				}
 					.keyboardShortcut("R")
 			}
+			HStack {
+				NativeTextField(
+					text: $lchColor,
+					placeholder: "LCH",
+					font: .monospacedSystemFont(ofSize: 0, weight: .regular),
+					isFocused: $isTextFieldFocused
+				)
+					.controlSize(.large)
+					.onChange(of: lchColor) {
+						if
+							isTextFieldFocused,
+							!isPreventingUpdate,
+							let newColor = NSColor(cssLCHString: $0.trimmingCharacters(in: .whitespaces))
+						{
+							colorPanel.color = newColor
+						}
+
+						if !isPreventingUpdate {
+							updateColorsFromPanel(excludeLCH: true, preventUpdate: true)
+						}
+					}
+				Button {
+					lchColor.copyToPasteboard()
+				} label: {
+					Image(systemName: "doc.on.doc.fill")
+						.controlSize(.small)
+				}
+					.keyboardShortcut("L")
+			}
 		}
 			.padding(9)
 			// 244 makes `HSL` always fit in the text field.
@@ -161,6 +191,7 @@ struct ColorPickerView: View {
 		excludeHex: Bool = false,
 		excludeHSL: Bool = false,
 		excludeRGB: Bool = false,
+		excludeLCH: Bool = false,
 		preventUpdate: Bool = false
 	) {
 		if preventUpdate {
@@ -177,6 +208,10 @@ struct ColorPickerView: View {
 
 		if !excludeRGB {
 			rgbColor = colorPanel.rgbColorString
+		}
+
+		if !excludeLCH {
+			lchColor = colorPanel.lchColorString
 		}
 
 		if preventUpdate {
@@ -198,6 +233,10 @@ extension NSColorPanel {
 
 	var rgbColorString: String {
 		color.usingColorSpace(.sRGB)!.format(Defaults[.legacyColorSyntax] ? .rgbLegacy : .rgb)
+	}
+
+	var lchColorString: String {
+		color.usingColorSpace(.sRGB)!.format(.lch)
 	}
 }
 

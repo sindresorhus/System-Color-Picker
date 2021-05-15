@@ -20,6 +20,7 @@ enum CopyColorFormat: String, Codable, CaseIterable {
 	case hex
 	case hsl
 	case rgb
+	case lch
 
 	var title: String {
 		switch self {
@@ -31,6 +32,8 @@ enum CopyColorFormat: String, Codable, CaseIterable {
 			return "HSL"
 		case .rgb:
 			return "RGB"
+		case .lch:
+			return "LCH"
 		}
 	}
 }
