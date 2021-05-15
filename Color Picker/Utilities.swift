@@ -355,7 +355,7 @@ extension NSColor {
 
 	/// - Important: Ensure you use a compatible color space, otherwise it will just be black.
 	var hsla: HSLA {
-		let hsba = self.hsba
+		let hsba = hsba
 
 		var saturation = hsba.saturation * hsba.brightness
 		var lightness = (2.0 - hsba.saturation) * hsba.brightness
@@ -648,25 +648,25 @@ extension NSColor {
 
 			return string
 		case .hsl:
-			let hsla = self.hsla
+			let hsla = hsla
 			let hue = Int((hsla.hue * 360).rounded())
 			let saturation = Int((hsla.saturation * 100).rounded())
 			let lightness = Int((hsla.lightness * 100).rounded())
 			return String(format: "hsl(%ddeg %d%% %d%%)", hue, saturation, lightness)
 		case .rgb:
-			let rgba = self.rgba
+			let rgba = rgba
 			let red = Int((rgba.red * 0xFF).rounded())
 			let green = Int((rgba.green * 0xFF).rounded())
 			let blue = Int((rgba.blue * 0xFF).rounded())
 			return String(format: "rgb(%d %d %d)", red, green, blue)
 		case .hslLegacy:
-			let hsla = self.hsla
+			let hsla = hsla
 			let hue = Int((hsla.hue * 360).rounded())
 			let saturation = Int((hsla.saturation * 100).rounded())
 			let lightness = Int((hsla.lightness * 100).rounded())
 			return String(format: "hsl(%d, %d%%, %d%%)", hue, saturation, lightness)
 		case .rgbLegacy:
-			let rgba = self.rgba
+			let rgba = rgba
 			let red = Int((rgba.red * 0xFF).rounded())
 			let green = Int((rgba.green * 0xFF).rounded())
 			let blue = Int((rgba.blue * 0xFF).rounded())
@@ -728,37 +728,6 @@ extension DispatchQueue {
 		} else {
 			main.async(execute: work)
 		}
-	}
-}
-
-
-extension Binding where Value: Equatable {
-	/**
-	Get notified when the binding value changes to a different one.
-
-	Can be useful to manually update non-reactive properties.
-
-	```
-	Toggle(
-		"Foo",
-		isOn: $foo.onChange {
-			bar.isEnabled = $0
-		}
-	)
-	```
-	*/
-	func onChange(_ action: @escaping (Value) -> Void) -> Self {
-		.init(
-			get: { wrappedValue },
-			set: {
-				let oldValue = wrappedValue
-				wrappedValue = $0
-				let newValue = wrappedValue
-				if newValue != oldValue {
-					action(newValue)
-				}
-			}
-		)
 	}
 }
 
