@@ -13,6 +13,13 @@ final class ColorPanel: NSColorPanel, NSWindowDelegate {
 		if Defaults[.showColorSamplerOnOpen] {
 			showColorSampler()
 		}
+
+		// Prevent the first tab from showing focus ring.
+		DispatchQueue.main.async {
+			DispatchQueue.main.async { [self] in
+				makeFirstResponder(nil)
+			}
+		}
 	}
 
 	// Ensures the app closes when the window does.

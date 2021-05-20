@@ -22,12 +22,17 @@ final class AppState: ObservableObject {
 			.moveToActiveSpace,
 			.fullScreenAuxiliary
 		]
+		colorPanel.makeMain()
 
 		let view = ColorPickerView(colorPanel: colorPanel)
 			.environmentObject(self)
 		let accessoryView = NSHostingView(rootView: view)
 		colorPanel.accessoryView = accessoryView
 		accessoryView.constrainEdgesToSuperview()
+
+		// This has to be after adding the accessory view to get correct size.
+		colorPanel.setFrameUsingName(SSApp.name)
+		colorPanel.setFrameAutosaveName(SSApp.name)
 
 		return colorPanel
 	}()
@@ -80,11 +85,15 @@ final class AppState: ObservableObject {
 
 			setUpEvents()
 			showWelcomeScreenIfNeeded()
+
+			// We hide the “View” menu as there's a macOS bug where it sometimes enables even though it doesn't work and then causes a crash when clicked.
+			NSApp.mainMenu?.item(withTitle: "View")?.isHidden = true
 		}
 	}
 
 	private func setUpEvents() {
 		Defaults.publisher(.showInMenuBar)
+			.receive(on: DispatchQueue.main)
 			.sink { [weak self] in
 				guard let self = self else {
 					return
@@ -101,6 +110,7 @@ final class AppState: ObservableObject {
 			.storeForever()
 
 		Defaults.publisher(.stayOnTop)
+			.receive(on: DispatchQueue.main)
 			.sink { [weak self] in
 				self?.colorPanel.level = $0.newValue ? .floating : .normal
 			}
