@@ -131,6 +131,8 @@ final class AppState: ObservableObject {
 			colorPanel.hslColorString.copyToPasteboard()
 		case .rgb:
 			colorPanel.rgbColorString.copyToPasteboard()
+		case .lch:
+			colorPanel.lchColorString.copyToPasteboard()
 		}
 	}
 
@@ -153,6 +155,6 @@ final class AppState: ObservableObject {
 			return
 		}
 
-		colorPanel.color = color
+		colorPanel.color = color.usingColorSpace(.sRGB) ?? color
 	}
 }

@@ -3,7 +3,7 @@ Pick colors from anywhere using the built-in color picker.
 
 ■ Features
 
-- Quickly copy, paste, and convert colors in Hex, HSL, and RGB format
+- Quickly copy, paste, and convert colors in Hex, HSL, RGB, LCH format
 - Show as a normal app or in the menu bar
 - Toggle it from anywhere with a global keyboard shortcut
 - Make the window stay on top of all other windows
@@ -16,9 +16,10 @@ You can use the following keyboard shortcuts in the app:
 
 - Pick color: Command+p
 - Copy as Hex: Shift+Command+h
-- Copy as HSL: Shift+Command+l
+- Copy as HSL: Shift+Command+s
 - Copy as RGB: Shift+Command+r
-- Paste color: Shift+Command+v (In the format Hex, HSL, or RGB)
+- Copy as LCH: Shift+Command+l
+- Paste color: Shift+Command+v (In the format Hex, HSL, RGB, or LCH)
 
 
 ■ Support

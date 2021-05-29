@@ -27,15 +27,19 @@ struct AppMain: App {
 					Button("Copy as HSL") {
 						appState.colorPanel.hslColorString.copyToPasteboard()
 					}
-						.keyboardShortcut("L")
+						.keyboardShortcut("S")
 					Button("Copy as RGB") {
 						appState.colorPanel.rgbColorString.copyToPasteboard()
 					}
 						.keyboardShortcut("R")
+					Button("Copy as LCH") {
+						appState.colorPanel.rgbColorString.copyToPasteboard()
+					}
+						.keyboardShortcut("L")
 					Button("Paste") {
 						appState.pasteColor()
 					}
-						.help("Paste color in the format Hex, HSL, or RGB")
+						.help("Paste color in the format Hex, HSL, RGB, or LCH")
 						.keyboardShortcut("V")
 						.disabled(NSColor.fromPasteboardGraceful(.general) == nil)
 				}
