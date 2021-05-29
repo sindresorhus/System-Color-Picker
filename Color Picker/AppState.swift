@@ -80,15 +80,24 @@ final class AppState: ObservableObject {
 		)
 
 		DispatchQueue.main.async { [self] in
-			// Make the invisible native SwitUI window not block access to the desktop.
-			NSApp.windows.first?.ignoresMouseEvents = true
-
-			setUpEvents()
-			showWelcomeScreenIfNeeded()
-
-			// We hide the “View” menu as there's a macOS bug where it sometimes enables even though it doesn't work and then causes a crash when clicked.
-			NSApp.mainMenu?.item(withTitle: "View")?.isHidden = true
+			didLaunch()
 		}
+	}
+
+	private func didLaunch() {
+		// Make the invisible native SwitUI window not block access to the desktop.
+		NSApp.windows.first?.ignoresMouseEvents = true
+
+		// We hide the “View” menu as there's a macOS bug where it sometimes enables even though it doesn't work and then causes a crash when clicked.
+		NSApp.mainMenu?.item(withTitle: "View")?.isHidden = true
+
+		setUpEvents()
+		showWelcomeScreenIfNeeded()
+		requestReview()
+
+		#if DEBUG
+//		SSApp.showSettingsWindow()
+		#endif
 	}
 
 	private func setUpEvents() {
@@ -116,6 +125,10 @@ final class AppState: ObservableObject {
 			}
 			.storeForever()
 
+		KeyboardShortcuts.onKeyUp(for: .pickColor) { [weak self] in
+			self?.pickColor()
+		}
+
 		KeyboardShortcuts.onKeyUp(for: .toggleWindow) { [weak self] in
 			self?.colorPanel.toggle()
 		}
@@ -136,6 +149,10 @@ final class AppState: ObservableObject {
 		}
 	}
 
+	private func requestReview() {
+		SSApp.requestReviewAfterBeingCalledThisManyTimes([10, 200, 1000])
+	}
+
 	func pickColor() {
 		NSColorSampler().show { [weak self] in
 			guard
@@ -147,6 +164,7 @@ final class AppState: ObservableObject {
 
 			self.colorPanel.color = color
 			self.copyColorIfNeeded()
+			self.requestReview()
 		}
 	}
 

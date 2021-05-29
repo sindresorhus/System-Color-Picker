@@ -1,6 +1,7 @@
 import SwiftUI
 import Combine
 import Carbon
+import StoreKit
 import Defaults
 import Regex
 
@@ -2046,5 +2047,68 @@ extension Colors {
 			a: chroma * cos(hue * .pi / 180),
 			b: chroma * sin(hue * .pi / 180)
 		)
+	}
+}
+
+
+enum SettingsTabType {
+	case general
+	case advanced
+	case shortcuts
+
+	fileprivate var label: some View {
+		switch self {
+		case .general:
+			return Label("General", systemImage: "gearshape")
+		case .advanced:
+			return Label("Advanced", systemImage: "gearshape.2")
+		case .shortcuts:
+			return Label("Shortcuts", systemImage: "command")
+		}
+	}
+}
+
+extension View {
+	/// Make the view a settings tab of the given type.
+	func settingsTabItem(_ type: SettingsTabType) -> some View {
+		tabItem { type.label }
+	}
+}
+
+
+extension Numeric {
+	mutating func increment(by value: Self = 1) -> Self {
+		self += value
+		return self
+	}
+
+	mutating func decrement(by value: Self = 1) -> Self {
+		self -= value
+		return self
+	}
+
+	func incremented(by value: Self = 1) -> Self {
+		self + value
+	}
+
+	func decremented(by value: Self = 1) -> Self {
+		self - value
+	}
+}
+
+
+extension SSApp {
+	private static let key = Defaults.Key("SSApp_requestReview", default: 0)
+
+	/// Requests a review only after this method has been called the given amount of times.
+	static func requestReviewAfterBeingCalledThisManyTimes(_ counts: [Int]) {
+		guard
+			!SSApp.isFirstLaunch,
+			counts.contains(Defaults[key].increment())
+		else {
+			return
+		}
+
+		SKStoreReviewController.requestReview()
 	}
 }

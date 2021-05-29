@@ -12,6 +12,7 @@ extension Defaults.Keys {
 }
 
 extension KeyboardShortcuts.Name {
+	static let pickColor = Self("pickColor")
 	static let toggleWindow = Self("toggleWindow")
 }
 
