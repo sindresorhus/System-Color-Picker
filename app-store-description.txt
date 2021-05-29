@@ -5,7 +5,7 @@ Pick colors from anywhere using the built-in color picker.
 
 - Quickly copy, paste, and convert colors in Hex, HSL, RGB, LCH format
 - Show as a normal app or in the menu bar
-- Toggle it from anywhere with a global keyboard shortcut
+- Pick a color or toggle the window from anywhere with a global keyboard shortcut
 - Make the window stay on top of all other windows
 - Launch it at login
 

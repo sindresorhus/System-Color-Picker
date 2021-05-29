@@ -9,6 +9,7 @@ extension Defaults.Keys {
 	static let stayOnTop = Key<Bool>("stayOnTop", default: true)
 	static let uppercaseHexColor = Key<Bool>("uppercaseHexColor", default: false)
 	static let legacyColorSyntax = Key<Bool>("legacyColorSyntax", default: false)
+	static let shownColorFormats = Key<Set<ColorFormat>>("shownColorFormats", default: [.hex, .hsl, .rgb, .lch])
 }
 
 extension KeyboardShortcuts.Name {
@@ -37,4 +38,28 @@ enum CopyColorFormat: String, Codable, CaseIterable {
 			return "LCH"
 		}
 	}
+}
+
+enum ColorFormat: String, Codable, CaseIterable {
+	case hex
+	case hsl
+	case rgb
+	case lch
+
+	var title: String {
+		switch self {
+		case .hex:
+			return "Hex"
+		case .hsl:
+			return "HSL"
+		case .rgb:
+			return "RGB"
+		case .lch:
+			return "LCH"
+		}
+	}
+}
+
+extension ColorFormat: Identifiable {
+	var id: Self { self }
 }

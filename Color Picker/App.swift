@@ -44,6 +44,13 @@ struct AppMain: App {
 						.disabled(NSColor.fromPasteboardGraceful(.general) == nil)
 				}
 				CommandGroup(replacing: .help) {
+					Button("What is LCH color?") {
+						"https://lea.verou.me/2020/04/lch-colors-in-css-what-why-and-how/".openUrl()
+					}
+					Button("FAQ") {
+						"https://github.com/sindresorhus/System-Color-Picker#faq".openUrl()
+					}
+					Divider()
 					// TODO: Use `Link` when it's supported here.
 					Button("Website") {
 						"https://sindresorhus.com/system-color-picker".openUrl()

@@ -1,12 +1,13 @@
 import SwiftUI
 import Combine
 import Defaults
-import KeyboardShortcuts
 import AppCenter
 import AppCenterCrashes
 
 final class AppState: ObservableObject {
 	static let shared = AppState()
+
+	var cancellables = Set<AnyCancellable>()
 
 	private(set) lazy var colorPanel: ColorPanel = {
 		let colorPanel = ColorPanel()
@@ -37,7 +38,13 @@ final class AppState: ObservableObject {
 		return colorPanel
 	}()
 
-	private let menu = with(NSMenu()) {
+	private lazy var menu = with(NSMenu()) {
+		$0.addCallbackItem("Pick Color") { [self] _ in
+			pickColor()
+		}
+
+		$0.addSeparator()
+
 		$0.addSettingsItem()
 
 		$0.addSeparator()
@@ -98,40 +105,6 @@ final class AppState: ObservableObject {
 		#if DEBUG
 //		SSApp.showSettingsWindow()
 		#endif
-	}
-
-	private func setUpEvents() {
-		Defaults.publisher(.showInMenuBar)
-			.receive(on: DispatchQueue.main)
-			.sink { [weak self] in
-				guard let self = self else {
-					return
-				}
-
-				self.statusItem.isVisible = $0.newValue
-				SSApp.isDockIconVisible = !$0.newValue
-				NSApp.activate(ignoringOtherApps: true)
-
-				if !$0.newValue {
-					self.colorPanel.makeKeyAndOrderFront(nil)
-				}
-			}
-			.storeForever()
-
-		Defaults.publisher(.stayOnTop)
-			.receive(on: DispatchQueue.main)
-			.sink { [weak self] in
-				self?.colorPanel.level = $0.newValue ? .floating : .normal
-			}
-			.storeForever()
-
-		KeyboardShortcuts.onKeyUp(for: .pickColor) { [weak self] in
-			self?.pickColor()
-		}
-
-		KeyboardShortcuts.onKeyUp(for: .toggleWindow) { [weak self] in
-			self?.colorPanel.toggle()
-		}
 	}
 
 	private func copyColorIfNeeded() {

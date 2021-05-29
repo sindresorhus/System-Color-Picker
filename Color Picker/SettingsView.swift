@@ -37,6 +37,23 @@ private struct CopyColorFormatSetting: View {
 	}
 }
 
+private struct ShownColorFormatsSetting: View {
+	var body: some View {
+		HStack(alignment: .firstTextBaseline) {
+			Text("Shown color formats:")
+			// TODO: Use a dropdown when SwiftUI supports multiple selections in `Picker`.
+			Defaults.MultiCheckboxPicker(
+				key: .shownColorFormats,
+				data: ColorFormat.allCases
+			) {
+				Text($0.title)
+			}
+		}
+			.accessibilityElement(children: .combine)
+			.help("Choose which color formats to show in the color picker window. Disabled formats will still show up in the “Color” menu.")
+	}
+}
+
 private struct GeneralSettings: View {
 	var body: some View {
 		VStack(alignment: .leading) {
@@ -47,6 +64,9 @@ private struct GeneralSettings: View {
 			Defaults.Toggle("Uppercase Hex color", key: .uppercaseHexColor)
 			Defaults.Toggle("Use legacy syntax for HSL and RGB", key: .legacyColorSyntax)
 				.help("Use the legacy “hsl(198, 28%, 50%)” syntax instead of the modern “hsl(198deg 28% 50%)” syntax. This setting is meant for users that need to support older browsers. All modern browsers support the modern syntax.")
+			Link("What is LCH color?", destination: "https://lea.verou.me/2020/04/lch-colors-in-css-what-why-and-how/")
+				.controlSize(.small)
+				.padding(.top)
 		}
 			.padding()
 			.padding()
@@ -110,6 +130,13 @@ private struct AdvancedSettings: View {
 			}
 				.padding()
 				.padding(.horizontal)
+			Divider()
+			VStack(alignment: .leading) {
+				ShownColorFormatsSetting()
+			}
+				.padding()
+				.padding(.horizontal)
+				.offset(x: 20)
 		}
 			.padding(.vertical)
 	}

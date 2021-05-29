@@ -2112,3 +2112,167 @@ extension SSApp {
 		SKStoreReviewController.requestReview()
 	}
 }
+
+
+/**
+Store a value persistently in a `View` like with `@State`, but without updating the view on mutations.
+
+You can use it for storing both value and reference types.
+*/
+@propertyWrapper
+struct ViewStorage<Value>: DynamicProperty {
+	private final class ValueBox: ObservableObject {
+		let objectWillChange = Empty<Never, Never>(completeImmediately: false)
+		var value: Value
+
+		init(_ value: Value) {
+			self.value = value
+		}
+	}
+
+	@StateObject private var valueBox: ValueBox
+
+	var wrappedValue: Value {
+		get { valueBox.value }
+		nonmutating set {
+			valueBox.value = newValue
+		}
+	}
+
+	init(wrappedValue value: @autoclosure @escaping () -> Value) {
+		self._valueBox = StateObject(wrappedValue: .init(value()))
+	}
+}
+
+
+extension Binding where Value: SetAlgebra, Value.Element: Hashable {
+	/**
+	Creates a `Bool` derived binding that reflects whether the original binding value contains the given element.
+
+	For example, you can use this to create a list of checkboxes, and when a checkbox is unchecked, the element is removed from the `Set` and if checked, it's added back.
+
+	```
+	struct ContentView: View {
+		@State private var foo = Set<String>(["unicorn", "rainbow"])
+
+		var body: some View {
+			Toggle(
+				"Contains `unicorn`",
+				isOn: $foo.contains("unicorn")
+			)
+		}
+	}
+	```
+	*/
+	func contains<T>(_ element: T) -> Binding<Bool> where T == Value.Element {
+		.init(
+			get: { wrappedValue.contains(element) },
+			set: {
+				if $0 {
+					wrappedValue.insert(element)
+				} else {
+					wrappedValue.remove(element)
+				}
+			}
+		)
+	}
+}
+
+
+/**
+A picker that supports multiple selections and renders as multiple checkboxes.
+
+```
+struct ContentView: View {
+	private var data = [DayOfWeek]()
+	@State private var selection = Set<DayOfWeek>()
+
+	var body: some View {
+		Defaults.MultiCheckboxPicker(
+			data: DayOfWeek.days,
+			selection: $selection
+		) {
+			Text($0.name)
+		}
+	}
+}
+```
+
+It intentionally does not support a `label` parameter as we cannot read `.labelsHidden()`, so we cannot respect that.
+*/
+struct MultiCheckboxPicker<Data: RandomAccessCollection, ElementLabel: View>: View where Data.Element: Hashable & Identifiable {
+	let data: Data
+	@Binding var selection: Set<Data.Element>
+	@ViewBuilder var elementLabel: (Data.Element) -> ElementLabel
+
+	var body: some View {
+		VStack(alignment: .leading) {
+			ForEach(data) { element in
+				Toggle(isOn: $selection.contains(element)) {
+					elementLabel(element)
+				}
+					.toggleStyle(CheckboxToggleStyle())
+			}
+		}
+	}
+}
+
+typealias _OriginalMultiCheckboxPicker = MultiCheckboxPicker
+
+extension Defaults {
+	/**
+	A picker that supports multiple selections and renders as multiple checkboxes.
+
+	```
+	struct ContentView: View {
+		var body: some View {
+			Defaults.MultiCheckboxPicker(
+				key: .highlightedDaysInCalendar,
+				data: DayOfWeek.days(for: calendar)
+			) {
+				Text($0.name(for: calendar))
+			}
+		}
+	}
+	```
+	*/
+	struct MultiCheckboxPicker<Data: RandomAccessCollection, ElementLabel: View, Key: Defaults.Key<Set<Data.Element>>>: View where Data.Element: Hashable & Identifiable {
+		typealias Element = Data.Element
+		typealias Selection = Set<Element>
+
+		@ViewStorage private var onChange: ((Selection) -> Void)?
+		private let data: Data
+		@StateObject private var observable: Defaults.Observable<Selection>
+		private var elementLabel: (Element) -> ElementLabel
+
+		init(
+			key: Key,
+			data: Data,
+			@ViewBuilder elementLabel: @escaping (Element) -> ElementLabel
+		) {
+			self.data = data
+			self._observable = .init(wrappedValue: Defaults.Observable(key))
+			self.elementLabel = elementLabel
+		}
+
+		var body: some View {
+			_OriginalMultiCheckboxPicker(
+				data: data,
+				selection: $observable.value
+			) {
+				elementLabel($0)
+			}
+				.onChange(of: observable.value) {
+					onChange?($0)
+				}
+		}
+	}
+}
+
+extension Defaults.MultiCheckboxPicker {
+	/// Do something when the value changes to a different value.
+	func onChange(_ action: @escaping (Selection) -> Void) -> Self {
+		onChange = action
+		return self
+	}
+}

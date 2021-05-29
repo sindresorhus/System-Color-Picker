@@ -21,7 +21,7 @@ Requires macOS 11 or later.
 
 - Quickly copy, paste, and convert colors in Hex, HSL, RGB, LCH format
 - Show as a normal app or in the menu bar
-- Toggle it from anywhere with a global keyboard shortcut
+- Pick a color or toggle the window from anywhere with a global keyboard shortcut
 - Make the window stay on top of all other windows
 - Launch it at login
 
@@ -56,9 +56,11 @@ The built-in color picker supports plugins:
 
 [It's a more human-friendly color format.](https://lea.verou.me/2020/04/lch-colors-in-css-what-why-and-how/)
 
+Note that the LCH color is [currently clamped to sRGB range](https://github.com/sindresorhus/System-Color-Picker/issues/13).
+
 #### The color changes if I copy and then paste it
 
-That is because the default color space in the picker is [Display P3](https://en.wikipedia.org/wiki/DCI-P3), but the color space used for the CSS color formats is [sRGB](https://en.wikipedia.org/wiki/SRGB) (browsers do not yet [handle color spaces](https://css-tricks.com/the-expanding-gamut-of-color-on-the-web/)).
+That is because the default color space in the picker is [Display P3](https://en.wikipedia.org/wiki/DCI-P3), which is [part of CSS Color 4](https://drafts.csswg.org/css-color-4/#valdef-color-display-p3), but the color space used for the legacy CSS color formats is [sRGB](https://en.wikipedia.org/wiki/SRGB) (browsers are starting to [handle color spaces](https://css-tricks.com/the-expanding-gamut-of-color-on-the-web/) but they are not all there yet).
 
 #### How do I change the color space?
 

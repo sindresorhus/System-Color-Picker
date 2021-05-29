@@ -36,6 +36,7 @@ private struct BarView: View {
 struct ColorPickerView: View {
 	@Default(.uppercaseHexColor) private var uppercaseHexColor
 	@Default(.legacyColorSyntax) private var legacyColorSyntax
+	@Default(.shownColorFormats) private var shownColorFormats
 	@State private var hexColor = ""
 	@State private var hslColor = ""
 	@State private var rgbColor = ""
@@ -45,124 +46,148 @@ struct ColorPickerView: View {
 
 	let colorPanel: NSColorPanel
 
+	private var hexColorView: some View {
+		HStack {
+			NativeTextField(
+				text: $hexColor,
+				placeholder: "Hex",
+				font: .monospacedSystemFont(ofSize: 0, weight: .regular),
+				isFocused: $isTextFieldFocused
+			)
+				.controlSize(.large)
+				.onChange(of: hexColor) {
+					if
+						isTextFieldFocused,
+						!isPreventingUpdate,
+						let newColor = NSColor(hexString: $0.trimmingCharacters(in: .whitespaces))
+					{
+						colorPanel.color = newColor
+					}
+
+					if !isPreventingUpdate {
+						updateColorsFromPanel(excludeHex: true, preventUpdate: true)
+					}
+				}
+			Button {
+				hexColor.copyToPasteboard()
+			} label: {
+				Image(systemName: "doc.on.doc.fill")
+					.controlSize(.small)
+			}
+				.keyboardShortcut("H")
+		}
+	}
+
+	private var hslColorView: some View {
+		HStack {
+			NativeTextField(
+				text: $hslColor,
+				placeholder: "HSL",
+				font: .monospacedSystemFont(ofSize: 0, weight: .regular),
+				isFocused: $isTextFieldFocused
+			)
+				.controlSize(.large)
+				.onChange(of: hslColor) {
+					if
+						isTextFieldFocused,
+						!isPreventingUpdate,
+						let newColor = NSColor(cssHSLString: $0.trimmingCharacters(in: .whitespaces))
+					{
+						colorPanel.color = newColor
+					}
+
+					if !isPreventingUpdate {
+						updateColorsFromPanel(excludeHSL: true, preventUpdate: true)
+					}
+				}
+			Button {
+				hslColor.copyToPasteboard()
+			} label: {
+				Image(systemName: "doc.on.doc.fill")
+					.controlSize(.small)
+			}
+				.keyboardShortcut("S")
+		}
+	}
+
+	private var rgbColorView: some View {
+		HStack {
+			NativeTextField(
+				text: $rgbColor,
+				placeholder: "RGB",
+				font: .monospacedSystemFont(ofSize: 0, weight: .regular),
+				isFocused: $isTextFieldFocused
+			)
+				.controlSize(.large)
+				.onChange(of: rgbColor) {
+					if
+						isTextFieldFocused,
+						!isPreventingUpdate,
+						let newColor = NSColor(cssRGBString: $0.trimmingCharacters(in: .whitespaces))
+					{
+						colorPanel.color = newColor
+					}
+
+					if !isPreventingUpdate {
+						updateColorsFromPanel(excludeRGB: true, preventUpdate: true)
+					}
+				}
+			Button {
+				rgbColor.copyToPasteboard()
+			} label: {
+				Image(systemName: "doc.on.doc.fill")
+					.controlSize(.small)
+			}
+				.keyboardShortcut("R")
+		}
+	}
+
+	private var lchColorView: some View {
+		HStack {
+			NativeTextField(
+				text: $lchColor,
+				placeholder: "LCH",
+				font: .monospacedSystemFont(ofSize: 0, weight: .regular),
+				isFocused: $isTextFieldFocused
+			)
+				.controlSize(.large)
+				.onChange(of: lchColor) {
+					if
+						isTextFieldFocused,
+						!isPreventingUpdate,
+						let newColor = NSColor(cssLCHString: $0.trimmingCharacters(in: .whitespaces))
+					{
+						colorPanel.color = newColor
+					}
+
+					if !isPreventingUpdate {
+						updateColorsFromPanel(excludeLCH: true, preventUpdate: true)
+					}
+				}
+			Button {
+				lchColor.copyToPasteboard()
+			} label: {
+				Image(systemName: "doc.on.doc.fill")
+					.controlSize(.small)
+			}
+				.keyboardShortcut("L")
+		}
+	}
+
 	var body: some View {
 		VStack {
 			BarView()
-			HStack {
-				NativeTextField(
-					text: $hexColor,
-					placeholder: "Hex",
-					font: .monospacedSystemFont(ofSize: 0, weight: .regular),
-					isFocused: $isTextFieldFocused
-				)
-					.controlSize(.large)
-					.onChange(of: hexColor) {
-						if
-							isTextFieldFocused,
-							!isPreventingUpdate,
-							let newColor = NSColor(hexString: $0.trimmingCharacters(in: .whitespaces))
-						{
-							colorPanel.color = newColor
-						}
-
-						if !isPreventingUpdate {
-							updateColorsFromPanel(excludeHex: true, preventUpdate: true)
-						}
-					}
-				Button {
-					hexColor.copyToPasteboard()
-				} label: {
-					Image(systemName: "doc.on.doc.fill")
-						.controlSize(.small)
-				}
-					.keyboardShortcut("H")
+			if shownColorFormats.contains(.hex) {
+				hexColorView
 			}
-			HStack {
-				NativeTextField(
-					text: $hslColor,
-					placeholder: "HSL",
-					font: .monospacedSystemFont(ofSize: 0, weight: .regular),
-					isFocused: $isTextFieldFocused
-				)
-					.controlSize(.large)
-					.onChange(of: hslColor) {
-						if
-							isTextFieldFocused,
-							!isPreventingUpdate,
-							let newColor = NSColor(cssHSLString: $0.trimmingCharacters(in: .whitespaces))
-						{
-							colorPanel.color = newColor
-						}
-
-						if !isPreventingUpdate {
-							updateColorsFromPanel(excludeHSL: true, preventUpdate: true)
-						}
-					}
-				Button {
-					hslColor.copyToPasteboard()
-				} label: {
-					Image(systemName: "doc.on.doc.fill")
-						.controlSize(.small)
-				}
-					.keyboardShortcut("S")
+			if shownColorFormats.contains(.hsl) {
+				hslColorView
 			}
-			HStack {
-				NativeTextField(
-					text: $rgbColor,
-					placeholder: "RGB",
-					font: .monospacedSystemFont(ofSize: 0, weight: .regular),
-					isFocused: $isTextFieldFocused
-				)
-					.controlSize(.large)
-					.onChange(of: rgbColor) {
-						if
-							isTextFieldFocused,
-							!isPreventingUpdate,
-							let newColor = NSColor(cssRGBString: $0.trimmingCharacters(in: .whitespaces))
-						{
-							colorPanel.color = newColor
-						}
-
-						if !isPreventingUpdate {
-							updateColorsFromPanel(excludeRGB: true, preventUpdate: true)
-						}
-					}
-				Button {
-					rgbColor.copyToPasteboard()
-				} label: {
-					Image(systemName: "doc.on.doc.fill")
-						.controlSize(.small)
-				}
-					.keyboardShortcut("R")
+			if shownColorFormats.contains(.rgb) {
+				rgbColorView
 			}
-			HStack {
-				NativeTextField(
-					text: $lchColor,
-					placeholder: "LCH",
-					font: .monospacedSystemFont(ofSize: 0, weight: .regular),
-					isFocused: $isTextFieldFocused
-				)
-					.controlSize(.large)
-					.onChange(of: lchColor) {
-						if
-							isTextFieldFocused,
-							!isPreventingUpdate,
-							let newColor = NSColor(cssLCHString: $0.trimmingCharacters(in: .whitespaces))
-						{
-							colorPanel.color = newColor
-						}
-
-						if !isPreventingUpdate {
-							updateColorsFromPanel(excludeLCH: true, preventUpdate: true)
-						}
-					}
-				Button {
-					lchColor.copyToPasteboard()
-				} label: {
-					Image(systemName: "doc.on.doc.fill")
-						.controlSize(.small)
-				}
-					.keyboardShortcut("L")
+			if shownColorFormats.contains(.lch) {
+				lchColorView
 			}
 		}
 			.padding(9)

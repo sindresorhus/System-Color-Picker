@@ -20,6 +20,7 @@
 		E394DAB2263E965500F5B042 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = E394DAB1263E965500F5B042 /* KeyboardShortcuts */; };
 		E3A3B11D25904E7B001B4D0C /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A3B11C25904E7B001B4D0C /* App.swift */; };
 		E3A3B12125904E7D001B4D0C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E3A3B12025904E7D001B4D0C /* Assets.xcassets */; };
+		E3DFA8C92662514800D2623E /* Events.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3DFA8C82662514800D2623E /* Events.swift */; };
 		E3E14062259A0D97004FC89F /* Defaults in Frameworks */ = {isa = PBXBuildFile; productRef = E3E14061259A0D97004FC89F /* Defaults */; };
 		E3E9F9AD2642B75100AE6450 /* AppCenterCrashes in Frameworks */ = {isa = PBXBuildFile; productRef = E3E9F9AC2642B75100AE6450 /* AppCenterCrashes */; };
 /* End PBXBuildFile section */
@@ -38,6 +39,7 @@
 		E3A3B12025904E7D001B4D0C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		E3A3B12525904E7D001B4D0C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E3A3B12625904E7D001B4D0C /* Color_Picker.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Color_Picker.entitlements; sourceTree = "<group>"; };
+		E3DFA8C82662514800D2623E /* Events.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Events.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -96,6 +98,7 @@
 				E3A3B11C25904E7B001B4D0C /* App.swift */,
 				E38D4330263AAEA900701B82 /* Constants.swift */,
 				E390D733263B3C71005FCB34 /* AppState.swift */,
+				E3DFA8C82662514800D2623E /* Events.swift */,
 				E38D4334263AEE3700701B82 /* ColorPickerView.swift */,
 				E390D735263C6ACD005FCB34 /* ColorPanel.swift */,
 				E38D432E263AAE8500701B82 /* SettingsView.swift */,
@@ -239,6 +242,7 @@
 				E390D738263C74C2005FCB34 /* WelcomeView.swift in Sources */,
 				E390D734263B3C71005FCB34 /* AppState.swift in Sources */,
 				E38D4331263AAEA900701B82 /* Constants.swift in Sources */,
+				E3DFA8C92662514800D2623E /* Events.swift in Sources */,
 				E390D736263C6ACD005FCB34 /* ColorPanel.swift in Sources */,
 				E38D4335263AEE3700701B82 /* ColorPickerView.swift in Sources */,
 			);
