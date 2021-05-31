@@ -40,7 +40,7 @@ extension AppState {
 		NotificationCenter.default.publisher(for: NSWindow.willCloseNotification)
 			.sink { [self] _ in
 				DispatchQueue.main.async {
-					if colorPanel.isVisible {
+					if colorPanel.isVisible, SSApp.settingsWindow?.isVisible != true {
 						colorPanel.makeKeyAndOrderFront(nil)
 					}
 				}

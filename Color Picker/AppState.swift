@@ -86,6 +86,10 @@ final class AppState: ObservableObject {
 			]
 		)
 
+		// TODO: Remove in 2022.
+		Defaults.migrate(.shownColorFormats, to: .v5)
+		Defaults.migrate(.colorFormatToCopyAfterPicking, to: .v5)
+
 		DispatchQueue.main.async { [self] in
 			didLaunch()
 		}

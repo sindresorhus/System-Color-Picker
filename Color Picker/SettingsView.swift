@@ -28,12 +28,17 @@ private struct CopyColorFormatSetting: View {
 	@Default(.colorFormatToCopyAfterPicking) private var colorFormat
 
 	var body: some View {
-		EnumPicker("Copy color after picking:", enumBinding: $colorFormat) { element, _ in
+		EnumPicker(
+			enumBinding: $colorFormat,
+			label: Text("Copy color after picking:")
+				.fixedSize()
+		) { element, _ in
 			Text(element.title)
 			if element == .none {
 				Divider()
 			}
 		}
+			.fixedSize()
 	}
 }
 

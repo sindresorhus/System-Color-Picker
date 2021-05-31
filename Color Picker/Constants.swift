@@ -17,7 +17,7 @@ extension KeyboardShortcuts.Name {
 	static let toggleWindow = Self("toggleWindow")
 }
 
-enum CopyColorFormat: String, Codable, CaseIterable {
+enum CopyColorFormat: String, CaseIterable, Defaults.Serializable {
 	case none
 	case hex
 	case hsl
@@ -40,7 +40,24 @@ enum CopyColorFormat: String, Codable, CaseIterable {
 	}
 }
 
-enum ColorFormat: String, Codable, CaseIterable {
+// TODO: Remove in 2022.
+enum CodableCopyColorFormat: String {
+	case none
+	case hex
+	case hsl
+	case rgb
+	case lch
+}
+
+extension CodableCopyColorFormat: Defaults.CodableType {
+	typealias NativeForm = CopyColorFormat
+}
+
+extension CopyColorFormat: Defaults.NativeType {
+	typealias CodableForm = CodableCopyColorFormat
+}
+
+enum ColorFormat: String, CaseIterable, Defaults.Serializable {
 	case hex
 	case hsl
 	case rgb
@@ -62,4 +79,20 @@ enum ColorFormat: String, Codable, CaseIterable {
 
 extension ColorFormat: Identifiable {
 	var id: Self { self }
+}
+
+// TODO: Remove in 2022.
+enum CodableColorFormat: String {
+	case hex
+	case hsl
+	case rgb
+	case lch
+}
+
+extension CodableColorFormat: Defaults.CodableType {
+	typealias NativeForm = ColorFormat
+}
+
+extension ColorFormat: Defaults.NativeType {
+	typealias CodableForm = CodableColorFormat
 }
