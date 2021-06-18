@@ -61,17 +61,19 @@ private struct ShownColorFormatsSetting: View {
 
 private struct GeneralSettings: View {
 	var body: some View {
-		VStack(alignment: .leading) {
-			LaunchAtLogin.Toggle()
-			ShowInMenuBarSetting()
-			Defaults.Toggle("Stay on top", key: .stayOnTop)
-				.help("Make the color picker window stay on top of all other windows.")
-			Defaults.Toggle("Uppercase Hex color", key: .uppercaseHexColor)
-			Defaults.Toggle("Use legacy syntax for HSL and RGB", key: .legacyColorSyntax)
-				.help("Use the legacy “hsl(198, 28%, 50%)” syntax instead of the modern “hsl(198deg 28% 50%)” syntax. This setting is meant for users that need to support older browsers. All modern browsers support the modern syntax.")
-			Link("What is LCH color?", destination: "https://lea.verou.me/2020/04/lch-colors-in-css-what-why-and-how/")
-				.controlSize(.small)
-				.padding(.top)
+		Form {
+			VStack(alignment: .leading) {
+				LaunchAtLogin.Toggle()
+				ShowInMenuBarSetting()
+				Defaults.Toggle("Stay on top", key: .stayOnTop)
+					.help("Make the color picker window stay on top of all other windows.")
+				Defaults.Toggle("Uppercase Hex color", key: .uppercaseHexColor)
+				Defaults.Toggle("Use legacy syntax for HSL and RGB", key: .legacyColorSyntax)
+					.help("Use the legacy “hsl(198, 28%, 50%)” syntax instead of the modern “hsl(198deg 28% 50%)” syntax. This setting is meant for users that need to support older browsers. All modern browsers support the modern syntax.")
+				Link("What is LCH color?", destination: "https://lea.verou.me/2020/04/lch-colors-in-css-what-why-and-how/")
+					.controlSize(.small)
+					.padding(.top)
+			}
 		}
 			.padding()
 			.padding()
@@ -85,33 +87,35 @@ private struct ShortcutsSettings: View {
 	private let maxWidth: CGFloat = 100
 
 	var body: some View {
-		VStack {
-			HStack(alignment: .firstTextBaseline) {
-				Text("Pick color:")
-					.respectDisabled()
-					.frame(width: maxWidth, alignment: .trailing)
-				KeyboardShortcuts.Recorder(for: .pickColor)
+		Form {
+			VStack {
+				HStack(alignment: .firstTextBaseline) {
+					Text("Pick color:")
+						.respectDisabled()
+						.frame(width: maxWidth, alignment: .trailing)
+					KeyboardShortcuts.Recorder(for: .pickColor)
+				}
+					.accessibilityElement(children: .combine)
+					.padding(.bottom, 8)
+				HStack(alignment: .firstTextBaseline) {
+					Text("Toggle window:")
+						.respectDisabled()
+						.frame(width: maxWidth, alignment: .trailing)
+					KeyboardShortcuts.Recorder(for: .toggleWindow)
+				}
+					.accessibilityElement(children: .combine)
+					.disabled(!showInMenuBar)
+					.overlay(
+						showInMenuBar
+							? nil
+							: Text("Requires “Show in menu bar” to be enabled.")
+								.font(.system(size: 10))
+								.foregroundColor(.secondary)
+								.offset(y: 20),
+						alignment: .bottom
+					)
+					.padding(.bottom, showInMenuBar ? 0 : 20)
 			}
-				.accessibilityElement(children: .combine)
-				.padding(.bottom, 8)
-			HStack(alignment: .firstTextBaseline) {
-				Text("Toggle window:")
-					.respectDisabled()
-					.frame(width: maxWidth, alignment: .trailing)
-				KeyboardShortcuts.Recorder(for: .toggleWindow)
-			}
-				.accessibilityElement(children: .combine)
-				.disabled(!showInMenuBar)
-				.overlay(
-					showInMenuBar
-						? nil
-						: Text("Requires “Show in menu bar” to be enabled.")
-							.font(.system(size: 10))
-							.foregroundColor(.secondary)
-							.offset(y: 20),
-					alignment: .bottom
-				)
-				.padding(.bottom, showInMenuBar ? 0 : 20)
 		}
 			.padding()
 			.padding()
@@ -122,26 +126,28 @@ private struct ShortcutsSettings: View {
 
 private struct AdvancedSettings: View {
 	var body: some View {
-		VStack(alignment: .leading) {
+		Form {
 			VStack(alignment: .leading) {
-				Defaults.Toggle("Show color sampler when opening window", key: .showColorSamplerOnOpen)
-					.help("Show the color picker loupe when the color picker window is shown.")
+				VStack(alignment: .leading) {
+					Defaults.Toggle("Show color sampler when opening window", key: .showColorSamplerOnOpen)
+						.help("Show the color picker loupe when the color picker window is shown.")
+				}
+					.padding()
+					.padding(.horizontal)
+				Divider()
+				VStack(alignment: .leading) {
+					CopyColorFormatSetting()
+				}
+					.padding()
+					.padding(.horizontal)
+				Divider()
+				VStack(alignment: .leading) {
+					ShownColorFormatsSetting()
+				}
+					.padding()
+					.padding(.horizontal)
+					.offset(x: 20)
 			}
-				.padding()
-				.padding(.horizontal)
-			Divider()
-			VStack(alignment: .leading) {
-				CopyColorFormatSetting()
-			}
-				.padding()
-				.padding(.horizontal)
-			Divider()
-			VStack(alignment: .leading) {
-				ShownColorFormatsSetting()
-			}
-				.padding()
-				.padding(.horizontal)
-				.offset(x: 20)
 		}
 			.padding(.vertical)
 	}

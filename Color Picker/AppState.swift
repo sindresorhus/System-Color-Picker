@@ -96,7 +96,7 @@ final class AppState: ObservableObject {
 	}
 
 	private func didLaunch() {
-		// Make the invisible native SwitUI window not block access to the desktop.
+		// Make the invisible native SwitUI window not block access to the desktop. (macOS 11.3)
 		NSApp.windows.first?.ignoresMouseEvents = true
 
 		// We hide the “View” menu as there's a macOS bug where it sometimes enables even though it doesn't work and then causes a crash when clicked.
