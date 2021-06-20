@@ -68,6 +68,7 @@ private struct GeneralSettings: View {
 				Defaults.Toggle("Stay on top", key: .stayOnTop)
 					.help("Make the color picker window stay on top of all other windows.")
 				Defaults.Toggle("Uppercase Hex color", key: .uppercaseHexColor)
+				Defaults.Toggle("Prefix Hex color with #", key: .hashPrefixInHexColor)
 				Defaults.Toggle("Use legacy syntax for HSL and RGB", key: .legacyColorSyntax)
 					.help("Use the legacy “hsl(198, 28%, 50%)” syntax instead of the modern “hsl(198deg 28% 50%)” syntax. This setting is meant for users that need to support older browsers. All modern browsers support the modern syntax.")
 				Link("What is LCH color?", destination: "https://lea.verou.me/2020/04/lch-colors-in-css-what-why-and-how/")

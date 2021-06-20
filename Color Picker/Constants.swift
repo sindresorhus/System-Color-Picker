@@ -8,6 +8,7 @@ extension Defaults.Keys {
 	static let colorFormatToCopyAfterPicking = Key<CopyColorFormat>("colorFormatToCopyAfterPicking", default: .none)
 	static let stayOnTop = Key<Bool>("stayOnTop", default: true)
 	static let uppercaseHexColor = Key<Bool>("uppercaseHexColor", default: false)
+	static let hashPrefixInHexColor = Key<Bool>("hashPrefixInHexColor", default: false)
 	static let legacyColorSyntax = Key<Bool>("legacyColorSyntax", default: false)
 	static let shownColorFormats = Key<Set<ColorFormat>>("shownColorFormats", default: [.hex, .hsl, .rgb, .lch])
 }

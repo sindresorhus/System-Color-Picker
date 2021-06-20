@@ -35,6 +35,7 @@ private struct BarView: View {
 
 struct ColorPickerView: View {
 	@Default(.uppercaseHexColor) private var uppercaseHexColor
+	@Default(.hashPrefixInHexColor) private var hashPrefixInHexColor
 	@Default(.legacyColorSyntax) private var legacyColorSyntax
 	@Default(.shownColorFormats) private var shownColorFormats
 	@State private var hexColor = ""
@@ -199,6 +200,9 @@ struct ColorPickerView: View {
 			.onChange(of: uppercaseHexColor) { _ in
 				updateColorsFromPanel()
 			}
+			.onChange(of: hashPrefixInHexColor) { _ in
+				updateColorsFromPanel()
+			}
 			.onChange(of: legacyColorSyntax) { _ in
 				updateColorsFromPanel()
 			}
@@ -249,7 +253,12 @@ struct ColorPickerView: View {
 
 extension NSColorPanel {
 	var hexColorString: String {
-		color.usingColorSpace(.sRGB)!.format(.hex(isUppercased: Defaults[.uppercaseHexColor]))
+		color.usingColorSpace(.sRGB)!.format(
+			.hex(
+				isUppercased: Defaults[.uppercaseHexColor],
+				hasPrefix: Defaults[.hashPrefixInHexColor]
+			)
+		)
 	}
 
 	var hslColorString: String {
