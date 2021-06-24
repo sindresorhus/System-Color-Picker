@@ -132,6 +132,7 @@ private struct AdvancedSettings: View {
 				VStack(alignment: .leading) {
 					Defaults.Toggle("Show color sampler when opening window", key: .showColorSamplerOnOpen)
 						.help("Show the color picker loupe when the color picker window is shown.")
+					Defaults.Toggle("Use larger text in text fields", key: .largerText)
 				}
 					.padding()
 					.padding(.horizontal)

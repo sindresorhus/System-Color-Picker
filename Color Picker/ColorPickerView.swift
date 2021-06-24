@@ -38,6 +38,7 @@ struct ColorPickerView: View {
 	@Default(.hashPrefixInHexColor) private var hashPrefixInHexColor
 	@Default(.legacyColorSyntax) private var legacyColorSyntax
 	@Default(.shownColorFormats) private var shownColorFormats
+	@Default(.largerText) private var largerText
 	@State private var hexColor = ""
 	@State private var hslColor = ""
 	@State private var rgbColor = ""
@@ -47,12 +48,14 @@ struct ColorPickerView: View {
 
 	let colorPanel: NSColorPanel
 
+	private var textFieldFontSize: Double { largerText ? 16 : 0 }
+
 	private var hexColorView: some View {
 		HStack {
 			NativeTextField(
 				text: $hexColor,
 				placeholder: "Hex",
-				font: .monospacedSystemFont(ofSize: 0, weight: .regular),
+				font: .monospacedSystemFont(ofSize: textFieldFontSize.cgFloat, weight: .regular),
 				isFocused: $isTextFieldFocused
 			)
 				.controlSize(.large)
@@ -84,7 +87,7 @@ struct ColorPickerView: View {
 			NativeTextField(
 				text: $hslColor,
 				placeholder: "HSL",
-				font: .monospacedSystemFont(ofSize: 0, weight: .regular),
+				font: .monospacedSystemFont(ofSize: textFieldFontSize.cgFloat, weight: .regular),
 				isFocused: $isTextFieldFocused
 			)
 				.controlSize(.large)
@@ -116,7 +119,7 @@ struct ColorPickerView: View {
 			NativeTextField(
 				text: $rgbColor,
 				placeholder: "RGB",
-				font: .monospacedSystemFont(ofSize: 0, weight: .regular),
+				font: .monospacedSystemFont(ofSize: textFieldFontSize.cgFloat, weight: .regular),
 				isFocused: $isTextFieldFocused
 			)
 				.controlSize(.large)
@@ -148,7 +151,7 @@ struct ColorPickerView: View {
 			NativeTextField(
 				text: $lchColor,
 				placeholder: "LCH",
-				font: .monospacedSystemFont(ofSize: 0, weight: .regular),
+				font: .monospacedSystemFont(ofSize: textFieldFontSize.cgFloat, weight: .regular),
 				isFocused: $isTextFieldFocused
 			)
 				.controlSize(.large)

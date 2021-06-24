@@ -11,6 +11,7 @@ extension Defaults.Keys {
 	static let hashPrefixInHexColor = Key<Bool>("hashPrefixInHexColor", default: false)
 	static let legacyColorSyntax = Key<Bool>("legacyColorSyntax", default: false)
 	static let shownColorFormats = Key<Set<ColorFormat>>("shownColorFormats", default: [.hex, .hsl, .rgb, .lch])
+	static let largerText = Key<Bool>("largerText", default: false)
 }
 
 extension KeyboardShortcuts.Name {
