@@ -32,9 +32,11 @@ final class ColorPanel: NSColorPanel, NSWindowDelegate {
 	}
 
 	private func hideNativePickerButton() {
+		let selectorString = String(":yfingam_".reversed())
+		let selector = NSSelectorFromString(selectorString)
+
 		let pickerButton = contentView?
-			.firstSubview(deep: true) { $0.simpleClassName == "NSButtonImageView" }?
-			.superview
+			.firstSubview(deep: true) { ($0 as? NSButton)?.action == selector } as? NSButton
 
 		assert(pickerButton != nil)
 

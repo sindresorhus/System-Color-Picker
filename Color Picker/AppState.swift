@@ -127,7 +127,7 @@ final class AppState: ObservableObject {
 	}
 
 	private func requestReview() {
-		SSApp.requestReviewAfterBeingCalledThisManyTimes([10, 200, 1000])
+		SSApp.requestReviewAfterBeingCalledThisManyTimes([10, 100, 200, 1000])
 	}
 
 	func pickColor() {

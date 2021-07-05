@@ -278,7 +278,7 @@ extension NSColorPanel {
 }
 
 struct ColorPickerView_Previews: PreviewProvider {
-    static var previews: some View {
+	static var previews: some View {
 		ColorPickerView(colorPanel: NSColorPanel.shared)
-    }
+	}
 }
