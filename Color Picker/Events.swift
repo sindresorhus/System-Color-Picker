@@ -1,6 +1,7 @@
 import SwiftUI
 import Defaults
 import KeyboardShortcuts
+import LaunchAtLogin
 
 extension AppState {
 	func setUpEvents() {
@@ -16,6 +17,7 @@ extension AppState {
 				NSApp.activate(ignoringOtherApps: true)
 
 				if !$0.newValue {
+					LaunchAtLogin.isEnabled = false
 					self.colorPanel.makeKeyAndOrderFront(nil)
 				}
 			}

@@ -13,7 +13,15 @@ private struct ShowInMenuBarSetting: View {
 					return
 				}
 
-				isShowingTip = true
+//				isShowingTip = true
+
+				// TODO: The SwiftUI alert shows multiple times. (macOS 11.5)
+				DispatchQueue.main.async {
+					NSAlert.showModal(
+						title: "Tips",
+						message: "Click the menu bar icon to toggle the color picker window.\n\nRight-click the menu bar icon to quit the app or access the preferences."
+					)
+				}
 			}
 			.alert(isPresented: $isShowingTip) {
 				Alert(
@@ -60,11 +68,16 @@ private struct ShownColorFormatsSetting: View {
 }
 
 private struct GeneralSettings: View {
+	@Default(.showInMenuBar) private var showInMenuBar
+
 	var body: some View {
 		Form {
 			VStack(alignment: .leading) {
-				LaunchAtLogin.Toggle()
 				ShowInMenuBarSetting()
+				LaunchAtLogin.Toggle()
+					.disabled(!showInMenuBar)
+					.help(showInMenuBar ? "" : "There is really no point in launching the app at login if it is not in the menu bar. You can instead just put it in the Dock and launch it when needed.")
+					.padding(.leading, 17)
 				Defaults.Toggle("Stay on top", key: .stayOnTop)
 					.help("Make the color picker window stay on top of all other windows.")
 				Defaults.Toggle("Uppercase Hex color", key: .uppercaseHexColor)

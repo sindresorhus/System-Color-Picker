@@ -13,6 +13,8 @@ extension AppState {
 			message:
 				"""
 				If you have any feedback, bug reports, or feature requests, use the feedback button in the “Help” menu. I quickly respond to all submissions.
+
+				Bug reports through app reviews are ignored.
 				""",
 			buttonTitles: [
 				"Get Started"
