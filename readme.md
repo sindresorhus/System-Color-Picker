@@ -23,7 +23,7 @@ Requires macOS 11 or later.
 - Show as a normal app or in the menu bar
 - Pick a color or toggle the window from anywhere with a global keyboard shortcut
 - Make the window stay on top of all other windows
-- Launch it at login
+- Launch it at login (when in the menu bar)
 
 ## Keyboard shortcuts
 
