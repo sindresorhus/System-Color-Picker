@@ -86,7 +86,7 @@ final class AppState: ObservableObject {
 			]
 		)
 
-		// TODO: Remove in 2022.
+		// TODO: Remove in 2023.
 		Defaults.migrate(.shownColorFormats, to: .v5)
 		Defaults.migrate(.colorFormatToCopyAfterPicking, to: .v5)
 

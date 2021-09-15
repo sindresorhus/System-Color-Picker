@@ -204,7 +204,7 @@ extension NSAttributedString {
 
 	/// - Important: This does not preserve font-related styles like bold and italic.
 	func withFontSizeFast(_ fontSize: Double) -> NSAttributedString {
-		addingAttributes([.font: font.withSize(CGFloat(fontSize))])
+		addingAttributes([.font: font.withSize(fontSize)])
 	}
 
 	func addingAttributes(_ attributes: [Key: Any]) -> NSAttributedString {
@@ -309,10 +309,12 @@ extension NSColor {
 		let color = self
 		#endif
 
+		// swiftlint:disable no_cgfloat
 		var red: CGFloat = 0
 		var green: CGFloat = 0
 		var blue: CGFloat = 0
 		var alpha: CGFloat = 0
+		// swiftlint:enable no_cgfloat
 
 		color.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
 
@@ -339,10 +341,12 @@ extension NSColor {
 		let color = self
 		#endif
 
+		// swiftlint:disable no_cgfloat
 		var hue: CGFloat = 0
 		var saturation: CGFloat = 0
 		var brightness: CGFloat = 0
 		var alpha: CGFloat = 0
+		// swiftlint:enable no_cgfloat
 
 		color.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha)
 
@@ -384,10 +388,10 @@ extension NSColor {
 	*/
 	convenience init(
 		colorSpace: NSColorSpace,
-		hue: CGFloat,
-		saturation: CGFloat,
-		lightness: CGFloat,
-		alpha: CGFloat
+		hue: Double,
+		saturation: Double,
+		lightness: Double,
+		alpha: Double
 	) {
 		precondition(
 			0...1 ~= hue
@@ -469,9 +473,9 @@ extension NSColor {
 
 		self.init(
 			colorSpace: .sRGB,
-			hue: hue.cgFloat / 360,
-			saturation: saturation.cgFloat / 100,
-			lightness: lightness.cgFloat / 100,
+			hue: hue / 360,
+			saturation: saturation / 100,
+			lightness: lightness / 100,
 			alpha: 1
 		)
 	}
@@ -503,9 +507,9 @@ extension NSColor {
 		}
 
 		self.init(
-			srgbRed: red.cgFloat / 255,
-			green: green.cgFloat / 255,
-			blue: blue.cgFloat / 255,
+			srgbRed: red / 255,
+			green: green / 255,
+			blue: blue / 255,
 			alpha: 1
 		)
 	}
@@ -606,10 +610,10 @@ extension NSColor {
 	*/
 	convenience init(hex: Int, alpha: Double = 1) {
 		self.init(
-			red: CGFloat((hex >> 16) & 0xFF) / 255,
-			green: CGFloat((hex >> 8) & 0xFF) / 255,
-			blue: CGFloat(hex & 0xFF) / 255,
-			alpha: CGFloat(alpha)
+			red: Double((hex >> 16) & 0xFF) / 255,
+			green: Double((hex >> 8) & 0xFF) / 255,
+			blue: Double(hex & 0xFF) / 255,
+			alpha: alpha
 		)
 	}
 
@@ -752,12 +756,7 @@ extension String {
 	}
 }
 
-
-extension Double {
-	/// Get a CGFloat from a Double. This makes it easier to work with optionals.
-	var cgFloat: CGFloat { CGFloat(self) }
-}
-
+// swiftlint:disable:next no_cgfloat
 extension CGFloat {
 	/// Get a Double from a CGFloat. This makes it easier to work with optionals.
 	var double: Double { Double(self) }
@@ -766,9 +765,6 @@ extension CGFloat {
 extension Int {
 	/// Get a Double from an Int. This makes it easier to work with optionals.
 	var double: Double { Double(self) }
-
-	/// Get a CGFloat from an Int. This makes it easier to work with optionals.
-	var cgFloat: CGFloat { CGFloat(self) }
 }
 
 
@@ -866,7 +862,7 @@ struct NativeTextField: NSViewRepresentable {
 				}
 
 				let clickPoint = self.convert(event.locationInWindow, from: nil)
-				let clickMargin: CGFloat = 3
+				let clickMargin = 3.0
 
 				if !self.frame.insetBy(dx: -clickMargin, dy: -clickMargin).contains(clickPoint) {
 					self.blur()
@@ -1739,10 +1735,10 @@ extension XColor {
 	/// Initialize from a `RGB` color.
 	convenience init(_ rgbColor: Colors.RGB) {
 		self.init(
-			red: rgbColor.red.cgFloat,
-			green: rgbColor.green.cgFloat,
-			blue: rgbColor.blue.cgFloat,
-			alpha: rgbColor.alpha.cgFloat
+			red: rgbColor.red,
+			green: rgbColor.green,
+			blue: rgbColor.blue,
+			alpha: rgbColor.alpha
 		)
 	}
 }

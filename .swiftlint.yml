@@ -167,7 +167,7 @@ identifier_name:
     - 'y2'
     - 'z2'
 deployment_target:
-  macOS_deployment_target: '11'
+  macOS_deployment_target: '11.3'
 custom_rules:
   no_nsrect:
     regex: '\bNSRect\b'
@@ -181,12 +181,19 @@ custom_rules:
     regex: '\bNSPoint\b'
     match_kinds: typeidentifier
     message: 'Use CGPoint instead of NSPoint'
+  no_cgfloat:
+    regex: '\bCGFloat\b'
+    match_kinds: typeidentifier
+    message: 'Use Double instead of CGFloat'
+  no_cgfloat2:
+    regex: '\bCGFloat\('
+    message: 'Use Double instead of CGFloat'
   swiftui_state_private:
     regex: '@(State|StateObject|ObservedObject|EnvironmentObject)\s+var'
-    message: "SwiftUI @State/@StateObject/@ObservedObject/@EnvironmentObject properties should be private"
+    message: 'SwiftUI @State/@StateObject/@ObservedObject/@EnvironmentObject properties should be private'
   swiftui_environment_private:
     regex: '@Environment\(\\\.\w+\)\s+var'
-    message: "SwiftUI @Environment properties should be private"
+    message: 'SwiftUI @Environment properties should be private'
   final_class:
     regex: '^class [a-zA-Z\d]+[^{]+\{'
-    message: "Classes should be marked as final whenever possible. If you actually need it to be subclassable, just add `// swiftlint:disable:next final_class`."
+    message: 'Classes should be marked as final whenever possible. If you actually need it to be subclassable, just add `// swiftlint:disable:next final_class`.'

@@ -51,7 +51,7 @@ struct AppMain: App {
 						"https://github.com/sindresorhus/System-Color-Picker#faq".openUrl()
 					}
 					Divider()
-					// TODO: Use `Link` when it's supported here.
+					// TODO: Use `Link` when targeting macOS 12.
 					Button("Website") {
 						"https://sindresorhus.com/system-color-picker".openUrl()
 					}

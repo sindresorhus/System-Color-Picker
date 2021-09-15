@@ -20,7 +20,7 @@ extension KeyboardShortcuts.Name {
 }
 
 enum CopyColorFormat: String, CaseIterable, Defaults.Serializable {
-	case none
+	case none // swiftlint:disable:this discouraged_none_name
 	case hex
 	case hsl
 	case rgb
@@ -42,9 +42,9 @@ enum CopyColorFormat: String, CaseIterable, Defaults.Serializable {
 	}
 }
 
-// TODO: Remove in 2022.
+// TODO: Remove in 2023.
 enum CodableCopyColorFormat: String {
-	case none
+	case none // swiftlint:disable:this discouraged_none_name
 	case hex
 	case hsl
 	case rgb
@@ -83,7 +83,7 @@ extension ColorFormat: Identifiable {
 	var id: Self { self }
 }
 
-// TODO: Remove in 2022.
+// TODO: Remove in 2023.
 enum CodableColorFormat: String {
 	case hex
 	case hsl

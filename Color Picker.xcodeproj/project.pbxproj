@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 54;
+	objectVersion = 55;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -154,7 +154,7 @@
 				};
 			};
 			buildConfigurationList = E3A3B11425904E7B001B4D0C /* Build configuration list for PBXProject "Color Picker" */;
-			compatibilityVersion = "Xcode 12.0";
+			compatibilityVersion = "Xcode 13.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -465,7 +465,7 @@
 			repositoryURL = "https://github.com/sindresorhus/KeyboardShortcuts";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.1.0;
+				minimumVersion = 1.2.1;
 			};
 		};
 		E3E14060259A0D97004FC89F /* XCRemoteSwiftPackageReference "Defaults" */ = {
@@ -481,7 +481,7 @@
 			repositoryURL = "https://github.com/microsoft/appcenter-sdk-apple";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 4.1.1;
+				minimumVersion = 4.3.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

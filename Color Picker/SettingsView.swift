@@ -98,7 +98,7 @@ private struct GeneralSettings: View {
 
 private struct ShortcutsSettings: View {
 	@Default(.showInMenuBar) private var showInMenuBar
-	private let maxWidth: CGFloat = 100
+	private let maxWidth = 100.0
 
 	var body: some View {
 		Form {

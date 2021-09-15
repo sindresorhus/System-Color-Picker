@@ -55,7 +55,7 @@ struct ColorPickerView: View {
 			NativeTextField(
 				text: $hexColor,
 				placeholder: "Hex",
-				font: .monospacedSystemFont(ofSize: textFieldFontSize.cgFloat, weight: .regular),
+				font: .monospacedSystemFont(ofSize: textFieldFontSize, weight: .regular),
 				isFocused: $isTextFieldFocused
 			)
 				.controlSize(.large)
@@ -87,7 +87,7 @@ struct ColorPickerView: View {
 			NativeTextField(
 				text: $hslColor,
 				placeholder: "HSL",
-				font: .monospacedSystemFont(ofSize: textFieldFontSize.cgFloat, weight: .regular),
+				font: .monospacedSystemFont(ofSize: textFieldFontSize, weight: .regular),
 				isFocused: $isTextFieldFocused
 			)
 				.controlSize(.large)
@@ -119,7 +119,7 @@ struct ColorPickerView: View {
 			NativeTextField(
 				text: $rgbColor,
 				placeholder: "RGB",
-				font: .monospacedSystemFont(ofSize: textFieldFontSize.cgFloat, weight: .regular),
+				font: .monospacedSystemFont(ofSize: textFieldFontSize, weight: .regular),
 				isFocused: $isTextFieldFocused
 			)
 				.controlSize(.large)
@@ -151,7 +151,7 @@ struct ColorPickerView: View {
 			NativeTextField(
 				text: $lchColor,
 				placeholder: "LCH",
-				font: .monospacedSystemFont(ofSize: textFieldFontSize.cgFloat, weight: .regular),
+				font: .monospacedSystemFont(ofSize: textFieldFontSize, weight: .regular),
 				isFocused: $isTextFieldFocused
 			)
 				.controlSize(.large)
