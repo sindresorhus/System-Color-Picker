@@ -274,6 +274,35 @@ final class LocalEventMonitor: ObservableObject {
 	}
 }
 
+final class GlobalEventMonitor {
+	private let events: NSEvent.EventTypeMask
+	private let callback: (NSEvent) -> Void
+	private weak var monitor: AnyObject?
+
+	init(events: NSEvent.EventTypeMask, callback: @escaping (NSEvent) -> Void) {
+		self.events = events
+		self.callback = callback
+	}
+
+	deinit {
+		stop()
+	}
+
+	@discardableResult
+	func start() -> Self {
+		monitor = NSEvent.addGlobalMonitorForEvents(matching: events, handler: callback) as AnyObject
+		return self
+	}
+
+	func stop() {
+		guard let monitor = monitor else {
+			return
+		}
+
+		NSEvent.removeMonitor(monitor)
+	}
+}
+
 
 extension NSView {
 	func constrainEdges(to view: NSView) {
@@ -830,7 +859,8 @@ struct NativeTextField: NSViewRepresentable {
 	var isSingleLine = true
 
 	final class InternalTextField: NSTextField {
-		private var eventMonitor: LocalEventMonitor?
+		private var globalEventMonitor: GlobalEventMonitor?
+		private var localEventMonitor: LocalEventMonitor?
 
 		var parent: NativeTextField
 
@@ -847,8 +877,17 @@ struct NativeTextField: NSViewRepresentable {
 		override func becomeFirstResponder() -> Bool {
 			parent.isFocused = true
 
+			// This is required so that it correctly loses focus when the user clicks in the menu bar or uses the dropper from a keyboard shortcut.
+			globalEventMonitor = GlobalEventMonitor(events: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+				guard let self = self else {
+					return
+				}
+
+				self.unfocus()
+			}.start()
+
 			// Cannot be `.leftMouseUp` as the color wheel swallows it.
-			eventMonitor = LocalEventMonitor(events: [.leftMouseDown, .rightMouseDown, .keyDown]) { [weak self] event in
+			localEventMonitor = LocalEventMonitor(events: [.leftMouseDown, .rightMouseDown, .keyDown]) { [weak self] event in
 				guard let self = self else {
 					return nil
 				}
@@ -865,7 +904,7 @@ struct NativeTextField: NSViewRepresentable {
 				let clickMargin = 3.0
 
 				if !self.frame.insetBy(dx: -clickMargin, dy: -clickMargin).contains(clickPoint) {
-					self.blur()
+					self.unfocus()
 					return nil
 				}
 
@@ -873,6 +912,11 @@ struct NativeTextField: NSViewRepresentable {
 			}.start()
 
 			return super.becomeFirstResponder()
+		}
+
+		private func unfocus() {
+			self.parent.isFocused = false
+			self.blur()
 		}
 	}
 
