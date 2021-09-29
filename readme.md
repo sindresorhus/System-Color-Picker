@@ -24,6 +24,7 @@ Requires macOS 11 or later.
 - Pick a color or toggle the window from anywhere with a global keyboard shortcut
 - Make the window stay on top of all other windows
 - Launch it at login (when in the menu bar)
+- Recently picked colors
 
 ## Keyboard shortcuts
 

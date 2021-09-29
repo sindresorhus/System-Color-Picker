@@ -38,24 +38,43 @@ final class AppState: ObservableObject {
 		return colorPanel
 	}()
 
-	private lazy var menu = with(NSMenu()) {
-		$0.addCallbackItem("Pick Color") { [self] _ in
+	private func createMenu() -> NSMenu {
+		let menu = NSMenu()
+
+		menu.addCallbackItem("Pick Color") { [self] _ in
 			pickColor()
 		}
+			.setShortcut(for: .pickColor)
 
-		$0.addSeparator()
+		menu.addSeparator()
 
-		$0.addSettingsItem()
+		if let colors = Defaults[.recentlyPickedColors].reversed().nilIfEmpty {
+			menu.addHeader("Recently Picked Colors")
 
-		$0.addSeparator()
+			for color in colors {
+				let menuItem = menu.addCallbackItem(color.stringRepresentation) { _ in
+					color.stringRepresentation.copyToPasteboard()
+				}
 
-		$0.addCallbackItem("Send Feedback…") { _ in
+				menuItem.image = color.swatchImage
+			}
+		}
+
+		menu.addSeparator()
+
+		menu.addSettingsItem()
+
+		menu.addSeparator()
+
+		menu.addCallbackItem("Send Feedback…") { _ in
 			SSApp.openSendFeedbackPage()
 		}
 
-		$0.addSeparator()
+		menu.addSeparator()
 
-		$0.addQuitItem()
+		menu.addQuitItem()
+
+		return menu
 	}
 
 	private(set) lazy var statusItem = with(NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)) {
@@ -69,7 +88,7 @@ final class AppState: ObservableObject {
 			let event = NSApp.currentEvent!
 
 			if event.type == .rightMouseUp {
-				item.menu = menu
+				item.menu = createMenu()
 				item.button!.performClick(nil)
 				item.menu = nil
 			} else {
@@ -86,22 +105,13 @@ final class AppState: ObservableObject {
 			]
 		)
 
-		// TODO: Remove in 2023.
-		Defaults.migrate(.shownColorFormats, to: .v5)
-		Defaults.migrate(.colorFormatToCopyAfterPicking, to: .v5)
-
 		DispatchQueue.main.async { [self] in
 			didLaunch()
 		}
 	}
 
 	private func didLaunch() {
-		// Make the invisible native SwitUI window not block access to the desktop. (macOS 11.3)
-		NSApp.windows.first?.ignoresMouseEvents = true
-
-		// We hide the “View” menu as there's a macOS bug where it sometimes enables even though it doesn't work and then causes a crash when clicked.
-		NSApp.mainMenu?.item(withTitle: "View")?.isHidden = true
-
+		fixStuff()
 		setUpEvents()
 		showWelcomeScreenIfNeeded()
 		requestReview()
@@ -111,23 +121,26 @@ final class AppState: ObservableObject {
 		#endif
 	}
 
-	private func copyColorIfNeeded() {
-		switch Defaults[.colorFormatToCopyAfterPicking] {
-		case .none:
-			break
-		case .hex:
-			colorPanel.hexColorString.copyToPasteboard()
-		case .hsl:
-			colorPanel.hslColorString.copyToPasteboard()
-		case .rgb:
-			colorPanel.rgbColorString.copyToPasteboard()
-		case .lch:
-			colorPanel.lchColorString.copyToPasteboard()
-		}
+	private func fixStuff() {
+		// Make the invisible native SwitUI window not block access to the desktop. (macOS 12.0)
+		NSApp.windows.first?.ignoresMouseEvents = true
+
+		// Make the invisible native SwiftUI window not show up in mission control when in menu bar mode. (macOS 11.6)
+		NSApp.windows.first?.collectionBehavior = .stationary
+
+		// We hide the “View” menu as there's a macOS bug where it sometimes enables even though it doesn't work and then causes a crash when clicked.
+		NSApp.mainMenu?.item(withTitle: "View")?.isHidden = true
 	}
 
 	private func requestReview() {
 		SSApp.requestReviewAfterBeingCalledThisManyTimes([10, 100, 200, 1000])
+	}
+
+	private func addToRecentlyPickedColor(_ color: NSColor) {
+		Defaults[.recentlyPickedColors] = Defaults[.recentlyPickedColors]
+			.removingAll(color)
+			.appending(color)
+			.truncatingFromStart(toCount: 6)
 	}
 
 	func pickColor() {
@@ -140,8 +153,12 @@ final class AppState: ObservableObject {
 			}
 
 			self.colorPanel.color = color
-			self.copyColorIfNeeded()
+			self.addToRecentlyPickedColor(color)
 			self.requestReview()
+
+			if Defaults[.copyColorAfterPicking] {
+				color.stringRepresentation.copyToPasteboard()
+			}
 		}
 	}
 

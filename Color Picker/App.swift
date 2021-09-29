@@ -1,10 +1,15 @@
 import SwiftUI
+import Defaults
 
 @main
 struct AppMain: App {
 	@NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 	@StateObject private var appState = AppState.shared
 	@StateObject private var pasteboardObserver = NSPasteboard.SimpleObservable(.general, onlyWhileAppIsActive: true)
+
+	init() {
+		migrate()
+	}
 
 	var body: some Scene {
 		WindowGroup {
@@ -21,19 +26,19 @@ struct AppMain: App {
 						.keyboardShortcut("p")
 					Divider()
 					Button("Copy as Hex") {
-						appState.colorPanel.hexColorString.copyToPasteboard()
+						appState.colorPanel.color.hexColorString.copyToPasteboard()
 					}
 						.keyboardShortcut("H")
 					Button("Copy as HSL") {
-						appState.colorPanel.hslColorString.copyToPasteboard()
+						appState.colorPanel.color.hslColorString.copyToPasteboard()
 					}
 						.keyboardShortcut("S")
 					Button("Copy as RGB") {
-						appState.colorPanel.rgbColorString.copyToPasteboard()
+						appState.colorPanel.color.rgbColorString.copyToPasteboard()
 					}
 						.keyboardShortcut("R")
 					Button("Copy as LCH") {
-						appState.colorPanel.rgbColorString.copyToPasteboard()
+						appState.colorPanel.color.lchColorString.copyToPasteboard()
 					}
 						.keyboardShortcut("L")
 					Button("Paste") {
@@ -69,6 +74,36 @@ struct AppMain: App {
 			}
 		Settings {
 			SettingsView()
+		}
+	}
+
+	private func migrate() {
+		// TODO: Remove in 2023.
+		Defaults.migrate(.shownColorFormats, to: .v5)
+		Defaults.migrate(.colorFormatToCopyAfterPicking, to: .v5)
+
+		// TODO: Remove in 2023.
+		SSApp.runOnce(identifier: "migrateToPreferredColorFormatSetting") {
+			guard !SSApp.isFirstLaunch else {
+				return
+			}
+
+			if Defaults[.colorFormatToCopyAfterPicking] != .none {
+				Defaults[.copyColorAfterPicking] = true
+			}
+
+			switch Defaults[.colorFormatToCopyAfterPicking] {
+			case .none:
+				break
+			case .hex:
+				Defaults[.preferredColorFormat] = .hex
+			case .hsl:
+				Defaults[.preferredColorFormat] = .hsl
+			case .rgb:
+				Defaults[.preferredColorFormat] = .rgb
+			case .lch:
+				Defaults[.preferredColorFormat] = .lch
+			}
 		}
 	}
 }

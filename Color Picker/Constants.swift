@@ -1,17 +1,24 @@
-import Foundation
+import Cocoa
 import Defaults
 import KeyboardShortcuts
 
 extension Defaults.Keys {
+	static let recentlyPickedColors = Key<[NSColor]>("recentlyPickedColors", default: [])
+
+	// Settings
 	static let showInMenuBar = Key<Bool>("showInMenuBar", default: false)
 	static let showColorSamplerOnOpen = Key<Bool>("showColorSamplerOnOpen", default: false)
-	static let colorFormatToCopyAfterPicking = Key<CopyColorFormat>("colorFormatToCopyAfterPicking", default: .none)
+	static let preferredColorFormat = Key<ColorFormat>("preferredColorFormat", default: .hex)
 	static let stayOnTop = Key<Bool>("stayOnTop", default: true)
 	static let uppercaseHexColor = Key<Bool>("uppercaseHexColor", default: false)
 	static let hashPrefixInHexColor = Key<Bool>("hashPrefixInHexColor", default: false)
 	static let legacyColorSyntax = Key<Bool>("legacyColorSyntax", default: false)
 	static let shownColorFormats = Key<Set<ColorFormat>>("shownColorFormats", default: [.hex, .hsl, .rgb, .lch])
 	static let largerText = Key<Bool>("largerText", default: false)
+	static let copyColorAfterPicking = Key<Bool>("copyColorAfterPicking", default: false)
+
+	// Deprecated
+	static let colorFormatToCopyAfterPicking = Key<CopyColorFormat>("colorFormatToCopyAfterPicking", default: .none)
 }
 
 extension KeyboardShortcuts.Name {
@@ -19,6 +26,7 @@ extension KeyboardShortcuts.Name {
 	static let toggleWindow = Self("toggleWindow")
 }
 
+// TODO: Remove in 2023.
 enum CopyColorFormat: String, CaseIterable, Defaults.Serializable {
 	case none // swiftlint:disable:this discouraged_none_name
 	case hex

@@ -1,6 +1,36 @@
 import SwiftUI
 import Defaults
 
+private struct RecentlyPickedColorsButton: View {
+	@EnvironmentObject private var appState: AppState
+	@Default(.recentlyPickedColors) private var recentlyPickedColors
+	@Default(.preferredColorFormat) private var preferredColorFormat // Only to get updates
+
+	var body: some View {
+		Menu {
+			ForEach(recentlyPickedColors.reversed(), id: \.lchColorString) { color in
+				Button {
+					appState.colorPanel.color = color
+				} label: {
+					// TODO: Using `Label` does not work. (macOS 11.6)
+					HStack {
+						// We don't use SwiftUI here as it only supports showing an actual image. (macOS 11.6)
+						Image(nsImage: color.swatchImage)
+						Text(color.stringRepresentation)
+					}
+				}
+			}
+		} label: {
+			Image(systemName: "clock.fill")
+		}
+			// TODO: Use `.menuIndicator(.hidden)` when using Xcode 13.1.
+			.menuStyle(BorderedButtonMenuStyle())
+			.fixedSize()
+			.disabled(recentlyPickedColors.isEmpty)
+			.help(recentlyPickedColors.isEmpty ? "No recently picked colors" : "Recently picked colors")
+	}
+}
+
 private struct BarView: View {
 	@EnvironmentObject private var appState: AppState
 	@StateObject private var pasteboardObserver = NSPasteboard.SimpleObservable(.general).stop()
@@ -22,6 +52,7 @@ private struct BarView: View {
 				.help("Paste color in the format Hex, HSL, RGB, or LCH")
 				.keyboardShortcut("V")
 				.disabled(NSColor.fromPasteboardGraceful(.general) == nil)
+			RecentlyPickedColorsButton()
 			Spacer()
 		}
 			.onAppearOnScreen {
@@ -230,20 +261,22 @@ struct ColorPickerView: View {
 			isPreventingUpdate = true
 		}
 
+		let color = colorPanel.color
+
 		if !excludeHex {
-			hexColor = colorPanel.hexColorString
+			hexColor = color.hexColorString
 		}
 
 		if !excludeHSL {
-			hslColor = colorPanel.hslColorString
+			hslColor = color.hslColorString
 		}
 
 		if !excludeRGB {
-			rgbColor = colorPanel.rgbColorString
+			rgbColor = color.rgbColorString
 		}
 
 		if !excludeLCH {
-			lchColor = colorPanel.lchColorString
+			lchColor = color.lchColorString
 		}
 
 		if preventUpdate {
@@ -251,29 +284,6 @@ struct ColorPickerView: View {
 				isPreventingUpdate = false
 			}
 		}
-	}
-}
-
-extension NSColorPanel {
-	var hexColorString: String {
-		color.usingColorSpace(.sRGB)!.format(
-			.hex(
-				isUppercased: Defaults[.uppercaseHexColor],
-				hasPrefix: Defaults[.hashPrefixInHexColor]
-			)
-		)
-	}
-
-	var hslColorString: String {
-		color.usingColorSpace(.sRGB)!.format(Defaults[.legacyColorSyntax] ? .hslLegacy : .hsl)
-	}
-
-	var rgbColorString: String {
-		color.usingColorSpace(.sRGB)!.format(Defaults[.legacyColorSyntax] ? .rgbLegacy : .rgb)
-	}
-
-	var lchColorString: String {
-		color.usingColorSpace(.sRGB)!.format(.lch)
 	}
 }
 

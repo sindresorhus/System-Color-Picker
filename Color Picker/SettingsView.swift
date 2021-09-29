@@ -15,7 +15,7 @@ private struct ShowInMenuBarSetting: View {
 
 //				isShowingTip = true
 
-				// TODO: The SwiftUI alert shows multiple times. (macOS 11.5)
+				// TODO: The SwiftUI alert shows multiple times. (macOS 11.6)
 				DispatchQueue.main.async {
 					NSAlert.showModal(
 						title: "Tips",
@@ -32,19 +32,16 @@ private struct ShowInMenuBarSetting: View {
 	}
 }
 
-private struct CopyColorFormatSetting: View {
-	@Default(.colorFormatToCopyAfterPicking) private var colorFormat
+private struct PreferredColorFormatSetting: View {
+	@Default(.preferredColorFormat) private var preferredColorFormat
 
 	var body: some View {
 		EnumPicker(
-			enumBinding: $colorFormat,
-			label: Text("Copy color after picking:")
+			enumBinding: $preferredColorFormat,
+			label: Text("Preferred color format:")
 				.fixedSize()
 		) { element, _ in
 			Text(element.title)
-			if element == .none {
-				Divider()
-			}
 		}
 			.fixedSize()
 	}
@@ -77,22 +74,53 @@ private struct GeneralSettings: View {
 				LaunchAtLogin.Toggle()
 					.disabled(!showInMenuBar)
 					.help(showInMenuBar ? "" : "There is really no point in launching the app at login if it is not in the menu bar. You can instead just put it in the Dock and launch it when needed.")
-					.padding(.leading, 17)
+					.padding(.leading, 19)
 				Defaults.Toggle("Stay on top", key: .stayOnTop)
 					.help("Make the color picker window stay on top of all other windows.")
-				Defaults.Toggle("Uppercase Hex color", key: .uppercaseHexColor)
-				Defaults.Toggle("Prefix Hex color with #", key: .hashPrefixInHexColor)
-				Defaults.Toggle("Use legacy syntax for HSL and RGB", key: .legacyColorSyntax)
-					.help("Use the legacy “hsl(198, 28%, 50%)” syntax instead of the modern “hsl(198deg 28% 50%)” syntax. This setting is meant for users that need to support older browsers. All modern browsers support the modern syntax.")
-				Link("What is LCH color?", destination: "https://lea.verou.me/2020/04/lch-colors-in-css-what-why-and-how/")
-					.controlSize(.small)
-					.padding(.top)
 			}
+				.offset(x: -40)
 		}
 			.padding()
 			.padding()
-			.frame(width: 380)
-			.windowLevel(.floating + 1) // Ensure it's always above the color picker.
+			.padding(.vertical)
+	}
+}
+
+private struct ColorSettings: View {
+	var body: some View {
+		Form {
+			VStack(alignment: .leading) {
+				VStack(alignment: .leading) {
+					Defaults.Toggle("Uppercase Hex color", key: .uppercaseHexColor)
+					Defaults.Toggle("Prefix Hex color with #", key: .hashPrefixInHexColor)
+					Defaults.Toggle("Use legacy syntax for HSL and RGB", key: .legacyColorSyntax)
+						.help("Use the legacy “hsl(198, 28%, 50%)” syntax instead of the modern “hsl(198deg 28% 50%)” syntax. This setting is meant for users that need to support older browsers. All modern browsers support the modern syntax.")
+				}
+					.padding()
+					.padding(.horizontal)
+				Divider()
+				VStack(alignment: .leading) {
+					PreferredColorFormatSetting()
+				}
+					.padding()
+					.padding(.horizontal)
+				Divider()
+				VStack(alignment: .leading) {
+					ShownColorFormatsSetting()
+				}
+					.padding()
+					.padding(.horizontal)
+					.offset(x: 10)
+				Divider()
+				HStack {
+					Link("What is LCH color?", destination: "https://lea.verou.me/2020/04/lch-colors-in-css-what-why-and-how/")
+						.controlSize(.small)
+						.padding(.top)
+				}
+					.frame(maxWidth: .infinity)
+			}
+		}
+			.padding(.vertical)
 	}
 }
 
@@ -145,25 +173,14 @@ private struct AdvancedSettings: View {
 				VStack(alignment: .leading) {
 					Defaults.Toggle("Show color sampler when opening window", key: .showColorSamplerOnOpen)
 						.help("Show the color picker loupe when the color picker window is shown.")
+					Defaults.Toggle("Copy color in preferred format after picking", key: .copyColorAfterPicking)
 					Defaults.Toggle("Use larger text in text fields", key: .largerText)
 				}
 					.padding()
 					.padding(.horizontal)
-				Divider()
-				VStack(alignment: .leading) {
-					CopyColorFormatSetting()
-				}
-					.padding()
-					.padding(.horizontal)
-				Divider()
-				VStack(alignment: .leading) {
-					ShownColorFormatsSetting()
-				}
-					.padding()
-					.padding(.horizontal)
-					.offset(x: 20)
 			}
 		}
+			.padding(.vertical)
 			.padding(.vertical)
 	}
 }
@@ -173,13 +190,17 @@ struct SettingsView: View {
 		TabView {
 			GeneralSettings()
 				.settingsTabItem(.general)
+			ColorSettings()
+				.tabItem {
+					Label("Color", systemImage: "drop.fill")
+				}
 			ShortcutsSettings()
 				.settingsTabItem(.shortcuts)
 			AdvancedSettings()
 				.settingsTabItem(.advanced)
 		}
 			.frame(width: 400)
-			.windowLevel(.modalPanel)
+			.windowLevel(.floating + 1) // Ensure it's always above the color picker.
 	}
 }
 

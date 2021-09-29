@@ -6,11 +6,76 @@ import Defaults
 import Regex
 
 
+/*
+Non-reusable utilities
+*/
+
+
+extension NSColor {
+	var hexColorString: String {
+		usingColorSpace(.sRGB)!.format(
+			.hex(
+				isUppercased: Defaults[.uppercaseHexColor],
+				hasPrefix: Defaults[.hashPrefixInHexColor]
+			)
+		)
+	}
+
+	var hslColorString: String {
+		usingColorSpace(.sRGB)!.format(Defaults[.legacyColorSyntax] ? .hslLegacy : .hsl)
+	}
+
+	var rgbColorString: String {
+		usingColorSpace(.sRGB)!.format(Defaults[.legacyColorSyntax] ? .rgbLegacy : .rgb)
+	}
+
+	var lchColorString: String {
+		usingColorSpace(.sRGB)!.format(.lch)
+	}
+
+	var stringRepresentation: String {
+		switch Defaults[.preferredColorFormat] {
+		case .hex:
+			return hexColorString
+		case .hsl:
+			return hslColorString
+		case .rgb:
+			return rgbColorString
+		case .lch:
+			return lchColorString
+		}
+	}
+}
+
+
+extension NSColor {
+	var swatchImage: NSImage {
+		NSImage.color(
+			self,
+			size: CGSize(width: 16, height: 16),
+			borderWidth: 1,
+			borderColor: (SSApp.isDarkMode ? NSColor.white : .black).withAlphaComponent(0.2),
+			cornerRadius: 4
+		)
+	}
+}
+
+
+/*
+---
+*/
+
+
 #if canImport(AppKit)
 typealias XColor = NSColor
 #elseif canImport(UIKit)
 typealias XColor = UIColor
 #endif
+
+
+extension NSAppearance {
+	var isDarkMode: Bool { bestMatch(from: [.darkAqua, .aqua]) == .darkAqua }
+}
 
 
 enum SSApp {
@@ -21,6 +86,8 @@ enum SSApp {
 	static let versionWithBuild = "\(version) (\(build))"
 	static let icon = NSApp.applicationIconImage!
 	static let url = Bundle.main.bundleURL
+
+	static var isDarkMode: Bool { NSApp?.effectiveAppearance.isDarkMode ?? false }
 
 	static func quit() {
 		NSApp.terminate(nil)
@@ -194,6 +261,10 @@ extension NSAttributedString {
 		}
 
 		return result
+	}
+
+	var smallFontSized: NSAttributedString {
+		withFontSizeFast(NSFont.smallSystemFontSize)
 	}
 
 	/// The `.font` attribute for the whole string, falling back to the system font if none.
@@ -1245,6 +1316,25 @@ extension NSMenu {
 		return menuItem
 	}
 
+	/// - Note: It preserves the existing `.font` and other attributes, but makes the font smaller.
+	@discardableResult
+	func addHeader(_ title: NSAttributedString, hasSeparatorAbove: Bool = true) -> NSMenuItem {
+		if hasSeparatorAbove {
+			addSeparator()
+		}
+
+		let menuItem = NSMenuItem()
+		menuItem.isEnabled = false
+		menuItem.attributedTitle = title.smallFontSized
+		addItem(menuItem)
+		return menuItem
+	}
+
+	@discardableResult
+	func addHeader(_ title: String, hasSeparatorAbove: Bool = true) -> NSMenuItem {
+		addHeader(title.attributedString, hasSeparatorAbove: hasSeparatorAbove)
+	}
+
 	@discardableResult
 	func addSettingsItem() -> NSMenuItem {
 		addCallbackItem("Preferences…", key: ",") { _ in
@@ -2268,5 +2358,121 @@ extension Defaults.MultiCheckboxPicker {
 	func onChange(_ action: @escaping (Selection) -> Void) -> Self {
 		onChange = action
 		return self
+	}
+}
+
+
+extension NSImage {
+	/// Draw a color as an image.
+	static func color(
+		_ color: NSColor,
+		size: CGSize,
+		borderWidth: Double = 0,
+		borderColor: NSColor? = nil,
+		cornerRadius: Double? = nil
+	) -> Self {
+		Self(size: size, flipped: false) { bounds in
+			NSGraphicsContext.current?.imageInterpolation = .high
+
+			guard let cornerRadius = cornerRadius else {
+				color.drawSwatch(in: bounds)
+				return true
+			}
+
+			let targetRect = bounds.insetBy(
+				dx: borderWidth,
+				dy: borderWidth
+			)
+
+			let bezierPath = NSBezierPath(
+				roundedRect: targetRect,
+				xRadius: cornerRadius,
+				yRadius: cornerRadius
+			)
+
+			color.set()
+			bezierPath.fill()
+
+			if
+				borderWidth > 0,
+				let borderColor = borderColor
+			{
+				borderColor.setStroke()
+				bezierPath.lineWidth = borderWidth
+				bezierPath.stroke()
+			}
+
+			return true
+		}
+	}
+}
+
+
+extension SSApp {
+	/**
+	This is like `SSApp.runOnce()` but let's you have an else-statement too.
+
+	```
+	if SSApp.runOnceShouldRun(identifier: "foo") {
+		// True only the first time and only once.
+	} else {
+
+	}
+	```
+	*/
+	static func runOnceShouldRun(identifier: String) -> Bool {
+		let key = "SS_App_runOnce__\(identifier)"
+
+		guard !UserDefaults.standard.bool(forKey: key) else {
+			return false
+		}
+
+		UserDefaults.standard.set(true, forKey: key)
+		return true
+	}
+
+	/// Run a closure only once ever, even between relaunches of the app.
+	static func runOnce(identifier: String, _ execute: () -> Void) {
+		guard runOnceShouldRun(identifier: identifier) else {
+			return
+		}
+
+		execute()
+	}
+}
+
+
+extension Sequence where Element: Equatable {
+	/**
+	Returns a new sequence without the elements in the sequence that equals the given element.
+
+	```
+	[1, 2, 1, 2].removingAll(2)
+	//=> [1, 1]
+	```
+	*/
+	func removingAll(_ element: Element) -> [Element] {
+		filter { $0 != element }
+	}
+}
+
+
+extension Collection {
+	func appending(_ newElement: Element) -> [Element] {
+		self + [newElement]
+	}
+}
+
+
+extension Collection {
+	/// Truncate a collection to a certain count by removing elements from the end.
+	func truncatingFromStart(toCount newCount: Int) -> [Element] {
+		let removeCount = count - newCount
+
+		guard removeCount > 0 else {
+			return Array(self)
+		}
+
+		return Array(dropFirst(removeCount))
 	}
 }
