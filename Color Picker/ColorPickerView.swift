@@ -8,7 +8,7 @@ private struct RecentlyPickedColorsButton: View {
 
 	var body: some View {
 		Menu {
-			ForEach(recentlyPickedColors.reversed(), id: \.lchColorString) { color in
+			ForEach(recentlyPickedColors.reversed()) { color in
 				Button {
 					appState.colorPanel.color = color
 				} label: {

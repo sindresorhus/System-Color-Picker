@@ -41,10 +41,19 @@ final class AppState: ObservableObject {
 	private func createMenu() -> NSMenu {
 		let menu = NSMenu()
 
-		menu.addCallbackItem("Pick Color") { [self] _ in
-			pickColor()
+		if Defaults[.menuBarItemClickAction] != .showColorSampler {
+			menu.addCallbackItem("Pick Color") { [self] _ in
+				pickColor()
+			}
+				.setShortcut(for: .pickColor)
 		}
-			.setShortcut(for: .pickColor)
+
+		if Defaults[.menuBarItemClickAction] != .toggleWindow {
+			menu.addCallbackItem("Toggle Window") { [self] _ in
+				colorPanel.toggle()
+			}
+				.setShortcut(for: .toggleWindow)
+		}
 
 		menu.addSeparator()
 
@@ -87,12 +96,31 @@ final class AppState: ObservableObject {
 		$0.button!.onAction { [self] _ in
 			let event = NSApp.currentEvent!
 
-			if event.type == .rightMouseUp {
+			func showMenu() {
 				item.menu = createMenu()
 				item.button!.performClick(nil)
 				item.menu = nil
-			} else {
-				colorPanel.toggle()
+			}
+
+			switch Defaults[.menuBarItemClickAction] {
+			case .showMenu:
+				if event.type == .rightMouseUp {
+					pickColor()
+				} else {
+					showMenu()
+				}
+			case .showColorSampler:
+				if event.type == .rightMouseUp {
+					showMenu()
+				} else {
+					pickColor()
+				}
+			case .toggleWindow:
+				if event.type == .rightMouseUp {
+					showMenu()
+				} else {
+					colorPanel.toggle()
+				}
 			}
 		}
 	}

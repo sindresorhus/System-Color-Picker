@@ -3,32 +3,24 @@ import Defaults
 import LaunchAtLogin
 import KeyboardShortcuts
 
-private struct ShowInMenuBarSetting: View {
-	@State private var isShowingTip = false
+private struct MenuBarItemClickActionSetting: View {
+	@Default(.menuBarItemClickAction) private var menuBarItemClickAction
 
 	var body: some View {
-		Defaults.Toggle("Show in menu bar", key: .showInMenuBar)
-			.onChange {
-				guard $0 else {
-					return
-				}
-
-//				isShowingTip = true
-
-				// TODO: The SwiftUI alert shows multiple times. (macOS 11.6)
-				DispatchQueue.main.async {
-					NSAlert.showModal(
-						title: "Tips",
-						message: "Click the menu bar icon to toggle the color picker window.\n\nRight-click the menu bar icon to quit the app or access the preferences."
-					)
-				}
+		VStack {
+			EnumPicker(
+				enumBinding: $menuBarItemClickAction,
+				label: Text("When clicking menu bar icon:")
+					.respectDisabled()
+					.fixedSize()
+			) { element, _ in
+				Text(element.title)
 			}
-			.alert(isPresented: $isShowingTip) {
-				Alert(
-					title: Text("Tips"),
-					message: Text("Click the menu bar icon to toggle the color picker window.\n\nRight-click the menu bar icon to quit the app or access the preferences.")
-				)
-			}
+				.fixedSize()
+			Text(menuBarItemClickAction.tip)
+				.settingSubtitleTextStyle()
+				.frame(maxWidth: .infinity, alignment: .trailing)
+		}
 	}
 }
 
@@ -70,15 +62,18 @@ private struct GeneralSettings: View {
 	var body: some View {
 		Form {
 			VStack(alignment: .leading) {
-				ShowInMenuBarSetting()
-				LaunchAtLogin.Toggle()
-					.disabled(!showInMenuBar)
-					.help(showInMenuBar ? "" : "There is really no point in launching the app at login if it is not in the menu bar. You can instead just put it in the Dock and launch it when needed.")
-					.padding(.leading, 19)
 				Defaults.Toggle("Stay on top", key: .stayOnTop)
 					.help("Make the color picker window stay on top of all other windows.")
+					.padding(.bottom, 8)
+				Defaults.Toggle("Show in menu bar", key: .showInMenuBar)
+				Group {
+					LaunchAtLogin.Toggle()
+						.help(showInMenuBar ? "" : "There is really no point in launching the app at login if it is not in the menu bar. You can instead just put it in the Dock and launch it when needed.")
+					MenuBarItemClickActionSetting()
+				}
+					.disabled(!showInMenuBar)
+					.padding(.leading, 19)
 			}
-				.offset(x: -40)
 		}
 			.padding()
 			.padding()
@@ -199,7 +194,7 @@ struct SettingsView: View {
 			AdvancedSettings()
 				.settingsTabItem(.advanced)
 		}
-			.frame(width: 400)
+			.frame(width: 420)
 			.windowLevel(.floating + 1) // Ensure it's always above the color picker.
 	}
 }

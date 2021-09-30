@@ -105,6 +105,15 @@ struct AppMain: App {
 				Defaults[.preferredColorFormat] = .lch
 			}
 		}
+
+		// Preserve the old behavior for existing users.
+		SSApp.runOnce(identifier: "setDefaultsForMenuBarItemClickActionSetting") {
+			guard !SSApp.isFirstLaunch else {
+				return
+			}
+
+			Defaults[.menuBarItemClickAction] = .toggleWindow
+		}
 	}
 }
 

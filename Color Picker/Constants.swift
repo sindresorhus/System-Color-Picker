@@ -8,6 +8,7 @@ extension Defaults.Keys {
 	// Settings
 	static let showInMenuBar = Key<Bool>("showInMenuBar", default: false)
 	static let showColorSamplerOnOpen = Key<Bool>("showColorSamplerOnOpen", default: false)
+	static let menuBarItemClickAction = Key<MenuBarItemClickAction>("menuBarItemClickAction", default: .showMenu)
 	static let preferredColorFormat = Key<ColorFormat>("preferredColorFormat", default: .hex)
 	static let stayOnTop = Key<Bool>("stayOnTop", default: true)
 	static let uppercaseHexColor = Key<Bool>("uppercaseHexColor", default: false)
@@ -105,4 +106,30 @@ extension CodableColorFormat: Defaults.CodableType {
 
 extension ColorFormat: Defaults.NativeType {
 	typealias CodableForm = CodableColorFormat
+}
+
+enum MenuBarItemClickAction: String, CaseIterable, Defaults.Serializable {
+	case showMenu
+	case showColorSampler
+	case toggleWindow
+
+	var title: String {
+		switch self {
+		case .showMenu:
+			return "Show menu"
+		case .showColorSampler:
+			return "Show color sampler"
+		case .toggleWindow:
+			return "Toggle window"
+		}
+	}
+
+	var tip: String {
+		switch self {
+		case .showMenu:
+			return "Right-click to show the color sampler"
+		case .showColorSampler, .toggleWindow:
+			return "Right-click to show the menu"
+		}
+	}
 }

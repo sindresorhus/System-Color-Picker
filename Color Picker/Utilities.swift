@@ -2476,3 +2476,38 @@ extension Collection {
 		return Array(dropFirst(removeCount))
 	}
 }
+
+
+extension Collection {
+	var nilIfEmpty: Self? { isEmpty ? nil : self }
+}
+
+
+extension View {
+	func multilineText() -> some View {
+		lineLimit(nil)
+			.fixedSize(horizontal: false, vertical: true)
+	}
+}
+
+
+extension View {
+	func secondaryTextStyle() -> some View {
+		font(.system(size: NSFont.smallSystemFontSize))
+			.foregroundColor(.secondary)
+	}
+}
+
+
+extension View {
+	/// Usually used for a verbose description of a settings item.
+	func settingSubtitleTextStyle() -> some View {
+		secondaryTextStyle()
+			.multilineText()
+	}
+}
+
+
+extension NSColor: Identifiable {
+	public var id: String { "\(rgb.hashValue) - \(colorSpace.localizedName ?? "")" }
+}
