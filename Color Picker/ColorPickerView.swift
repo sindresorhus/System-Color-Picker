@@ -4,7 +4,12 @@ import Defaults
 private struct RecentlyPickedColorsButton: View {
 	@EnvironmentObject private var appState: AppState
 	@Default(.recentlyPickedColors) private var recentlyPickedColors
+
+	// TODO: Find a better way to handle this than having to subscribe to each key.
 	@Default(.preferredColorFormat) private var preferredColorFormat // Only to get updates
+	@Default(.uppercaseHexColor) private var uppercaseHexColor // Only to get updates
+	@Default(.hashPrefixInHexColor) private var hashPrefixInHexColor // Only to get updates
+	@Default(.legacyColorSyntax) private var legacyColorSyntax // Only to get updates
 
 	var body: some View {
 		Menu {
