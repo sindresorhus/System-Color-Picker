@@ -17,12 +17,13 @@ private struct RecentlyPickedColorsButton: View {
 				Button {
 					appState.colorPanel.color = color
 				} label: {
-					// TODO: Using `Label` does not work. (macOS 11.6)
-					HStack {
+					Label {
+						Text(color.stringRepresentation)
+					} icon: {
 						// We don't use SwiftUI here as it only supports showing an actual image. (macOS 11.6)
 						Image(nsImage: color.swatchImage)
-						Text(color.stringRepresentation)
 					}
+						.labelStyle(TitleAndIconLabelStyle())
 				}
 			}
 		} label: {
