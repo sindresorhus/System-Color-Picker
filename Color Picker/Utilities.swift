@@ -10,7 +10,7 @@ import Regex
 Non-reusable utilities
 */
 
-
+#if !APP_EXTENSION
 extension NSColor {
 	var hexColorString: String {
 		usingColorSpace(.sRGB)!.format(
@@ -46,11 +46,11 @@ extension NSColor {
 		}
 	}
 }
-
+#endif
 
 extension NSColor {
 	var swatchImage: NSImage {
-		NSImage.color(
+		.color(
 			self,
 			size: CGSize(width: 16, height: 16),
 			borderWidth: 1,
@@ -71,6 +71,21 @@ typealias XColor = NSColor
 #elseif canImport(UIKit)
 typealias XColor = UIColor
 #endif
+
+
+extension XColor {
+	/**
+	Generate a random color, avoiding black and white.
+	*/
+	static func randomAvoidingBlackAndWhite() -> Self {
+		self.init(
+			hue: .random(in: 0...1),
+			saturation: .random(in: 0.5...1), // 0.5 is to get away from white
+			brightness: .random(in: 0.5...1), // 0.5 is to get away from black
+			alpha: 1
+		)
+	}
+}
 
 
 extension NSAppearance {
@@ -881,7 +896,7 @@ extension DispatchQueue {
 	}
 }
 
-
+#if !APP_EXTENSION
 extension Defaults {
 	final class Observable<Value: Serializable>: ObservableObject {
 		let objectWillChange = ObservableObjectPublisher()
@@ -917,7 +932,7 @@ extension Defaults {
 		}
 	}
 }
-
+#endif
 
 struct NativeTextField: NSViewRepresentable {
 	typealias NSViewType = InternalTextField
@@ -2181,6 +2196,7 @@ extension Numeric {
 }
 
 
+#if !APP_EXTENSION
 extension SSApp {
 	private static let key = Defaults.Key("SSApp_requestReview", default: 0)
 
@@ -2196,6 +2212,7 @@ extension SSApp {
 		SKStoreReviewController.requestReview()
 	}
 }
+#endif
 
 
 /**
@@ -2295,7 +2312,7 @@ struct MultiCheckboxPicker<Data: RandomAccessCollection, ElementLabel: View>: Vi
 				Toggle(isOn: $selection.contains(element)) {
 					elementLabel(element)
 				}
-					.toggleStyle(CheckboxToggleStyle())
+					.toggleStyle(.checkbox)
 			}
 		}
 	}
@@ -2303,6 +2320,7 @@ struct MultiCheckboxPicker<Data: RandomAccessCollection, ElementLabel: View>: Vi
 
 typealias _OriginalMultiCheckboxPicker = MultiCheckboxPicker
 
+#if !APP_EXTENSION
 extension Defaults {
 	/**
 	A picker that supports multiple selections and renders as multiple checkboxes.
@@ -2360,6 +2378,7 @@ extension Defaults.MultiCheckboxPicker {
 		return self
 	}
 }
+#endif
 
 
 extension NSImage {
@@ -2511,3 +2530,15 @@ extension View {
 extension NSColor: Identifiable {
 	public var id: String { "\(rgb.hashValue) - \(colorSpace.localizedName ?? "")" }
 }
+
+
+#if canImport(Intents)
+import Intents
+
+extension NSImage {
+	var inImage: INImage {
+		// `tiffRepresentation` is very unlikely to fail, so we just fall back to an empty image.
+		INImage(imageData: tiffRepresentation ?? Data())
+	}
+}
+#endif

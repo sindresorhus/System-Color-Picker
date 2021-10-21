@@ -20,17 +20,17 @@ private struct RecentlyPickedColorsButton: View {
 					Label {
 						Text(color.stringRepresentation)
 					} icon: {
-						// We don't use SwiftUI here as it only supports showing an actual image. (macOS 11.6)
+						// We don't use SwiftUI here as it only supports showing an actual image. (macOS 12.0)
 						Image(nsImage: color.swatchImage)
 					}
-						.labelStyle(TitleAndIconLabelStyle())
+						.labelStyle(.titleAndIcon)
 				}
 			}
 		} label: {
 			Image(systemName: "clock.fill")
 		}
-			// TODO: Use `.menuIndicator(.hidden)` when using Xcode 13.1.
-			.menuStyle(BorderedButtonMenuStyle())
+			// TODO: Use `.menuIndicator(.hidden)` when targeting macOS 12.
+			.menuStyle(.borderedButton)
 			.fixedSize()
 			.disabled(recentlyPickedColors.isEmpty)
 			.help(recentlyPickedColors.isEmpty ? "No recently picked colors" : "Recently picked colors")

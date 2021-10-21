@@ -25,6 +25,7 @@ Requires macOS 11 or later.
 - Make the window stay on top of all other windows
 - Launch it at login (when in the menu bar)
 - Recently picked colors
+- Shortcuts support
 
 ## Keyboard shortcuts
 
