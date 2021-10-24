@@ -8,13 +8,12 @@ private struct MenuBarItemClickActionSetting: View {
 
 	var body: some View {
 		VStack {
-			EnumPicker(
-				enumBinding: $menuBarItemClickAction,
-				label: Text("When clicking menu bar icon:")
+			EnumPicker(enumBinding: $menuBarItemClickAction) { element, _ in
+				Text(element.title)
+			} label: {
+				Text("When clicking menu bar icon:")
 					.respectDisabled()
 					.fixedSize()
-			) { element, _ in
-				Text(element.title)
 			}
 				.fixedSize()
 			Text(menuBarItemClickAction.tip)
@@ -28,12 +27,11 @@ private struct PreferredColorFormatSetting: View {
 	@Default(.preferredColorFormat) private var preferredColorFormat
 
 	var body: some View {
-		EnumPicker(
-			enumBinding: $preferredColorFormat,
-			label: Text("Preferred color format:")
-				.fixedSize()
-		) { element, _ in
+		EnumPicker(enumBinding: $preferredColorFormat) { element, _ in
 			Text(element.title)
+		} label: {
+			Text("Preferred color format:")
+				.fixedSize()
 		}
 			.fixedSize()
 	}

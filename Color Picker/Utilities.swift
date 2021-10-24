@@ -22,15 +22,16 @@ extension NSColor {
 	}
 
 	var hslColorString: String {
-		usingColorSpace(.sRGB)!.format(Defaults[.legacyColorSyntax] ? .hslLegacy : .hsl)
+		usingColorSpace(.sRGB)!.format(Defaults[.legacyColorSyntax] ? .cssHSLLegacy : .cssHSL)
 	}
 
 	var rgbColorString: String {
-		usingColorSpace(.sRGB)!.format(Defaults[.legacyColorSyntax] ? .rgbLegacy : .rgb)
+		usingColorSpace(.sRGB)!.format(Defaults[.legacyColorSyntax] ? .cssRGBLegacy : .cssRGB)
 	}
 
 	var lchColorString: String {
-		usingColorSpace(.sRGB)!.format(.lch)
+		usingColorSpace(.sRGB)!.format(.cssLCH)
+	}
 	}
 
 	var stringRepresentation: String {
@@ -145,7 +146,9 @@ enum SSApp {
 
 
 extension SSApp {
-	/// Manually show the SwiftUI settings window.
+	/**
+	Manually show the SwiftUI settings window.
+	*/
 	static func showSettingsWindow() {
 		if NSApp.activationPolicy() == .accessory {
 			NSApp.activate(ignoringOtherApps: true)
@@ -157,7 +160,9 @@ extension SSApp {
 		}
 	}
 
-	/// The SwiftUI settings window.
+	/**
+	The SwiftUI settings window.
+	*/
 	static var settingsWindow: NSWindow? {
 		NSApp.windows.first { $0.frameAutosaveName == "com_apple_SwiftUI_Settings_window" }
 	}
@@ -253,7 +258,9 @@ extension String {
 
 
 extension NSAttributedString {
-	/// Returns a `NSMutableAttributedString` version.
+	/**
+	Returns a `NSMutableAttributedString` version.
+	*/
 	func mutable() -> NSMutableAttributedString {
 		// Force-casting here is safe as it can only be nil if there's no `mutableCopy` implementation, but we know there is for `NSMutableAttributedString`.
 		// swiftlint:disable:next force_cast
@@ -262,7 +269,9 @@ extension NSAttributedString {
 
 	var nsRange: NSRange { NSRange(0..<length) }
 
-	/// Get an attribute if it applies to the whole string.
+	/**
+	Get an attribute if it applies to the whole string.
+	*/
 	func attributeForWholeString(_ key: Key) -> Any? {
 		guard length > 0 else {
 			return nil
@@ -282,13 +291,18 @@ extension NSAttributedString {
 		withFontSizeFast(NSFont.smallSystemFontSize)
 	}
 
-	/// The `.font` attribute for the whole string, falling back to the system font if none.
-	/// - Note: It even handles if half the string has one attribute and the other half has another, as long as those attributes are identical.
+	/**
+	The `.font` attribute for the whole string, falling back to the system font if none.
+
+	- Note: It even handles if half the string has one attribute and the other half has another, as long as those attributes are identical.
+	*/
 	var font: NSFont {
 		attributeForWholeString(.font) as? NSFont ?? .systemFont(ofSize: NSFont.systemFontSize)
 	}
 
-	/// - Important: This does not preserve font-related styles like bold and italic.
+	/**
+	- Important: This does not preserve font-related styles like bold and italic.
+	*/
 	func withFontSizeFast(_ fontSize: Double) -> NSAttributedString {
 		addingAttributes([.font: font.withSize(fontSize)])
 	}
@@ -299,7 +313,9 @@ extension NSAttributedString {
 		return new
 	}
 
-	/// - Important: This does not preserve font-related styles like bold and italic.
+	/**
+	- Important: This does not preserve font-related styles like bold and italic.
+	*/
 	func withFont(_ font: NSFont) -> NSAttributedString {
 		addingAttributes([.font: font])
 	}
@@ -476,7 +492,9 @@ extension NSColor {
 
 
 extension NSColor {
-	/// - Important: Ensure you use a compatible color space, otherwise it will just be black.
+	/**
+	- Important: Ensure you use a compatible color space, otherwise it will just be black.
+	*/
 	var hsl: Colors.HSL {
 		let hsb = hsb
 
@@ -569,7 +587,9 @@ extension NSColor {
 	// TODO: Should I move this to the `Colors.HSL` struct instead?
 	// TODO: Support `alpha` in HSL (both comma and `/` separated): https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/hsl()
 	// TODO: Write a lot of tests for the regex.
-	/// Assumes `sRGB` color space.
+	/**
+	Assumes `sRGB` color space.
+	*/
 	convenience init?(cssHSLString: String) {
 		guard
 			let match = Self.cssHSLRegex.firstMatch(in: cssHSLString),
@@ -604,7 +624,9 @@ extension NSColor {
 	// TODO: Support `alpha` in RGB (both comma and `/` separated): https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/hsl()
 	// TODO: Write a lot of tests for the regex.
 	// Fixture: rgb(27.59% 41.23% 100%)
-	/// Assumes `sRGB` color space.
+	/**
+	Assumes `sRGB` color space.
+	*/
 	convenience init?(cssRGBString: String) {
 		guard
 			let match = Self.cssRGBRegex.firstMatch(in: cssRGBString),
@@ -637,7 +659,9 @@ extension NSColor {
 
 	// TODO: Support `alpha`, both percentage and float format. Right now we accept such colors, but ignore the alpha.
 	// TODO: Write a lot of tests for the regex.
-	/// Assumes `sRGB` color space.
+	/**
+	Assumes `sRGB` color space.
+	*/
 	convenience init?(cssLCHString: String) {
 		guard
 			let match = Self.cssLCHRegex.firstMatch(in: cssLCHString),
@@ -790,14 +814,16 @@ extension NSColor {
 extension NSColor {
 	enum ColorStringFormat {
 		case hex(isUppercased: Bool = false, hasPrefix: Bool = false)
-		case hsl
-		case rgb
-		case lch
-		case hslLegacy
-		case rgbLegacy
+		case cssHSL
+		case cssRGB
+		case cssLCH
+		case cssHSLLegacy
+		case cssRGBLegacy
 	}
 
-	/// Format the color to a string using the given format.
+	/**
+	Format the color to a string using the given format.
+	*/
 	func format(_ format: ColorStringFormat) -> String {
 		switch format {
 		case .hex(let isUppercased, let hasPrefix):
@@ -812,33 +838,31 @@ extension NSColor {
 			}
 
 			return string
-		case .hsl:
+		case .cssHSL:
 			let hsl = hsl
 			let hue = Int((hsl.hue * 360).rounded())
 			let saturation = Int((hsl.saturation * 100).rounded())
 			let lightness = Int((hsl.lightness * 100).rounded())
 			return String(format: "hsl(%ddeg %d%% %d%%)", hue, saturation, lightness)
-		case .rgb:
+		case .cssRGB:
 			let rgb = rgb
 			let red = Int((rgb.red * 0xFF).rounded())
 			let green = Int((rgb.green * 0xFF).rounded())
 			let blue = Int((rgb.blue * 0xFF).rounded())
 			return String(format: "rgb(%d %d %d)", red, green, blue)
-		case .lch:
+		case .cssLCH:
 			let lch = rgb.toLCH()
-			print("RGB", rgb)
-			print("LCH", lch)
 			let lightness = Int(lch.lightness.rounded())
 			let chroma = Int(lch.chroma.rounded())
 			let hue = Int(lch.hue.rounded())
 			return String(format: "lch(%d%% %d %ddeg)", lightness, chroma, hue)
-		case .hslLegacy:
+		case .cssHSLLegacy:
 			let hsl = hsl
 			let hue = Int((hsl.hue * 360).rounded())
 			let saturation = Int((hsl.saturation * 100).rounded())
 			let lightness = Int((hsl.lightness * 100).rounded())
 			return String(format: "hsl(%d, %d%%, %d%%)", hue, saturation, lightness)
-		case .rgbLegacy:
+		case .cssRGBLegacy:
 			let rgb = rgb
 			let red = Int((rgb.red * 0xFF).rounded())
 			let green = Int((rgb.green * 0xFF).rounded())
@@ -850,7 +874,9 @@ extension NSColor {
 
 
 extension StringProtocol {
-	/// Makes it easier to deal with optional SubStrings.
+	/**
+	Makes it easier to deal with optional sub-strings.
+	*/
 	var string: String { String(self) }
 }
 
@@ -873,12 +899,16 @@ extension String {
 
 // swiftlint:disable:next no_cgfloat
 extension CGFloat {
-	/// Get a Double from a CGFloat. This makes it easier to work with optionals.
+	/**
+	Get a Double from a CGFloat. This makes it easier to work with optionals.
+	*/
 	var double: Double { Double(self) }
 }
 
 extension Int {
-	/// Get a Double from an Int. This makes it easier to work with optionals.
+	/**
+	Get a Double from an Int. This makes it easier to work with optionals.
+	*/
 	var double: Double { Double(self) }
 }
 
@@ -926,7 +956,9 @@ extension Defaults {
 				}
 		}
 
-		/// Reset the key back to its default value.
+		/**
+		Reset the key back to its default value.
+		*/
 		func reset() {
 			key.reset()
 		}
@@ -1078,7 +1110,9 @@ struct NativeTextField: NSViewRepresentable {
 
 
 extension NSColorPanel {
-	/// Show the color sampler.
+	/**
+	Show the color sampler.
+	*/
 	func showColorSampler() {
 		// "_magnify:"
 		let selector = String(":yfingam_".reversed())
@@ -1101,7 +1135,9 @@ extension NSColorPanel {
 
 
 extension NSAlert {
-	/// Show an alert as a window-modal sheet, or as an app-modal (window-indepedendent) alert if the window is `nil` or not given.
+	/**
+	Show an alert as a window-modal sheet, or as an app-modal (window-indepedendent) alert if the window is `nil` or not given.
+	*/
 	@discardableResult
 	static func showModal(
 		for window: NSWindow? = nil,
@@ -1121,8 +1157,11 @@ extension NSAlert {
 			.runModal(for: window)
 	}
 
-	/// The index in the `buttonTitles` array for the button to use as default.
-	/// Set `-1` to not have any default. Useful for really destructive actions.
+	/**
+	The index in the `buttonTitles` array for the button to use as default.
+
+	Set `-1` to not have any default. Useful for really destructive actions.
+	*/
 	var defaultButtonIndex: Int {
 		get {
 			buttons.firstIndex { $0.keyEquivalent == "\r" } ?? -1
@@ -1161,7 +1200,9 @@ extension NSAlert {
 		}
 	}
 
-	/// Runs the alert as a window-modal sheet, or as an app-modal (window-indepedendent) alert if the window is `nil` or not given.
+	/**
+	Runs the alert as a window-modal sheet, or as an app-modal (window-indepedendent) alert if the window is `nil` or not given.
+	*/
 	@discardableResult
 	func runModal(for window: NSWindow? = nil) -> NSApplication.ModalResponse {
 		guard let window = window else {
@@ -1175,7 +1216,9 @@ extension NSAlert {
 		return NSApp.runModal(for: window)
 	}
 
-	/// Adds buttons with the given titles to the alert.
+	/**
+	Adds buttons with the given titles to the alert.
+	*/
 	func addButtons(withTitles buttonTitles: [String]) {
 		for buttonTitle in buttonTitles {
 			addButton(withTitle: buttonTitle)
@@ -1185,8 +1228,10 @@ extension NSAlert {
 
 
 extension View {
+	/**
+	Make the view subscribe to the given notification.
+	*/
 	func onNotification(
-		/// Make the view subscribe to the given notification.
 		_ name: Notification.Name,
 		object: AnyObject? = nil,
 		perform action: @escaping (Notification) -> Void
@@ -1331,7 +1376,9 @@ extension NSMenu {
 		return menuItem
 	}
 
-	/// - Note: It preserves the existing `.font` and other attributes, but makes the font smaller.
+	/**
+	- Note: It preserves the existing `.font` and other attributes, but makes the font smaller.
+	*/
 	@discardableResult
 	func addHeader(_ title: NSAttributedString, hasSeparatorAbove: Bool = true) -> NSMenuItem {
 		if hasSeparatorAbove {
@@ -1381,16 +1428,21 @@ private struct RespectDisabledViewModifier: ViewModifier {
 }
 
 extension Text {
-	/// Make some text respect the current view environment being disabled.
-	/// Useful for `Text` label to a control.
+	/**
+	Make some text respect the current view environment being disabled.
+
+	Useful for `Text` label to a control.
+	*/
 	func respectDisabled() -> some View {
 		modifier(RespectDisabledViewModifier())
 	}
 }
 
 
-/// Convenience for opening URLs.
 extension URL {
+	/**
+	Convenience for opening URLs.
+	*/
 	func open() {
 		NSWorkspace.shared.open(self)
 	}
@@ -1471,7 +1523,9 @@ private struct WindowAccessor: NSViewRepresentable {
 }
 
 extension View {
-	/// Bind the native backing-window of a SwiftUI window to a property.
+	/**
+	Bind the native backing-window of a SwiftUI window to a property.
+	*/
 	func bindNativeWindow(_ window: Binding<NSWindow?>) -> some View {
 		background(WindowAccessor(window))
 	}
@@ -1491,12 +1545,16 @@ private struct WindowViewModifier: ViewModifier {
 }
 
 extension View {
-	/// Access the native backing-window of a SwiftUI window.
+	/**
+	Access the native backing-window of a SwiftUI window.
+	*/
 	func accessNativeWindow(_ onWindow: @escaping (NSWindow?) -> Void) -> some View {
 		modifier(WindowViewModifier(onWindow: onWindow))
 	}
 
-	/// Set the window level of a SwiftUI window.
+	/**
+	Set the window level of a SwiftUI window.
+	*/
 	func windowLevel(_ level: NSWindow.Level) -> some View {
 		accessNativeWindow {
 			$0?.level = level
@@ -1506,7 +1564,9 @@ extension View {
 
 
 extension NSView {
-	/// Get a subview matching a condition.
+	/**
+	Get a subview matching a condition.
+	*/
 	func firstSubview(deep: Bool = false, where matches: (NSView) -> Bool) -> NSView? {
 		for subview in subviews {
 			if matches(subview) {
@@ -1525,16 +1585,22 @@ extension NSView {
 
 extension NSObject {
 	// Note: It's intentionally a getter to get the dynamic self.
-	/// Returns the class name without module name.
+	/**
+	Returns the class name without module name.
+	*/
 	static var simpleClassName: String { String(describing: self) }
 
-	/// Returns the class name of the instance without module name.
+	/**
+	Returns the class name of the instance without module name.
+	*/
 	var simpleClassName: String { Self.simpleClassName }
 }
 
 
 enum SSPublishers {
-	/// Publishes when the app becomes active/inactive.
+	/**
+	Publishes when the app becomes active/inactive.
+	*/
 	static var appIsActive: AnyPublisher<Bool, Never> {
 		Publishers.Merge(
 			NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
@@ -1609,7 +1675,9 @@ extension View {
 
 
 extension NSPasteboard {
-	/// Returns a publisher that emits when the pasteboard changes.
+	/**
+	Returns a publisher that emits when the pasteboard changes.
+	*/
 	var simplePublisher: AnyPublisher<Void, Never> {
 		Timer.publish(every: 0.2, tolerance: 0.1, on: .main, in: .common)
 			.autoconnect()
@@ -1624,7 +1692,9 @@ extension NSPasteboard {
 }
 
 extension NSPasteboard {
-	/// An observable object that publishes updates when the given pasteboard changes.
+	/**
+	An observable object that publishes updates when the given pasteboard changes.
+	*/
 	final class SimpleObservable: ObservableObject {
 		private var cancellables = Set<AnyCancellable>()
 		private var pasteboardPublisherCancellable: AnyCancellable?
@@ -1811,15 +1881,18 @@ struct ContentView: View {
 */
 struct EnumPicker<Enum, Label, Content>: View where Enum: CaseIterable & Equatable, Enum.AllCases.Index: Hashable, Label: View, Content: View {
 	let enumBinding: Binding<Enum>
-	let label: Label
 	@ViewBuilder let content: (Enum, Bool) -> Content
+	@ViewBuilder let label: () -> Label
 
 	var body: some View {
-		Picker(selection: enumBinding.caseIndex, label: label) {
+		Picker(selection: enumBinding.caseIndex) {
 			ForEach(Array(Enum.allCases).indexed(), id: \.0) { index, element in
+				// TODO: Is `isSelected` really useful? If not, remove it.
 				content(element, element == enumBinding.wrappedValue)
 					.tag(index)
 			}
+		} label: {
+			label()
 		}
 	}
 }
@@ -1831,8 +1904,8 @@ extension EnumPicker where Label == Text {
 		@ViewBuilder content: @escaping (Enum, Bool) -> Content
 	) where S: StringProtocol {
 		self.enumBinding = enumBinding
-		self.label = Text(title)
 		self.content = content
+		self.label = { Text(title) }
 	}
 }
 
@@ -1866,22 +1939,32 @@ extension Colors {
 	}
 
 	struct LCH: Hashable {
-		/// Range: `0...100`
+		/**
+		Range: `0...100`
+		*/
 		let lightness: Double
 
-		/// Range: `0...132` *(Could be higher)*
+		/**
+		Range: `0...132` *(Could be higher)*
+		*/
 		let chroma: Double
 
-		/// Range: `0...360`
+		/**
+		Range: `0...360`
+		*/
 		let hue: Double
 
-		/// Range: `0...1`
+		/**
+		Range: `0...1`
+		*/
 		let alpha: Double
 	}
 }
 
 extension XColor {
-	/// Initialize from a `RGB` color.
+	/**
+	Initialize from a `RGB` color.
+	*/
 	convenience init(_ rgbColor: Colors.RGB) {
 		self.init(
 			red: rgbColor.red,
@@ -1893,7 +1976,9 @@ extension XColor {
 }
 
 extension Colors.RGB {
-	/// Convert sRGB to LCH.
+	/**
+	Convert sRGB to LCH.
+	*/
 	func toLCH() -> Colors.LCH {
 		// Algorithm: https://www.w3.org/TR/css-color-4/#rgb-to-lab
 
@@ -1927,7 +2012,9 @@ extension Colors.RGB {
 }
 
 extension Colors.LCH {
-	/// Convert LCH to sRGB.
+	/**
+	Convert LCH to sRGB.
+	*/
 	func toRGB() -> Colors.RGB {
 		// Algorithm: https://www.w3.org/TR/css-color-4/#lab-to-rgb
 
@@ -2168,7 +2255,9 @@ enum SettingsTabType {
 }
 
 extension View {
-	/// Make the view a settings tab of the given type.
+	/**
+	Make the view a settings tab of the given type.
+	*/
 	func settingsTabItem(_ type: SettingsTabType) -> some View {
 		tabItem { type.label }
 	}
@@ -2200,7 +2289,9 @@ extension Numeric {
 extension SSApp {
 	private static let key = Defaults.Key("SSApp_requestReview", default: 0)
 
-	/// Requests a review only after this method has been called the given amount of times.
+	/**
+	Requests a review only after this method has been called the given amount of times.
+	*/
 	static func requestReviewAfterBeingCalledThisManyTimes(_ counts: [Int]) {
 		guard
 			!SSApp.isFirstLaunch,
@@ -2372,7 +2463,9 @@ extension Defaults {
 }
 
 extension Defaults.MultiCheckboxPicker {
-	/// Do something when the value changes to a different value.
+	/**
+	Do something when the value changes to a different value.
+	*/
 	func onChange(_ action: @escaping (Selection) -> Void) -> Self {
 		onChange = action
 		return self
@@ -2382,7 +2475,9 @@ extension Defaults.MultiCheckboxPicker {
 
 
 extension NSImage {
-	/// Draw a color as an image.
+	/**
+	Draw a color as an image.
+	*/
 	static func color(
 		_ color: NSColor,
 		size: CGSize,
@@ -2450,7 +2545,9 @@ extension SSApp {
 		return true
 	}
 
-	/// Run a closure only once ever, even between relaunches of the app.
+	/**
+	Run a closure only once ever, even between relaunches of the app.
+	*/
 	static func runOnce(identifier: String, _ execute: () -> Void) {
 		guard runOnceShouldRun(identifier: identifier) else {
 			return
@@ -2484,7 +2581,9 @@ extension Collection {
 
 
 extension Collection {
-	/// Truncate a collection to a certain count by removing elements from the end.
+	/**
+	Truncate a collection to a certain count by removing elements from the end.
+	*/
 	func truncatingFromStart(toCount newCount: Int) -> [Element] {
 		let removeCount = count - newCount
 
@@ -2519,7 +2618,9 @@ extension View {
 
 
 extension View {
-	/// Usually used for a verbose description of a settings item.
+	/**
+	Usually used for a verbose description of a settings item.
+	*/
 	func settingSubtitleTextStyle() -> some View {
 		secondaryTextStyle()
 			.multilineText()

@@ -4,26 +4,22 @@ import Intents
 extension Color_ {
 	fileprivate convenience init(_ nsColor: NSColor) {
 		let sRGBColor = nsColor.usingColorSpace(.sRGB)!
-
-		let thumbnail = NSImage.color(
-			nsColor,
-			size: CGSize(width: 1, height: 1)
-		)
+		let thumbnail = NSImage.color(nsColor, size: CGSize(width: 1, height: 1))
 
 		self.init(
 			identifier: "color",
 			display: sRGBColor.hexString,
-			subtitle: sRGBColor.format(.rgb),
+			subtitle: sRGBColor.format(.cssRGB),
 			image: thumbnail.inImage
 		)
 
 		self.hex = sRGBColor.format(.hex())
 		self.hexNumber = sRGBColor.hex as NSNumber
-		self.hsl = sRGBColor.format(.hsl)
-		self.rgb = sRGBColor.format(.rgb)
-		self.lch = nsColor.format(.lch)
-		self.hslLegacy = sRGBColor.format(.hslLegacy)
-		self.rgbLegacy = sRGBColor.format(.rgbLegacy)
+		self.hsl = sRGBColor.format(.cssHSL)
+		self.rgb = sRGBColor.format(.cssRGB)
+		self.lch = nsColor.format(.cssLCH)
+		self.hslLegacy = sRGBColor.format(.cssHSLLegacy)
+		self.rgbLegacy = sRGBColor.format(.cssRGBLegacy)
 	}
 }
 

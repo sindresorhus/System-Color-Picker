@@ -9,7 +9,7 @@
 	<key>INIntentDefinitionNamespace</key>
 	<string>cTK6qm</string>
 	<key>INIntentDefinitionSystemVersion</key>
-	<string>21A5552a</string>
+	<string>21A559</string>
 	<key>INIntentDefinitionToolsBuildVersion</key>
 	<string>13A1030d</string>
 	<key>INIntentDefinitionToolsVersion</key>
@@ -154,7 +154,7 @@
 				</array>
 			</dict>
 			<key>INIntentTitle</key>
-			<string>Get Random Color</string>
+			<string>Random Color</string>
 			<key>INIntentTitleID</key>
 			<string>3RA5pB</string>
 			<key>INIntentType</key>
