@@ -32,6 +32,9 @@ extension NSColor {
 	var lchColorString: String {
 		usingColorSpace(.sRGB)!.format(.cssLCH)
 	}
+
+	var hsbColorString: String {
+		format(.hsb)
 	}
 
 	var stringRepresentation: String {
@@ -462,6 +465,38 @@ extension NSColor {
 extension NSColor {
 	typealias HSB = (hue: Double, saturation: Double, brightness: Double, alpha: Double)
 
+	/**
+	This preserves the original color space as long as it is RGB, otherwise, it is normalized to extended sRGB.
+	*/
+	var hsbRaw: HSB {
+		var color = self
+
+		if colorSpace.colorSpaceModel != .rgb {
+			guard let color_ = usingColorSpace(.extendedSRGB) else {
+				assertionFailure("Unsupported color space")
+				return HSB(0, 0, 0, 0)
+			}
+
+			color = color_
+		}
+
+		// swiftlint:disable no_cgfloat
+		var hue: CGFloat = 0
+		var saturation: CGFloat = 0
+		var brightness: CGFloat = 0
+		var alpha: CGFloat = 0
+		// swiftlint:enable no_cgfloat
+
+		color.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha)
+
+		return HSB(
+			hue: hue.double,
+			saturation: saturation.double,
+			brightness: brightness.double,
+			alpha: alpha.double
+		)
+	}
+
 	var hsb: HSB {
 		#if canImport(AppKit)
 		guard let color = usingColorSpace(.extendedSRGB) else {
@@ -819,6 +854,7 @@ extension NSColor {
 		case cssLCH
 		case cssHSLLegacy
 		case cssRGBLegacy
+		case hsb
 	}
 
 	/**
@@ -868,6 +904,12 @@ extension NSColor {
 			let green = Int((rgb.green * 0xFF).rounded())
 			let blue = Int((rgb.blue * 0xFF).rounded())
 			return String(format: "rgb(%d, %d, %d)", red, green, blue)
+		case .hsb:
+			let hsb = hsbRaw // We use the current color space.
+			let hue = Int((hsb.hue * 360).rounded())
+			let saturation = Int((hsb.saturation * 100).rounded())
+			let brightness = Int((hsb.brightness * 100).rounded())
+			return String(format: "%d %d%% %d%%", hue, saturation, brightness)
 		}
 	}
 }
@@ -2643,3 +2685,64 @@ extension NSImage {
 	}
 }
 #endif
+
+
+// TODO: Remove when targeting macOS 12.
+extension View {
+	func overlay2<Overlay: View>(
+		alignment: Alignment = .center,
+		@ViewBuilder content: () -> Overlay
+	) -> some View {
+		overlay(ZStack(content: content), alignment: alignment)
+	}
+
+	func background2<V: View>(
+		alignment: Alignment = .center,
+		@ViewBuilder content: () -> V
+	) -> some View {
+		background(ZStack(content: content), alignment: alignment)
+	}
+}
+
+
+extension Shape where Self == Rectangle {
+	static var rectangle: Self { .init() }
+}
+
+extension Shape where Self == Circle {
+	static var circle: Self { .init() }
+}
+
+extension Shape where Self == Capsule {
+	static var capsule: Self { .init() }
+}
+
+extension Shape where Self == Ellipse {
+	static var ellipse: Self { .init() }
+}
+
+extension Shape where Self == ContainerRelativeShape {
+	static var containerRelative: Self { .init() }
+}
+
+extension Shape where Self == RoundedRectangle {
+	static func roundedRectangle(cornerRadius: Double, style: RoundedCornerStyle = .circular) -> Self {
+		.init(cornerRadius: cornerRadius, style: style)
+	}
+
+	static func roundedRectangle(cornerSize: CGSize, style: RoundedCornerStyle = .circular) -> Self {
+		.init(cornerSize: cornerSize, style: style)
+	}
+}
+
+
+extension View {
+	@ViewBuilder
+	func menuIndicatorHidden() -> some View {
+		if #available(macOS 12, *) {
+			menuIndicator(.hidden)
+		} else {
+			self
+		}
+	}
+}

@@ -26,47 +26,89 @@ private struct RecentlyPickedColorsButton: View {
 						.labelStyle(.titleAndIcon)
 				}
 			}
+				// Without, it becomes disabled. (macOS 12.0.1)
+				.buttonStyle(.automatic)
 		} label: {
 			Image(systemName: "clock.fill")
+				.controlSize(.large)
+//				.padding(8) // Has no effect. (macOS 12.0.1)
+				.contentShape(.rectangle)
 		}
-			// TODO: Use `.menuIndicator(.hidden)` when targeting macOS 12.
-			.menuStyle(.borderedButton)
+			.menuIndicatorHidden()
+			.padding(8)
 			.fixedSize()
+			.opacity(0.6) // Try to match the other buttons.
 			.disabled(recentlyPickedColors.isEmpty)
 			.help(recentlyPickedColors.isEmpty ? "No recently picked colors" : "Recently picked colors")
 	}
 }
 
 private struct BarView: View {
+	@Environment(\.colorScheme) private var colorScheme
 	@EnvironmentObject private var appState: AppState
 	@StateObject private var pasteboardObserver = NSPasteboard.SimpleObservable(.general).stop()
 
 	var body: some View {
-		HStack {
+		HStack(spacing: 12) {
 			Button {
 				appState.pickColor()
 			} label: {
 				Image(systemName: "eyedropper")
+					.font(.system(size: 14).bold())
+					.padding(8)
 			}
+				.contentShape(.rectangle)
 				.help("Pick color")
 				.keyboardShortcut("p")
+				.padding(.leading, 4)
 			Button {
 				appState.pasteColor()
 			} label: {
 				Image(systemName: "paintbrush.fill")
+					.padding(8)
 			}
+				.contentShape(.rectangle)
 				.help("Paste color in the format Hex, HSL, RGB, or LCH")
 				.keyboardShortcut("V")
 				.disabled(NSColor.fromPasteboardGraceful(.general) == nil)
 			RecentlyPickedColorsButton()
+			moreButton
 			Spacer()
 		}
+			// Cannot do this as the `Menu` buttons don't respect it. (macOS 12.0.1)
+//			.font(.title3)
+			.background2 {
+				RoundedRectangle(cornerRadius: 6, style: .continuous)
+					.fill(Color.black.opacity(colorScheme == .dark ? 0.17 : 0.05))
+			}
+			.padding(.vertical, 4)
+			.buttonStyle(.borderless)
+			.menuStyle(.borderlessButton)
 			.onAppearOnScreen {
 				pasteboardObserver.start()
 			}
 			.onDisappearFromScreen {
 				pasteboardObserver.stop()
 			}
+	}
+
+	private var moreButton: some View {
+		Menu {
+			Button("Copy as HSB") {
+				appState.colorPanel.color.hsbColorString.copyToPasteboard()
+			}
+				// Without, it becomes disabled. (macOS 12.0.1)
+				.buttonStyle(.automatic)
+		} label: {
+			Label("More", systemImage: "ellipsis.circle.fill")
+				.labelStyle(.iconOnly)
+//				.padding(8) // Has no effect. (macOS 12.0.1)
+		}
+			.padding(8)
+			.contentShape(.rectangle)
+			.fixedSize()
+			.opacity(0.6) // Try to match the other buttons.
+			.menuIndicatorHidden()
 	}
 }
 
@@ -89,6 +131,7 @@ struct ColorPickerView: View {
 
 	private var hexColorView: some View {
 		HStack {
+			// TODO: When I use `TextField`, add the copy button using `.safeAreaInset()`.
 			NativeTextField(
 				text: $hexColor,
 				placeholder: "Hex",
@@ -113,8 +156,9 @@ struct ColorPickerView: View {
 				hexColor.copyToPasteboard()
 			} label: {
 				Image(systemName: "doc.on.doc.fill")
-					.controlSize(.small)
 			}
+				.buttonStyle(.borderless)
+				.contentShape(.rectangle)
 				.keyboardShortcut("H")
 		}
 	}
@@ -145,8 +189,9 @@ struct ColorPickerView: View {
 				hslColor.copyToPasteboard()
 			} label: {
 				Image(systemName: "doc.on.doc.fill")
-					.controlSize(.small)
 			}
+				.buttonStyle(.borderless)
+				.contentShape(.rectangle)
 				.keyboardShortcut("S")
 		}
 	}
@@ -177,8 +222,9 @@ struct ColorPickerView: View {
 				rgbColor.copyToPasteboard()
 			} label: {
 				Image(systemName: "doc.on.doc.fill")
-					.controlSize(.small)
 			}
+				.buttonStyle(.borderless)
+				.contentShape(.rectangle)
 				.keyboardShortcut("R")
 		}
 	}
@@ -209,8 +255,9 @@ struct ColorPickerView: View {
 				lchColor.copyToPasteboard()
 			} label: {
 				Image(systemName: "doc.on.doc.fill")
-					.controlSize(.small)
 			}
+				.buttonStyle(.borderless)
+				.contentShape(.rectangle)
 				.keyboardShortcut("L")
 		}
 	}
@@ -295,6 +342,6 @@ struct ColorPickerView: View {
 
 struct ColorPickerView_Previews: PreviewProvider {
 	static var previews: some View {
-		ColorPickerView(colorPanel: NSColorPanel.shared)
+		ColorPickerView(colorPanel: .shared)
 	}
 }

@@ -626,7 +626,7 @@
 			repositoryURL = "https://github.com/sindresorhus/Regex";
 			requirement = {
 				kind = upToNextMinorVersion;
-				minimumVersion = 0.1.1;
+				minimumVersion = 1.0.0;
 			};
 		};
 		E394DAAC263E95D900F5B042 /* XCRemoteSwiftPackageReference "LaunchAtLogin" */ = {
@@ -634,7 +634,7 @@
 			repositoryURL = "https://github.com/sindresorhus/LaunchAtLogin";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 4.1.0;
+				minimumVersion = 4.2.0;
 			};
 		};
 		E394DAB0263E965500F5B042 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
@@ -642,7 +642,7 @@
 			repositoryURL = "https://github.com/sindresorhus/KeyboardShortcuts";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.2.1;
+				minimumVersion = 1.3.0;
 			};
 		};
 		E3E14060259A0D97004FC89F /* XCRemoteSwiftPackageReference "Defaults" */ = {
@@ -650,7 +650,7 @@
 			repositoryURL = "https://github.com/sindresorhus/Defaults";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 5.0.0;
+				minimumVersion = 6.1.0;
 			};
 		};
 		E3E9F9AB2642B75100AE6450 /* XCRemoteSwiftPackageReference "appcenter-sdk-apple" */ = {
