@@ -77,6 +77,11 @@ typealias XColor = UIColor
 #endif
 
 
+func delay(seconds: TimeInterval, closure: @escaping () -> Void) {
+	DispatchQueue.main.asyncAfter(deadline: .now() + seconds, execute: closure)
+}
+
+
 extension XColor {
 	/**
 	Generate a random color, avoiding black and white.
@@ -109,7 +114,18 @@ enum SSApp {
 	static var isDarkMode: Bool { NSApp?.effectiveAppearance.isDarkMode ?? false }
 
 	static func quit() {
-		NSApp.terminate(nil)
+		DispatchQueue.main.async {
+			NSApp.terminate(nil)
+		}
+	}
+
+	static func relaunch() {
+		let configuration = NSWorkspace.OpenConfiguration()
+		configuration.createsNewApplicationInstance = true
+
+		NSWorkspace.shared.openApplication(at: url, configuration: configuration) { _, _ in
+			quit()
+		}
 	}
 
 	static let isFirstLaunch: Bool = {
@@ -2744,5 +2760,23 @@ extension View {
 		} else {
 			self
 		}
+	}
+}
+
+
+extension View {
+	/**
+	This allows multiple alerts on a single view, which `.alert()` doesn't.
+	*/
+	func alert2(
+		isPresented: Binding<Bool>,
+		content: @escaping () -> Alert
+	) -> some View {
+		background(
+			EmptyView().alert(
+				isPresented: isPresented,
+				content: content
+			)
+		)
 	}
 }

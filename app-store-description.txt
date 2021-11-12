@@ -10,6 +10,7 @@ Pick colors from anywhere using the built-in color picker.
 - Launch it at login (when in the menu bar)
 - Recently picked colors
 - Shortcuts support
+- Hide menu bar icon
 
 
 ■ Keyboard shortcuts

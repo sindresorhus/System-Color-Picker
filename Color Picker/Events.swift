@@ -12,7 +12,11 @@ extension AppState {
 					return
 				}
 
-				self.statusItem.isVisible = $0.newValue
+				// We only set the state if it's in Dock mode or menu bar mode showing the icon.
+				if !$0.newValue || ($0.newValue && !Defaults[.hideMenuBarIcon]) {
+					self.statusItem.isVisible = $0.newValue
+				}
+
 				SSApp.isDockIconVisible = !$0.newValue
 				NSApp.activate(ignoringOtherApps: true)
 
@@ -30,6 +34,13 @@ extension AppState {
 			}
 			.store(in: &cancellables)
 
+		Defaults.publisher(.hideMenuBarIcon, options: [])
+			.receive(on: DispatchQueue.main)
+			.sink { [self] in
+				statusItem.isVisible = !$0.newValue
+			}
+			.store(in: &cancellables)
+
 		KeyboardShortcuts.onKeyUp(for: .pickColor) { [weak self] in
 			self?.pickColor()
 		}
@@ -37,6 +48,13 @@ extension AppState {
 		KeyboardShortcuts.onKeyUp(for: .toggleWindow) { [weak self] in
 			self?.colorPanel.toggle()
 		}
+
+		// We use this instead of `applicationShouldHandleReopen` because of the macOS bug.
+		NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
+			.sink { [self] _ in
+				handleAppReopen()
+			}
+			.store(in: &cancellables)
 
 		// Workaround for the color picker window not becoming active after the settings window closes. (macOS 11.3)
 		NotificationCenter.default.publisher(for: NSWindow.willCloseNotification)

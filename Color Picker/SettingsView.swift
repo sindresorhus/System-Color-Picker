@@ -3,6 +3,23 @@ import Defaults
 import LaunchAtLogin
 import KeyboardShortcuts
 
+private struct HideMenuBarIconSetting: View {
+	@State private var isShowingAlert = false
+
+	var body: some View {
+		Defaults.Toggle("Hide menu bar icon", key: .hideMenuBarIcon)
+			.onChange {
+				isShowingAlert = $0
+			}
+			.help("This can be useful if you only use this app with the global keyboard shortcuts.")
+			.alert2(isPresented: $isShowingAlert) {
+				Alert(
+					title: Text("If you need to access the menu bar icon, launch the app to reveal it for 5 seconds.")
+				)
+			}
+	}
+}
+
 private struct MenuBarItemClickActionSetting: View {
 	@Default(.menuBarItemClickAction) private var menuBarItemClickAction
 
@@ -68,6 +85,7 @@ private struct GeneralSettings: View {
 				Group {
 					LaunchAtLogin.Toggle()
 						.help(showInMenuBar ? "" : "There is really no point in launching the app at login if it is not in the menu bar. You can instead just put it in the Dock and launch it when needed.")
+					HideMenuBarIconSetting()
 					MenuBarItemClickActionSetting()
 				}
 					.disabled(!showInMenuBar)

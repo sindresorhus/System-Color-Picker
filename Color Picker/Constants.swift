@@ -7,6 +7,7 @@ extension Defaults.Keys {
 
 	// Settings
 	static let showInMenuBar = Key<Bool>("showInMenuBar", default: false)
+	static let hideMenuBarIcon = Key<Bool>("hideMenuBarIcon", default: false)
 	static let showColorSamplerOnOpen = Key<Bool>("showColorSamplerOnOpen", default: false)
 	static let menuBarItemClickAction = Key<MenuBarItemClickAction>("menuBarItemClickAction", default: .showMenu)
 	static let preferredColorFormat = Key<ColorFormat>("preferredColorFormat", default: .hex)

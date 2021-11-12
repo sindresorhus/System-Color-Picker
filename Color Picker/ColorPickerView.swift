@@ -21,6 +21,7 @@ private struct RecentlyPickedColorsButton: View {
 						Text(color.stringRepresentation)
 					} icon: {
 						// We don't use SwiftUI here as it only supports showing an actual image. (macOS 12.0)
+						// https://github.com/feedback-assistant/reports/issues/247
 						Image(nsImage: color.swatchImage)
 					}
 						.labelStyle(.titleAndIcon)
@@ -47,6 +48,7 @@ private struct BarView: View {
 	@Environment(\.colorScheme) private var colorScheme
 	@EnvironmentObject private var appState: AppState
 	@StateObject private var pasteboardObserver = NSPasteboard.SimpleObservable(.general).stop()
+	@Default(.showInMenuBar) private var showInMenuBar
 
 	var body: some View {
 		HStack(spacing: 12) {
@@ -76,6 +78,7 @@ private struct BarView: View {
 			Spacer()
 		}
 			// Cannot do this as the `Menu` buttons don't respect it. (macOS 12.0.1)
+			// https://github.com/feedback-assistant/reports/issues/249
 //			.font(.title3)
 			.background2 {
 				RoundedRectangle(cornerRadius: 6, style: .continuous)
@@ -97,13 +100,19 @@ private struct BarView: View {
 			Button("Copy as HSB") {
 				appState.colorPanel.color.hsbColorString.copyToPasteboard()
 			}
-				// Without, it becomes disabled. (macOS 12.0.1)
-				.buttonStyle(.automatic)
+			if showInMenuBar {
+				Divider()
+				Button("Preferences…") {
+					SSApp.showSettingsWindow()
+				}
+					.keyboardShortcut(",")
+			}
 		} label: {
 			Label("More", systemImage: "ellipsis.circle.fill")
 				.labelStyle(.iconOnly)
 //				.padding(8) // Has no effect. (macOS 12.0.1)
 		}
+			.buttonStyle(.automatic) // Without, it becomes disabled: https://github.com/feedback-assistant/reports/issues/250 (macOS 12.0.1)
 			.padding(8)
 			.contentShape(.rectangle)
 			.fixedSize()

@@ -26,6 +26,7 @@ Requires macOS 11 or later.
 - Launch it at login (when in the menu bar)
 - Recently picked colors
 - Shortcuts support
+- Hide menu bar icon
 
 ## Keyboard shortcuts
 

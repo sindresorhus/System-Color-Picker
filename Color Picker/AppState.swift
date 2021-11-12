@@ -141,6 +141,7 @@ final class AppState: ObservableObject {
 	private func didLaunch() {
 		fixStuff()
 		setUpEvents()
+		handleMenuBarIcon()
 		showWelcomeScreenIfNeeded()
 		requestReview()
 
@@ -151,13 +152,16 @@ final class AppState: ObservableObject {
 
 	private func fixStuff() {
 		// Make the invisible native SwitUI window not block access to the desktop. (macOS 12.0)
+		// https://github.com/feedback-assistant/reports/issues/253
 		NSApp.windows.first?.ignoresMouseEvents = true
 
 		// Make the invisible native SwiftUI window not show up in mission control when in menu bar mode. (macOS 11.6)
 		NSApp.windows.first?.collectionBehavior = .stationary
 
-		// We hide the “View” menu as there's a macOS bug where it sometimes enables even though it doesn't work and then causes a crash when clicked.
-		NSApp.mainMenu?.item(withTitle: "View")?.isHidden = true
+		// We hide the “View” menu as there's a macOS bug where it sometimes enables even though it doesn't work and then causes a crash when clicked. Hiding it does not work on macOS 12.
+		if #available(macOS 12, *) {} else {
+			NSApp.mainMenu?.item(withTitle: "View")?.isHidden = true
+		}
 	}
 
 	private func requestReview() {
@@ -169,6 +173,22 @@ final class AppState: ObservableObject {
 			.removingAll(color)
 			.appending(color)
 			.truncatingFromStart(toCount: 6)
+	}
+
+	private func handleMenuBarIcon() {
+		guard Defaults[.showInMenuBar] else {
+			return
+		}
+
+		statusItem.isVisible = true
+
+		delay(seconds: 5) { [self] in
+			guard Defaults[.hideMenuBarIcon] else {
+				return
+			}
+
+			statusItem.isVisible = false
+		}
 	}
 
 	func pickColor() {
@@ -196,5 +216,9 @@ final class AppState: ObservableObject {
 		}
 
 		colorPanel.color = color.usingColorSpace(.sRGB) ?? color
+	}
+
+	func handleAppReopen() {
+		handleMenuBarIcon()
 	}
 }

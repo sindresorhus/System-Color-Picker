@@ -16,7 +16,7 @@ struct AppMain: App {
 			if false {}
 		}
 			// TODO: How to replace `File` menu with `Color`?
-			// TODO: Remove `View` menu.
+			// TODO: Would be nice to be able to remove the `View` menu: https://github.com/feedback-assistant/reports/issues/252
 			.commands {
 				CommandGroup(replacing: .newItem) {}
 				CommandMenu("Color") {
@@ -119,4 +119,11 @@ struct AppMain: App {
 
 private final class AppDelegate: NSObject, NSApplicationDelegate {
 	func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
+
+	// Does not work on macOS 12.0.1 because of `WindowGroup`: https://github.com/feedback-assistant/reports/issues/246
+	// This is only run when the app is started when it's already running.
+//	func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+//		AppState.shared.handleAppReopen()
+//		return true
+//	}
 }
