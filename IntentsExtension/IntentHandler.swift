@@ -13,13 +13,13 @@ extension Color_ {
 			image: thumbnail.inImage
 		)
 
-		self.hex = sRGBColor.format(.hex())
-		self.hexNumber = sRGBColor.hex as NSNumber
-		self.hsl = sRGBColor.format(.cssHSL)
-		self.rgb = sRGBColor.format(.cssRGB)
-		self.lch = nsColor.format(.cssLCH)
-		self.hslLegacy = sRGBColor.format(.cssHSLLegacy)
-		self.rgbLegacy = sRGBColor.format(.cssRGBLegacy)
+		hex = sRGBColor.format(.hex())
+		hexNumber = sRGBColor.hex as NSNumber
+		hsl = sRGBColor.format(.cssHSL)
+		rgb = sRGBColor.format(.cssRGB)
+		lch = nsColor.format(.cssLCH)
+		hslLegacy = sRGBColor.format(.cssHSLLegacy)
+		rgbLegacy = sRGBColor.format(.cssRGBLegacy)
 	}
 }
 

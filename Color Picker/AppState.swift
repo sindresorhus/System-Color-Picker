@@ -1,9 +1,9 @@
 import SwiftUI
 import Combine
 import Defaults
-import AppCenter
-import AppCenterCrashes
+import Sentry
 
+@MainActor
 final class AppState: ObservableObject {
 	static let shared = AppState()
 
@@ -42,14 +42,14 @@ final class AppState: ObservableObject {
 		let menu = NSMenu()
 
 		if Defaults[.menuBarItemClickAction] != .showColorSampler {
-			menu.addCallbackItem("Pick Color") { [self] _ in
+			menu.addCallbackItem("Pick Color") { [self] in
 				pickColor()
 			}
 				.setShortcut(for: .pickColor)
 		}
 
 		if Defaults[.menuBarItemClickAction] != .toggleWindow {
-			menu.addCallbackItem("Toggle Window") { [self] _ in
+			menu.addCallbackItem("Toggle Window") { [self] in
 				colorPanel.toggle()
 			}
 				.setShortcut(for: .toggleWindow)
@@ -61,7 +61,7 @@ final class AppState: ObservableObject {
 			menu.addHeader("Recently Picked Colors")
 
 			for color in colors {
-				let menuItem = menu.addCallbackItem(color.stringRepresentation) { _ in
+				let menuItem = menu.addCallbackItem(color.stringRepresentation) {
 					color.stringRepresentation.copyToPasteboard()
 				}
 
@@ -75,7 +75,7 @@ final class AppState: ObservableObject {
 
 		menu.addSeparator()
 
-		menu.addCallbackItem("Send Feedback…") { _ in
+		menu.addCallbackItem("Send Feedback…") {
 			SSApp.openSendFeedbackPage()
 		}
 
@@ -93,10 +93,10 @@ final class AppState: ObservableObject {
 
 		let item = $0
 
-		$0.button!.onAction { [self] _ in
+		$0.button!.onAction { [self] in
 			let event = NSApp.currentEvent!
 
-			func showMenu() {
+			let showMenu = {
 				item.menu = createMenu()
 				item.button!.performClick(nil)
 				item.menu = nil
@@ -126,12 +126,7 @@ final class AppState: ObservableObject {
 	}
 
 	init() {
-		AppCenter.start(
-			withAppSecret: "f44a0ef2-9271-4bdb-8320-dcceaa857c36",
-			services: [
-				Crashes.self
-			]
-		)
+		setUpConfig()
 
 		DispatchQueue.main.async { [self] in
 			didLaunch()
@@ -147,6 +142,15 @@ final class AppState: ObservableObject {
 
 		#if DEBUG
 //		SSApp.showSettingsWindow()
+		#endif
+	}
+
+	private func setUpConfig() {
+		#if !DEBUG
+		SentrySDK.start {
+			$0.dsn = "https://e89cb93d693444ee8829f521ab75025a@o844094.ingest.sentry.io/6139060"
+			$0.enableSwizzling = false
+		}
 		#endif
 	}
 
@@ -192,11 +196,8 @@ final class AppState: ObservableObject {
 	}
 
 	func pickColor() {
-		NSColorSampler().show { [weak self] in
-			guard
-				let self = self,
-				let color = $0
-			else {
+		Task {
+			guard let color = await NSColorSampler().sample() else {
 				return
 			}
 

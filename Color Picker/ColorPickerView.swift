@@ -182,6 +182,9 @@ struct ColorPickerView: View {
 				hexColor.copyToPasteboard()
 			} label: {
 				Image(systemName: "doc.on.doc.fill")
+					// TODO: Enable when targeting macOS 12 and remove `.fill` in the string. Also on the other buttons.
+//					.symbolVariant(.fill)
+//					.symbolRenderingMode(.hierarchical)
 			}
 				.buttonStyle(.borderless)
 				.contentShape(.rectangle)

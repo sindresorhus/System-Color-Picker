@@ -78,7 +78,10 @@ typealias XColor = UIColor
 
 
 func delay(seconds: TimeInterval, closure: @escaping () -> Void) {
-	DispatchQueue.main.asyncAfter(deadline: .now() + seconds, execute: closure)
+	Task.detached {
+		try? await Task.sleep(seconds: seconds)
+		closure()
+	}
 }
 
 
@@ -114,16 +117,17 @@ enum SSApp {
 	static var isDarkMode: Bool { NSApp?.effectiveAppearance.isDarkMode ?? false }
 
 	static func quit() {
-		DispatchQueue.main.async {
+		Task { @MainActor in
 			NSApp.terminate(nil)
 		}
 	}
 
 	static func relaunch() {
-		let configuration = NSWorkspace.OpenConfiguration()
-		configuration.createsNewApplicationInstance = true
+		Task { @MainActor in
+			let configuration = NSWorkspace.OpenConfiguration()
+			configuration.createsNewApplicationInstance = true
 
-		NSWorkspace.shared.openApplication(at: url, configuration: configuration) { _, _ in
+			_ = try? await NSWorkspace.shared.openApplication(at: url, configuration: configuration)
 			quit()
 		}
 	}
@@ -1104,8 +1108,8 @@ struct NativeTextField: NSViewRepresentable {
 		}
 
 		private func unfocus() {
-			self.parent.isFocused = false
-			self.blur()
+			parent.isFocused = false
+			blur()
 		}
 	}
 
@@ -1126,7 +1130,7 @@ struct NativeTextField: NSViewRepresentable {
 				return
 			}
 
-			// We give the text field time required to transition into a new state.
+			// The text field needs some time to transition into a new state.
 			DispatchQueue.main.async { [self] in
 				parent.isFocused = textField.isCurrentFirstResponder
 			}
@@ -1328,18 +1332,16 @@ protocol ControlActionClosureProtocol: NSObjectProtocol {
 	var action: Selector? { get set }
 }
 
-private final class ActionTrampoline<T>: NSObject {
-	let action: (T) -> Void
+private final class ActionTrampoline: NSObject {
+	private let action: () -> Void
 
-	init(action: @escaping (T) -> Void) {
+	init(action: @escaping () -> Void) {
 		self.action = action
 	}
 
 	@objc
-	func action(sender: AnyObject) {
-		// This is safe as it can only be `T`.
-		// swiftlint:disable:next force_cast
-		action(sender as! T)
+	fileprivate func handleAction(_ sender: AnyObject) {
+		action()
 	}
 }
 
@@ -1350,15 +1352,15 @@ extension ControlActionClosureProtocol {
 	```
 	let button = NSButton(title: "Unicorn", target: nil, action: nil)
 
-	button.onAction { sender in
-		print("Button action: \(sender)")
+	button.onAction {
+		print("Button action")
 	}
 	```
 	*/
-	func onAction(_ action: @escaping (Self) -> Void) {
+	func onAction(_ action: @escaping () -> Void) {
 		let trampoline = ActionTrampoline(action: action)
 		target = trampoline
-		self.action = #selector(ActionTrampoline<Self>.action(sender:))
+		self.action = #selector(ActionTrampoline.handleAction)
 		objc_setAssociatedObject(self, &controlActionClosureProtocolAssociatedObjectKey, trampoline, .OBJC_ASSOCIATION_RETAIN)
 	}
 }
@@ -1389,16 +1391,17 @@ final class CallbackMenuItem: NSMenuItem {
 		validateCallback = callback
 	}
 
+	private let callback: () -> Void
+
 	init(
 		_ title: String,
 		key: String = "",
 		keyModifiers: NSEvent.ModifierFlags? = nil,
-		data: Any? = nil,
 		isEnabled: Bool = true,
 		isHidden: Bool = false,
-		callback: @escaping (NSMenuItem) -> Void
+		action: @escaping () -> Void
 	) {
-		self.callback = callback
+		self.callback = action
 		super.init(title: title, action: #selector(action(_:)), keyEquivalent: key)
 		self.target = self
 		self.isEnabled = isEnabled
@@ -1414,11 +1417,9 @@ final class CallbackMenuItem: NSMenuItem {
 		fatalError() // swiftlint:disable:this fatal_error_message
 	}
 
-	private let callback: (NSMenuItem) -> Void
-
 	@objc
-	func action(_ sender: NSMenuItem) {
-		callback(sender)
+	private func action(_ sender: NSMenuItem) {
+		callback()
 	}
 }
 
@@ -1435,20 +1436,18 @@ extension NSMenu {
 		_ title: String,
 		key: String = "",
 		keyModifiers: NSEvent.ModifierFlags? = nil,
-		data: Any? = nil,
 		isEnabled: Bool = true,
 		isChecked: Bool = false,
 		isHidden: Bool = false,
-		callback: @escaping (NSMenuItem) -> Void
+		action: @escaping () -> Void
 	) -> NSMenuItem {
 		let menuItem = CallbackMenuItem(
 			title,
 			key: key,
 			keyModifiers: keyModifiers,
-			data: data,
 			isEnabled: isEnabled,
 			isHidden: isHidden,
-			callback: callback
+			action: action
 		)
 		addItem(menuItem)
 		return menuItem
@@ -1477,7 +1476,7 @@ extension NSMenu {
 
 	@discardableResult
 	func addSettingsItem() -> NSMenuItem {
-		addCallbackItem("Preferences…", key: ",") { _ in
+		addCallbackItem("Preferences…", key: ",") {
 			SSApp.showSettingsWindow()
 		}
 	}
@@ -1486,7 +1485,7 @@ extension NSMenu {
 	func addQuitItem() -> NSMenuItem {
 		addSeparator()
 
-		return addCallbackItem("Quit \(SSApp.name)", key: "q") { _ in
+		return addCallbackItem("Quit \(SSApp.name)", key: "q") {
 			SSApp.quit()
 		}
 	}
@@ -2258,8 +2257,8 @@ extension Colors {
 		// http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
 
 		// swiftlint:disable identifier_name
-		let κ = 24_389.0 / 27.0; // 29^3 / 3^3
-		let ε = 216.0 / 24_389.0; // 6^3 / 29^3
+		let κ = 24_389.0 / 27.0 // 29^3 / 3^3
+		let ε = 216.0 / 24_389.0 // 6^3 / 29^3
 		// swiftlint:enable identifier_name
 
 		// Compute f, starting with the luminance-related term.
@@ -2798,5 +2797,12 @@ extension View {
 				content: content
 			)
 		)
+	}
+}
+
+
+extension Task where Success == Never, Failure == Never {
+	public static func sleep(seconds: TimeInterval) async throws {
+	   try await sleep(nanoseconds: UInt64(seconds * Double(NSEC_PER_SEC)))
 	}
 }

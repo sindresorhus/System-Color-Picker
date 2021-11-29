@@ -4,7 +4,7 @@
 	"Website": "https://sindresorhus.com/system-color-picker",
 	"Connections" : [
 		{
-			"Host" : "*.appcenter.ms",
+			"Host" : "*.sentry.io",
 			"NetworkProtocol" : "TCP",
 			"Port" : "443",
 			"Purpose" : "System Color Picker sends crash reports to this server.",

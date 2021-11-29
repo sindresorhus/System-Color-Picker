@@ -117,6 +117,7 @@ struct AppMain: App {
 	}
 }
 
+@MainActor
 private final class AppDelegate: NSObject, NSApplicationDelegate {
 	func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
 
