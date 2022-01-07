@@ -28,24 +28,24 @@ struct AppMain: App {
 					Button("Copy as Hex") {
 						appState.colorPanel.color.hexColorString.copyToPasteboard()
 					}
-						.keyboardShortcut("H")
+						.keyboardShortcut("h", modifiers: [.shift, .command])
 					Button("Copy as HSL") {
 						appState.colorPanel.color.hslColorString.copyToPasteboard()
 					}
-						.keyboardShortcut("S")
+						.keyboardShortcut("s", modifiers: [.shift, .command])
 					Button("Copy as RGB") {
 						appState.colorPanel.color.rgbColorString.copyToPasteboard()
 					}
-						.keyboardShortcut("R")
+						.keyboardShortcut("r", modifiers: [.shift, .command])
 					Button("Copy as LCH") {
 						appState.colorPanel.color.lchColorString.copyToPasteboard()
 					}
-						.keyboardShortcut("L")
+						.keyboardShortcut("l", modifiers: [.shift, .command])
 					Button("Paste") {
 						appState.pasteColor()
 					}
 						.help("Paste color in the format Hex, HSL, RGB, or LCH")
-						.keyboardShortcut("V")
+						.keyboardShortcut("v", modifiers: [.shift, .command])
 						.disabled(NSColor.fromPasteboardGraceful(.general) == nil)
 				}
 				CommandGroup(replacing: .help) {

@@ -1024,6 +1024,17 @@ extension Defaults {
 }
 #endif
 
+
+extension NSTextField {
+	/**
+	Whether the text field currently has keyboard focus.
+	*/
+	var isCurrentFirstResponder: Bool {
+		currentEditor() == window?.firstResponder
+	}
+}
+
+
 struct NativeTextField: NSViewRepresentable {
 	typealias NSViewType = InternalTextField
 
@@ -1082,6 +1093,8 @@ struct NativeTextField: NSViewRepresentable {
 				if !self.frame.insetBy(dx: -clickMargin, dy: -clickMargin).contains(clickPoint) {
 					self.unfocus()
 					return nil
+				} else {
+					self.parent.isFocused = true
 				}
 
 				return event
@@ -1109,7 +1122,14 @@ struct NativeTextField: NSViewRepresentable {
 		}
 
 		func controlTextDidEndEditing(_ notification: Notification) {
-			parent.isFocused = false
+			guard let textField = notification.object as? NSTextField else {
+				return
+			}
+
+			// We give the text field time required to transition into a new state.
+			DispatchQueue.main.async { [self] in
+				parent.isFocused = textField.isCurrentFirstResponder
+			}
 		}
 
 		// This ensures the app doesn't close when pressing `Esc` (closing is the default behavior for `NSPanel`.

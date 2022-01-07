@@ -71,7 +71,7 @@ private struct BarView: View {
 			}
 				.contentShape(.rectangle)
 				.help("Paste color in the format Hex, HSL, RGB, or LCH")
-				.keyboardShortcut("V")
+				.keyboardShortcut("v", modifiers: [.shift, .command])
 				.disabled(NSColor.fromPasteboardGraceful(.general) == nil)
 			RecentlyPickedColorsButton()
 			moreButton
@@ -131,10 +131,20 @@ struct ColorPickerView: View {
 	@State private var hslColor = ""
 	@State private var rgbColor = ""
 	@State private var lchColor = ""
+	@State private var isTextFieldFocusedHex = false
+	@State private var isTextFieldFocusedHSL = false
+	@State private var isTextFieldFocusedRGB = false
+	@State private var isTextFieldFocusedLCH = false
 	@State private var isPreventingUpdate = false
-	@State private var isTextFieldFocused = false
 
 	let colorPanel: NSColorPanel
+
+	private var isAnyTextFieldFocused: Bool {
+		isTextFieldFocusedHex
+			|| isTextFieldFocusedHSL
+			|| isTextFieldFocusedRGB
+			|| isTextFieldFocusedLCH
+	}
 
 	private var textFieldFontSize: Double { largerText ? 16 : 0 }
 
@@ -145,14 +155,21 @@ struct ColorPickerView: View {
 				text: $hexColor,
 				placeholder: "Hex",
 				font: .monospacedSystemFont(ofSize: textFieldFontSize, weight: .regular),
-				isFocused: $isTextFieldFocused
+				isFocused: $isTextFieldFocusedHex
 			)
 				.controlSize(.large)
 				.onChange(of: hexColor) {
+					var hexColor = $0
+
+					if hexColor.hasPrefix("##") {
+						hexColor = hexColor.dropFirst().string
+						self.hexColor = hexColor
+					}
+
 					if
-						isTextFieldFocused,
+						isTextFieldFocusedHex,
 						!isPreventingUpdate,
-						let newColor = NSColor(hexString: $0.trimmingCharacters(in: .whitespaces))
+						let newColor = NSColor(hexString: hexColor.trimmingCharacters(in: .whitespaces))
 					{
 						colorPanel.color = newColor
 					}
@@ -168,7 +185,7 @@ struct ColorPickerView: View {
 			}
 				.buttonStyle(.borderless)
 				.contentShape(.rectangle)
-				.keyboardShortcut("H")
+				.keyboardShortcut("h", modifiers: [.shift, .command])
 		}
 	}
 
@@ -178,12 +195,12 @@ struct ColorPickerView: View {
 				text: $hslColor,
 				placeholder: "HSL",
 				font: .monospacedSystemFont(ofSize: textFieldFontSize, weight: .regular),
-				isFocused: $isTextFieldFocused
+				isFocused: $isTextFieldFocusedHSL
 			)
 				.controlSize(.large)
 				.onChange(of: hslColor) {
 					if
-						isTextFieldFocused,
+						isTextFieldFocusedHSL,
 						!isPreventingUpdate,
 						let newColor = NSColor(cssHSLString: $0.trimmingCharacters(in: .whitespaces))
 					{
@@ -201,7 +218,7 @@ struct ColorPickerView: View {
 			}
 				.buttonStyle(.borderless)
 				.contentShape(.rectangle)
-				.keyboardShortcut("S")
+				.keyboardShortcut("s", modifiers: [.shift, .command])
 		}
 	}
 
@@ -211,12 +228,12 @@ struct ColorPickerView: View {
 				text: $rgbColor,
 				placeholder: "RGB",
 				font: .monospacedSystemFont(ofSize: textFieldFontSize, weight: .regular),
-				isFocused: $isTextFieldFocused
+				isFocused: $isTextFieldFocusedRGB
 			)
 				.controlSize(.large)
 				.onChange(of: rgbColor) {
 					if
-						isTextFieldFocused,
+						isTextFieldFocusedRGB,
 						!isPreventingUpdate,
 						let newColor = NSColor(cssRGBString: $0.trimmingCharacters(in: .whitespaces))
 					{
@@ -234,7 +251,7 @@ struct ColorPickerView: View {
 			}
 				.buttonStyle(.borderless)
 				.contentShape(.rectangle)
-				.keyboardShortcut("R")
+				.keyboardShortcut("r", modifiers: [.shift, .command])
 		}
 	}
 
@@ -244,12 +261,12 @@ struct ColorPickerView: View {
 				text: $lchColor,
 				placeholder: "LCH",
 				font: .monospacedSystemFont(ofSize: textFieldFontSize, weight: .regular),
-				isFocused: $isTextFieldFocused
+				isFocused: $isTextFieldFocusedLCH
 			)
 				.controlSize(.large)
 				.onChange(of: lchColor) {
 					if
-						isTextFieldFocused,
+						isTextFieldFocusedLCH,
 						!isPreventingUpdate,
 						let newColor = NSColor(cssLCHString: $0.trimmingCharacters(in: .whitespaces))
 					{
@@ -267,7 +284,7 @@ struct ColorPickerView: View {
 			}
 				.buttonStyle(.borderless)
 				.contentShape(.rectangle)
-				.keyboardShortcut("L")
+				.keyboardShortcut("l", modifiers: [.shift, .command])
 		}
 	}
 
@@ -303,7 +320,7 @@ struct ColorPickerView: View {
 				updateColorsFromPanel()
 			}
 			.onReceive(colorPanel.colorDidChangePublisher) {
-				guard !isTextFieldFocused else {
+				guard !isAnyTextFieldFocused else {
 					return
 				}
 
