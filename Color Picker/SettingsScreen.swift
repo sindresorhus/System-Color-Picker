@@ -34,6 +34,7 @@ private struct MenuBarItemClickActionSetting: View {
 			}
 				.fixedSize()
 			Text(menuBarItemClickAction.tip)
+				.offset(x: 2)
 				.settingSubtitleTextStyle()
 				.frame(maxWidth: .infinity, alignment: .trailing)
 		}
@@ -197,7 +198,7 @@ private struct AdvancedSettings: View {
 	}
 }
 
-struct SettingsView: View {
+struct SettingsScreen: View {
 	var body: some View {
 		TabView {
 			GeneralSettings()
@@ -216,8 +217,8 @@ struct SettingsView: View {
 	}
 }
 
-struct SettingsView_Previews: PreviewProvider {
+struct SettingsScreen_Previews: PreviewProvider {
 	static var previews: some View {
-		SettingsView()
+		SettingsScreen()
 	}
 }

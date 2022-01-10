@@ -73,7 +73,7 @@ struct AppMain: App {
 				}
 			}
 		Settings {
-			SettingsView()
+			SettingsScreen()
 		}
 	}
 

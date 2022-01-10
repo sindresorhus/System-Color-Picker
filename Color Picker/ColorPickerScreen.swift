@@ -121,7 +121,7 @@ private struct BarView: View {
 	}
 }
 
-struct ColorPickerView: View {
+struct ColorPickerScreen: View {
 	@Default(.uppercaseHexColor) private var uppercaseHexColor
 	@Default(.hashPrefixInHexColor) private var hashPrefixInHexColor
 	@Default(.legacyColorSyntax) private var legacyColorSyntax
@@ -369,8 +369,8 @@ struct ColorPickerView: View {
 	}
 }
 
-struct ColorPickerView_Previews: PreviewProvider {
+struct ColorPickerScreen_Previews: PreviewProvider {
 	static var previews: some View {
-		ColorPickerView(colorPanel: .shared)
+		ColorPickerScreen(colorPanel: .shared)
 	}
 }

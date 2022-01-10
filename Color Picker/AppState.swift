@@ -25,7 +25,7 @@ final class AppState: ObservableObject {
 		]
 		colorPanel.makeMain()
 
-		let view = ColorPickerView(colorPanel: colorPanel)
+		let view = ColorPickerScreen(colorPanel: colorPanel)
 			.environmentObject(self)
 		let accessoryView = NSHostingView(rootView: view)
 		colorPanel.accessoryView = accessoryView
@@ -93,30 +93,28 @@ final class AppState: ObservableObject {
 
 		let item = $0
 
-		$0.button!.onAction { [self] in
-			let event = NSApp.currentEvent!
+		$0.button!.onAction { [self] event in
+			let isAlternative = event.isAlternateClickForStatusItem
 
 			let showMenu = {
-				item.menu = createMenu()
-				item.button!.performClick(nil)
-				item.menu = nil
+				item.showMenu(createMenu())
 			}
 
 			switch Defaults[.menuBarItemClickAction] {
 			case .showMenu:
-				if event.type == .rightMouseUp {
+				if isAlternative {
 					pickColor()
 				} else {
 					showMenu()
 				}
 			case .showColorSampler:
-				if event.type == .rightMouseUp {
+				if isAlternative {
 					showMenu()
 				} else {
 					pickColor()
 				}
 			case .toggleWindow:
-				if event.type == .rightMouseUp {
+				if isAlternative {
 					showMenu()
 				} else {
 					colorPanel.toggle()

@@ -473,10 +473,10 @@ extension NSColor {
 		color.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
 
 		return .init(
-			red: red.double,
-			green: green.double,
-			blue: blue.double,
-			alpha: alpha.double
+			red: red,
+			green: green,
+			blue: blue,
+			alpha: alpha
 		)
 	}
 }
@@ -1193,18 +1193,6 @@ struct NativeTextField: NSViewRepresentable {
 
 extension NSColorPanel {
 	/**
-	Show the color sampler.
-	*/
-	func showColorSampler() {
-		// "_magnify:"
-		let selector = String(":yfingam_".reversed())
-		perform(NSSelectorFromString(selector))
-	}
-}
-
-
-extension NSColorPanel {
-	/**
 	Publishes when the color in the color panel changes.
 	*/
 	var colorDidChangePublisher: AnyPublisher<Void, Never> {
@@ -1333,15 +1321,15 @@ protocol ControlActionClosureProtocol: NSObjectProtocol {
 }
 
 private final class ActionTrampoline: NSObject {
-	private let action: () -> Void
+	private let action: (NSEvent) -> Void
 
-	init(action: @escaping () -> Void) {
+	init(action: @escaping (NSEvent) -> Void) {
 		self.action = action
 	}
 
 	@objc
 	fileprivate func handleAction(_ sender: AnyObject) {
-		action()
+		action(NSApp.currentEvent!)
 	}
 }
 
@@ -1352,12 +1340,12 @@ extension ControlActionClosureProtocol {
 	```
 	let button = NSButton(title: "Unicorn", target: nil, action: nil)
 
-	button.onAction {
+	button.onAction { _ in
 		print("Button action")
 	}
 	```
 	*/
-	func onAction(_ action: @escaping () -> Void) {
+	func onAction(_ action: @escaping (NSEvent) -> Void) {
 		let trampoline = ActionTrampoline(action: action)
 		target = trampoline
 		self.action = #selector(ActionTrampoline.handleAction)
@@ -2772,6 +2760,7 @@ extension Shape where Self == RoundedRectangle {
 
 
 extension View {
+	@available(macOS, obsoleted: 12)
 	@ViewBuilder
 	func menuIndicatorHidden() -> some View {
 		if #available(macOS 12, *) {
@@ -2804,5 +2793,57 @@ extension View {
 extension Task where Success == Never, Failure == Never {
 	public static func sleep(seconds: TimeInterval) async throws {
 	   try await sleep(nanoseconds: UInt64(seconds * Double(NSEC_PER_SEC)))
+	}
+}
+
+
+extension NSStatusItem {
+	/**
+	Show a one-time menu from the status item.
+	*/
+	func showMenu(_ menu: NSMenu) {
+		self.menu = menu
+		button!.performClick(nil)
+		self.menu = nil
+	}
+}
+
+
+extension NSEvent {
+	/**
+	Real modifiers.
+
+	- Note: Prefer this over `.modifierFlags`.
+
+	```
+	// Check if Command is one of possible more modifiers keys
+	event.modifiers.contains(.command)
+
+	// Check if Command is the only modifier key
+	event.modifiers == .command
+
+	// Check if Command and Shift are the only modifiers
+	event.modifiers == [.command, .shift]
+	```
+	*/
+	var modifiers: ModifierFlags {
+		modifierFlags
+			.intersection(.deviceIndependentFlagsMask)
+			// We remove `capsLock` as it shouldn't affect the modifiers.
+			// We remove `numericPad`/`function` as arrow keys trigger it, use `event.specialKeys` instead.
+			.subtracting([.capsLock, .numericPad, .function])
+	}
+}
+
+
+extension NSEvent {
+	var isAlternateMouseUp: Bool {
+		type == .rightMouseUp
+			|| (type == .leftMouseUp && modifiers == .control)
+	}
+
+	var isAlternateClickForStatusItem: Bool {
+		isAlternateMouseUp
+			|| (type == .leftMouseUp && modifiers == .option)
 	}
 }
