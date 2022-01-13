@@ -12,7 +12,7 @@ final class ColorPanel: NSColorPanel, NSWindowDelegate {
 		super.makeKeyAndOrderFront(sender)
 
 		if Defaults[.showColorSamplerOnOpen] {
-			showColorSampler()
+			AppState.shared.pickColor()
 		}
 
 		// Prevent the first tab from showing focus ring.
