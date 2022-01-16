@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E32CF5572793FACD002DDBC0 /* Defaults in Frameworks */ = {isa = PBXBuildFile; productRef = E32CF5562793FACD002DDBC0 /* Defaults */; };
 		E38D432F263AAE8500701B82 /* SettingsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = E38D432E263AAE8500701B82 /* SettingsScreen.swift */; };
 		E38D4331263AAEA900701B82 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = E38D4330263AAEA900701B82 /* Constants.swift */; };
 		E38D4333263AB24E00701B82 /* Utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = E38D4332263AB24E00701B82 /* Utilities.swift */; };
@@ -97,6 +98,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E32CF5572793FACD002DDBC0 /* Defaults in Frameworks */,
 				E3E7D7AE27218C8A009D71F4 /* Regex in Frameworks */,
 				E3E7D79B27218903009D71F4 /* Intents.framework in Frameworks */,
 			);
@@ -218,6 +220,7 @@
 			name = IntentsExtension;
 			packageProductDependencies = (
 				E3E7D7AD27218C8A009D71F4 /* Regex */,
+				E32CF5562793FACD002DDBC0 /* Defaults */,
 			);
 			productName = IntentsExtension;
 			productReference = E3E7D79927218903009D71F4 /* IntentsExtension.appex */;
@@ -664,6 +667,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		E32CF5562793FACD002DDBC0 /* Defaults */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E3E14060259A0D97004FC89F /* XCRemoteSwiftPackageReference "Defaults" */;
+			productName = Defaults;
+		};
 		E394DAAA263D73AD00F5B042 /* Regex */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = E394DAA9263D73AD00F5B042 /* XCRemoteSwiftPackageReference "Regex" */;

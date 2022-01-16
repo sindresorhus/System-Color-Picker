@@ -91,6 +91,9 @@ final class AppState: ObservableObject {
 		$0.button!.image = NSImage(systemSymbolName: "drop.fill", accessibilityDescription: nil)
 		$0.button!.sendAction(on: [.leftMouseUp, .rightMouseUp])
 
+		// Work around macOS bug where the position is not preserved. (macOS 12.1)
+		$0.autosaveName = "Color Picker"
+
 		let item = $0
 
 		$0.button!.onAction { [self] event in
