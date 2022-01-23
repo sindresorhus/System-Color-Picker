@@ -91,6 +91,11 @@ private struct GeneralSettings: View {
 				}
 					.disabled(!showInMenuBar)
 					.padding(.leading, 19)
+				Button("Feedback & Support") {
+					SSApp.openSendFeedbackPage()
+				}
+					.buttonStyle(.link)
+					.padding(.top)
 			}
 		}
 			.padding()

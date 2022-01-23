@@ -97,7 +97,7 @@ final class AppState: ObservableObject {
 		let item = $0
 
 		$0.button!.onAction { [self] event in
-			let isAlternative = event.isAlternateClickForStatusItem
+			let isAlternative = event.isAlternativeClickForStatusItem
 
 			let showMenu = {
 				item.showMenu(createMenu())

@@ -77,11 +77,16 @@ typealias XColor = UIColor
 #endif
 
 
+//func delay(seconds: TimeInterval, closure: @escaping () -> Void) {
+//	Task.detached {
+//		try? await Task.sleep(seconds: seconds)
+//		closure()
+//	}
+//}
+
+// TODO: Don't make this use `Task` for at least another two years (2024). There are a lot of things that don't work with `Task`.
 func delay(seconds: TimeInterval, closure: @escaping () -> Void) {
-	Task.detached {
-		try? await Task.sleep(seconds: seconds)
-		closure()
-	}
+	DispatchQueue.main.asyncAfter(deadline: .now() + seconds, execute: closure)
 }
 
 
@@ -2837,13 +2842,13 @@ extension NSEvent {
 
 
 extension NSEvent {
-	var isAlternateMouseUp: Bool {
+	var isAlternativeMouseUp: Bool {
 		type == .rightMouseUp
 			|| (type == .leftMouseUp && modifiers == .control)
 	}
 
-	var isAlternateClickForStatusItem: Bool {
-		isAlternateMouseUp
+	var isAlternativeClickForStatusItem: Bool {
+		isAlternativeMouseUp
 			|| (type == .leftMouseUp && modifiers == .option)
 	}
 }
