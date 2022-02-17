@@ -653,7 +653,7 @@
 			repositoryURL = "https://github.com/sindresorhus/Defaults";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 6.1.0;
+				minimumVersion = 6.2.0;
 			};
 		};
 		E3F4BC852788A5780075DC52 /* XCRemoteSwiftPackageReference "sentry-cocoa" */ = {
@@ -661,7 +661,7 @@
 			repositoryURL = "https://github.com/getsentry/sentry-cocoa";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 7.8.0;
+				minimumVersion = 7.9.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

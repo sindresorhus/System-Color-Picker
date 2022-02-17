@@ -35,6 +35,8 @@ final class AppState: ObservableObject {
 		colorPanel.setFrameUsingName(SSApp.name)
 		colorPanel.setFrameAutosaveName(SSApp.name)
 
+		colorPanel.orderOut(nil)
+
 		return colorPanel
 	}()
 
@@ -99,7 +101,7 @@ final class AppState: ObservableObject {
 		$0.button!.onAction { [self] event in
 			let isAlternative = event.isAlternativeClickForStatusItem
 
-			let showMenu = {
+			let showMenu = { [self] in
 				item.showMenu(createMenu())
 			}
 
@@ -141,6 +143,10 @@ final class AppState: ObservableObject {
 		showWelcomeScreenIfNeeded()
 		requestReview()
 
+		if Defaults[.showInMenuBar] {
+			colorPanel.close()
+		}
+
 		#if DEBUG
 //		SSApp.showSettingsWindow()
 		#endif
@@ -158,10 +164,10 @@ final class AppState: ObservableObject {
 	private func fixStuff() {
 		// Make the invisible native SwitUI window not block access to the desktop. (macOS 12.0)
 		// https://github.com/feedback-assistant/reports/issues/253
-		NSApp.windows.first?.ignoresMouseEvents = true
+		SSApp.swiftUIMainWindow?.ignoresMouseEvents = true
 
 		// Make the invisible native SwiftUI window not show up in mission control when in menu bar mode. (macOS 11.6)
-		NSApp.windows.first?.collectionBehavior = .stationary
+		SSApp.swiftUIMainWindow?.collectionBehavior = .stationary
 
 		// We hide the “View” menu as there's a macOS bug where it sometimes enables even though it doesn't work and then causes a crash when clicked. Hiding it does not work on macOS 12.
 		if #available(macOS 12, *) {} else {

@@ -174,6 +174,13 @@ enum SSApp {
 
 
 extension SSApp {
+	static var swiftUIMainWindow: NSWindow? {
+		NSApp.windows.first { $0.simpleClassName == "SwiftUIWindow" }
+	}
+}
+
+
+extension SSApp {
 	/**
 	Manually show the SwiftUI settings window.
 	*/

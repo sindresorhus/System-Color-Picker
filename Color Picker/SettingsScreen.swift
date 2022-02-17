@@ -4,15 +4,15 @@ import LaunchAtLogin
 import KeyboardShortcuts
 
 private struct HideMenuBarIconSetting: View {
-	@State private var isShowingAlert = false
+	@State private var isAlertPresented = false
 
 	var body: some View {
 		Defaults.Toggle("Hide menu bar icon", key: .hideMenuBarIcon)
 			.onChange {
-				isShowingAlert = $0
+				isAlertPresented = $0
 			}
 			.help("This can be useful if you only use this app with the global keyboard shortcuts.")
-			.alert2(isPresented: $isShowingAlert) {
+			.alert2(isPresented: $isAlertPresented) {
 				Alert(
 					title: Text("If you need to access the menu bar icon, launch the app to reveal it for 5 seconds.")
 				)
