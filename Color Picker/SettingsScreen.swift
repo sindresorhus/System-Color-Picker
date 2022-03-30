@@ -96,6 +96,7 @@ private struct GeneralSettings: View {
 				}
 					.buttonStyle(.link)
 					.padding(.top)
+					.offset(y: 20)
 			}
 		}
 			.padding()
@@ -148,34 +149,21 @@ private struct ShortcutsSettings: View {
 
 	var body: some View {
 		Form {
-			VStack {
-				HStack(alignment: .firstTextBaseline) {
-					Text("Pick color:")
-						.respectDisabled()
-						.frame(width: maxWidth, alignment: .trailing)
-					KeyboardShortcuts.Recorder(for: .pickColor)
-				}
-					.accessibilityElement(children: .combine)
-					.padding(.bottom, 8)
-				HStack(alignment: .firstTextBaseline) {
-					Text("Toggle window:")
-						.respectDisabled()
-						.frame(width: maxWidth, alignment: .trailing)
-					KeyboardShortcuts.Recorder(for: .toggleWindow)
-				}
-					.accessibilityElement(children: .combine)
-					.disabled(!showInMenuBar)
-					.overlay(
-						showInMenuBar
-							? nil
-							: Text("Requires “Show in menu bar” to be enabled.")
-								.font(.system(size: 10))
-								.foregroundColor(.secondary)
-								.offset(y: 20),
-						alignment: .bottom
-					)
-					.padding(.bottom, showInMenuBar ? 0 : 20)
-			}
+			KeyboardShortcuts.Recorder("Pick color:", name: .pickColor)
+				.padding(.bottom, 8)
+			KeyboardShortcuts.Recorder("Toggle window:", name: .toggleWindow)
+				.disabled(!showInMenuBar)
+				.opacity(showInMenuBar ? 1 : 0.5)
+				.overlay(
+					showInMenuBar
+						? nil
+						: Text("Requires “Show in menu bar” to be enabled.")
+							.font(.system(size: 10))
+							.foregroundColor(.secondary)
+							.offset(y: 20),
+					alignment: .bottom
+				)
+				.padding(.bottom, showInMenuBar ? 0 : 20)
 		}
 			.padding()
 			.padding()
@@ -209,9 +197,7 @@ struct SettingsScreen: View {
 			GeneralSettings()
 				.settingsTabItem(.general)
 			ColorSettings()
-				.tabItem {
-					Label("Color", systemImage: "drop.fill")
-				}
+				.settingsTabItem("Color", systemImage: "drop.fill")
 			ShortcutsSettings()
 				.settingsTabItem(.shortcuts)
 			AdvancedSettings()

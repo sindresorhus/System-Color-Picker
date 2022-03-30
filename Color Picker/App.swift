@@ -79,8 +79,14 @@ struct AppMain: App {
 
 	private func migrate() {
 		// TODO: Remove in 2023.
-		Defaults.migrate(.shownColorFormats, to: .v5)
-		Defaults.migrate(.colorFormatToCopyAfterPicking, to: .v5)
+		SSApp.runOnce(identifier: "migrateShownColorFormats") {
+			guard !SSApp.isFirstLaunch else {
+				return
+			}
+
+			Defaults.migrate(.shownColorFormats, to: .v5)
+			Defaults.migrate(.colorFormatToCopyAfterPicking, to: .v5)
+		}
 
 		// TODO: Remove in 2023.
 		SSApp.runOnce(identifier: "migrateToPreferredColorFormatSetting") {

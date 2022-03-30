@@ -121,20 +121,9 @@ enum SSApp {
 
 	static var isDarkMode: Bool { NSApp?.effectiveAppearance.isDarkMode ?? false }
 
+	@MainActor
 	static func quit() {
-		Task { @MainActor in
-			NSApp.terminate(nil)
-		}
-	}
-
-	static func relaunch() {
-		Task { @MainActor in
-			let configuration = NSWorkspace.OpenConfiguration()
-			configuration.createsNewApplicationInstance = true
-
-			_ = try? await NSWorkspace.shared.openApplication(at: url, configuration: configuration)
-			quit()
-		}
+		NSApp.terminate(nil)
 	}
 
 	static let isFirstLaunch: Bool = {
@@ -174,6 +163,7 @@ enum SSApp {
 
 
 extension SSApp {
+	@MainActor
 	static var swiftUIMainWindow: NSWindow? {
 		NSApp.windows.first { $0.simpleClassName == "SwiftUIWindow" }
 	}
@@ -184,6 +174,7 @@ extension SSApp {
 	/**
 	Manually show the SwiftUI settings window.
 	*/
+	@MainActor
 	static func showSettingsWindow() {
 		if NSApp.activationPolicy() == .accessory {
 			NSApp.activate(ignoringOtherApps: true)
@@ -957,7 +948,7 @@ extension StringProtocol {
 
 extension NSPasteboard {
 	func with(_ callback: (NSPasteboard) -> Void) {
-		clearContents()
+		prepareForNewContents()
 		callback(self)
 	}
 }
@@ -1477,7 +1468,9 @@ extension NSMenu {
 	@discardableResult
 	func addSettingsItem() -> NSMenuItem {
 		addCallbackItem("Preferences…", key: ",") {
-			SSApp.showSettingsWindow()
+			Task {
+				await SSApp.showSettingsWindow()
+			}
 		}
 	}
 
@@ -1486,7 +1479,9 @@ extension NSMenu {
 		addSeparator()
 
 		return addCallbackItem("Quit \(SSApp.name)", key: "q") {
-			SSApp.quit()
+			Task {
+				await SSApp.quit()
+			}
 		}
 	}
 
@@ -2337,6 +2332,12 @@ extension View {
 	*/
 	func settingsTabItem(_ type: SettingsTabType) -> some View {
 		tabItem { type.label }
+	}
+
+	func settingsTabItem(_ title: String, systemImage: String) -> some View {
+		tabItem {
+			Label(title, systemImage: systemImage)
+		}
 	}
 }
 

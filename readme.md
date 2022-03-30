@@ -4,12 +4,14 @@
 	</a>
 	<h1>System Color Picker</h1>
 	<p>
-		<b>The macOS color picker as an app with more features</b>
+		<b>The familiar color picker supercharged</b>
 	</p>
 	<br>
 	<br>
 	<br>
 </div>
+
+The macOS color picker as an app with lots of extra features.
 
 ## Download
 
