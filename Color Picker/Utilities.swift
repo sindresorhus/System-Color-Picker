@@ -5,6 +5,9 @@ import StoreKit
 import Defaults
 import Regex
 
+#if !APP_EXTENSION
+import Sentry
+#endif
 
 /*
 Non-reusable utilities
@@ -12,8 +15,24 @@ Non-reusable utilities
 
 #if !APP_EXTENSION
 extension NSColor {
+	var toSRGB: NSColor {
+		guard let color = usingColorSpace(.sRGB) else {
+			let error = NSError.appError("Failed to convert color with color space \(colorSpace.localizedName ?? "<Unknown>") to sRGB")
+
+			SentrySDK.capture(error: error)
+
+			DispatchQueue.main.async {
+				NSApp.presentError(error)
+			}
+
+			return self
+		}
+
+		return color
+	}
+
 	var hexColorString: String {
-		usingColorSpace(.sRGB)!.format(
+		toSRGB.format(
 			.hex(
 				isUppercased: Defaults[.uppercaseHexColor],
 				hasPrefix: Defaults[.hashPrefixInHexColor]
@@ -22,15 +41,15 @@ extension NSColor {
 	}
 
 	var hslColorString: String {
-		usingColorSpace(.sRGB)!.format(Defaults[.legacyColorSyntax] ? .cssHSLLegacy : .cssHSL)
+		toSRGB.format(Defaults[.legacyColorSyntax] ? .cssHSLLegacy : .cssHSL)
 	}
 
 	var rgbColorString: String {
-		usingColorSpace(.sRGB)!.format(Defaults[.legacyColorSyntax] ? .cssRGBLegacy : .cssRGB)
+		toSRGB.format(Defaults[.legacyColorSyntax] ? .cssRGBLegacy : .cssRGB)
 	}
 
 	var lchColorString: String {
-		usingColorSpace(.sRGB)!.format(.cssLCH)
+		toSRGB.format(.cssLCH)
 	}
 
 	var hsbColorString: String {
@@ -111,7 +130,7 @@ extension NSAppearance {
 
 
 enum SSApp {
-	static let id = Bundle.main.bundleIdentifier!
+	static let idString = Bundle.main.bundleIdentifier!
 	static let name = Bundle.main.object(forInfoDictionaryKey: kCFBundleNameKey as String) as! String
 	static let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String
 	static let build = Bundle.main.object(forInfoDictionaryKey: kCFBundleVersionKey as String) as! String
@@ -140,13 +159,13 @@ enum SSApp {
 	static func openSendFeedbackPage() {
 		let metadata =
 			"""
-			\(SSApp.name) \(SSApp.versionWithBuild) - \(SSApp.id)
+			\(name) \(versionWithBuild) - \(idString)
 			macOS \(Device.osVersion)
 			\(Device.hardwareModel)
 			"""
 
 		let query: [String: String] = [
-			"product": SSApp.name,
+			"product": name,
 			"metadata": metadata
 		]
 
@@ -279,7 +298,7 @@ extension AnyCancellable {
 
 
 extension String {
-	var attributedString: NSAttributedString { NSAttributedString(string: self) }
+	var toNSAttributedString: NSAttributedString { NSAttributedString(string: self) }
 }
 
 
@@ -513,10 +532,10 @@ extension NSColor {
 		color.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha)
 
 		return HSB(
-			hue: hue.double,
-			saturation: saturation.double,
-			brightness: brightness.double,
-			alpha: alpha.double
+			hue: hue.toDouble,
+			saturation: saturation.toDouble,
+			brightness: brightness.toDouble,
+			alpha: alpha.toDouble
 		)
 	}
 
@@ -540,10 +559,10 @@ extension NSColor {
 		color.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha)
 
 		return HSB(
-			hue: hue.double,
-			saturation: saturation.double,
-			brightness: brightness.double,
-			alpha: alpha.double
+			hue: hue.toDouble,
+			saturation: saturation.toDouble,
+			brightness: brightness.toDouble,
+			alpha: alpha.toDouble
 		)
 	}
 }
@@ -893,7 +912,7 @@ extension NSColor {
 			}
 
 			if !hasPrefix {
-				string = string.dropFirst().string
+				string = string.dropFirst().toString
 			}
 
 			return string
@@ -942,7 +961,7 @@ extension StringProtocol {
 	/**
 	Makes it easier to deal with optional sub-strings.
 	*/
-	var string: String { String(self) }
+	var toString: String { String(self) }
 }
 
 
@@ -967,69 +986,15 @@ extension CGFloat {
 	/**
 	Get a Double from a CGFloat. This makes it easier to work with optionals.
 	*/
-	var double: Double { Double(self) }
+	var toDouble: Double { Double(self) }
 }
 
 extension Int {
 	/**
 	Get a Double from an Int. This makes it easier to work with optionals.
 	*/
-	var double: Double { Double(self) }
+	var toDouble: Double { Double(self) }
 }
-
-
-extension DispatchQueue {
-	/**
-	Performs the `execute` closure immediately if we're on the main thread or asynchronously puts it on the main thread otherwise.
-	*/
-	static func mainSafeAsync(execute work: @escaping () -> Void) {
-		if Thread.isMainThread {
-			work()
-		} else {
-			main.async(execute: work)
-		}
-	}
-}
-
-#if !APP_EXTENSION
-extension Defaults {
-	final class Observable<Value: Serializable>: ObservableObject {
-		let objectWillChange = ObservableObjectPublisher()
-		private var cancellable: AnyCancellable?
-		private let key: Defaults.Key<Value>
-
-		var value: Value {
-			get { Defaults[key] }
-			set {
-				objectWillChange.send()
-				Defaults[key] = newValue
-			}
-		}
-
-		init(_ key: Key<Value>) {
-			self.key = key
-
-			self.cancellable = Defaults.publisher(key, options: [.prior])
-				.sink { [weak self] change in
-					guard change.isPrior else {
-						return
-					}
-
-					DispatchQueue.mainSafeAsync {
-						self?.objectWillChange.send()
-					}
-				}
-		}
-
-		/**
-		Reset the key back to its default value.
-		*/
-		func reset() {
-			key.reset()
-		}
-	}
-}
-#endif
 
 
 extension NSTextField {
@@ -1195,6 +1160,7 @@ struct NativeTextField: NSViewRepresentable {
 
 
 extension NSColorPanel {
+	// TODO: Make this an AsyncSequence.
 	/**
 	Publishes when the color in the color panel changes.
 	*/
@@ -1324,7 +1290,7 @@ protocol ControlActionClosureProtocol: NSObjectProtocol {
 }
 
 private final class ActionTrampoline: NSObject {
-	private let action: (NSEvent) -> Void
+	fileprivate let action: (NSEvent) -> Void
 
 	init(action: @escaping (NSEvent) -> Void) {
 		self.action = action
@@ -1337,22 +1303,27 @@ private final class ActionTrampoline: NSObject {
 }
 
 extension ControlActionClosureProtocol {
-	/**
-	Closure version of `.action`
+	var onAction: ((NSEvent) -> Void)? {
+		get {
+			guard
+				let trampoline = objc_getAssociatedObject(self, &controlActionClosureProtocolAssociatedObjectKey) as? ActionTrampoline
+			else {
+				return nil
+			}
 
-	```
-	let button = NSButton(title: "Unicorn", target: nil, action: nil)
+			return trampoline.action
+		}
+		set {
+			guard let action = newValue else {
+				objc_setAssociatedObject(self, &controlActionClosureProtocolAssociatedObjectKey, nil, .OBJC_ASSOCIATION_RETAIN)
+				return
+			}
 
-	button.onAction { _ in
-		print("Button action")
-	}
-	```
-	*/
-	func onAction(_ action: @escaping (NSEvent) -> Void) {
-		let trampoline = ActionTrampoline(action: action)
-		target = trampoline
-		self.action = #selector(ActionTrampoline.handleAction)
-		objc_setAssociatedObject(self, &controlActionClosureProtocolAssociatedObjectKey, trampoline, .OBJC_ASSOCIATION_RETAIN)
+			let trampoline = ActionTrampoline(action: action)
+			target = trampoline
+			self.action = #selector(ActionTrampoline.handleAction)
+			objc_setAssociatedObject(self, &controlActionClosureProtocolAssociatedObjectKey, trampoline, .OBJC_ASSOCIATION_RETAIN)
+		}
 	}
 }
 
@@ -1462,7 +1433,7 @@ extension NSMenu {
 
 	@discardableResult
 	func addHeader(_ title: String, hasSeparatorAbove: Bool = true) -> NSMenuItem {
-		addHeader(title.attributedString, hasSeparatorAbove: hasSeparatorAbove)
+		addHeader(title.toNSAttributedString, hasSeparatorAbove: hasSeparatorAbove)
 	}
 
 	@discardableResult
@@ -2513,7 +2484,7 @@ extension Defaults {
 
 		@ViewStorage private var onChange: ((Selection) -> Void)?
 		private let data: Data
-		@StateObject private var observable: Defaults.Observable<Selection>
+		@Default private var selection: Selection
 		private var elementLabel: (Element) -> ElementLabel
 
 		init(
@@ -2522,18 +2493,18 @@ extension Defaults {
 			@ViewBuilder elementLabel: @escaping (Element) -> ElementLabel
 		) {
 			self.data = data
-			self._observable = .init(wrappedValue: Defaults.Observable(key))
+			self._selection = .init(key)
 			self.elementLabel = elementLabel
 		}
 
 		var body: some View {
 			_OriginalMultiCheckboxPicker(
 				data: data,
-				selection: $observable.value
+				selection: $selection
 			) {
 				elementLabel($0)
 			}
-				.onChange(of: observable.value) {
+				.onChange(of: selection) {
 					onChange?($0)
 				}
 		}
@@ -2773,31 +2744,120 @@ extension Shape where Self == RoundedRectangle {
 
 
 extension View {
-	@available(macOS, obsoleted: 12)
-	@ViewBuilder
-	func menuIndicatorHidden() -> some View {
-		if #available(macOS 12, *) {
-			menuIndicator(.hidden)
-		} else {
-			self
-		}
+	/**
+	This allows multiple alerts on a single view, which `.alert()` doesn't.
+	*/
+	func alert2<A, M>(
+		_ title: Text,
+		isPresented: Binding<Bool>,
+		@ViewBuilder actions: () -> A,
+		@ViewBuilder message: () -> M
+	) -> some View where A: View, M: View {
+		background(
+			EmptyView()
+				.alert(
+					title,
+					isPresented: isPresented,
+					actions: actions,
+					message: message
+				)
+		)
 	}
-}
 
+	/**
+	This allows multiple alerts on a single view, which `.alert()` doesn't.
+	*/
+	func alert2<A, M>(
+		_ title: String,
+		isPresented: Binding<Bool>,
+		@ViewBuilder actions: () -> A,
+		@ViewBuilder message: () -> M
+	) -> some View where A: View, M: View {
+		alert2(
+			Text(title),
+			isPresented: isPresented,
+			actions: actions,
+			message: message
+		)
+	}
 
-extension View {
+	/**
+	This allows multiple alerts on a single view, which `.alert()` doesn't.
+	*/
+	func alert2<A>(
+		_ title: Text,
+		message: String? = nil,
+		isPresented: Binding<Bool>,
+		@ViewBuilder actions: () -> A
+	) -> some View where A: View {
+		// swiftlint:disable:next trailing_closure
+		alert2(
+			title,
+			isPresented: isPresented,
+			actions: actions,
+			message: {
+				if let message = message {
+					Text(message)
+				}
+			}
+		)
+	}
+
+	// This is a convenience method and does not exist natively.
+	/**
+	This allows multiple alerts on a single view, which `.alert()` doesn't.
+	*/
+	func alert2<A>(
+		_ title: String,
+		message: String? = nil,
+		isPresented: Binding<Bool>,
+		@ViewBuilder actions: () -> A
+	) -> some View where A: View {
+		// swiftlint:disable:next trailing_closure
+		alert2(
+			title,
+			isPresented: isPresented,
+			actions: actions,
+			message: {
+				if let message = message {
+					Text(message)
+				}
+			}
+		)
+	}
+
 	/**
 	This allows multiple alerts on a single view, which `.alert()` doesn't.
 	*/
 	func alert2(
-		isPresented: Binding<Bool>,
-		content: @escaping () -> Alert
+		_ title: Text,
+		message: String? = nil,
+		isPresented: Binding<Bool>
 	) -> some View {
-		background(
-			EmptyView().alert(
-				isPresented: isPresented,
-				content: content
-			)
+		// swiftlint:disable:next trailing_closure
+		alert2(
+			title,
+			message: message,
+			isPresented: isPresented,
+			actions: {}
+		)
+	}
+
+	// This is a convenience method and does not exist natively.
+	/**
+	This allows multiple alerts on a single view, which `.alert()` doesn't.
+	*/
+	func alert2(
+		_ title: String,
+		message: String? = nil,
+		isPresented: Binding<Bool>
+	) -> some View {
+		// swiftlint:disable:next trailing_closure
+		alert2(
+			title,
+			message: message,
+			isPresented: isPresented,
+			actions: {}
 		)
 	}
 }
@@ -2858,5 +2918,45 @@ extension NSEvent {
 	var isAlternativeClickForStatusItem: Bool {
 		isAlternativeMouseUp
 			|| (type == .leftMouseUp && modifiers == .option)
+	}
+}
+
+
+extension NSError {
+	static func appError(
+		_ description: String,
+		recoverySuggestion: String? = nil,
+		userInfo: [String: Any] = [:],
+		domainPostfix: String? = nil
+	) -> Self {
+		var userInfo = userInfo
+		userInfo[NSLocalizedDescriptionKey] = description
+
+		if let recoverySuggestion = recoverySuggestion {
+			userInfo[NSLocalizedRecoverySuggestionErrorKey] = recoverySuggestion
+		}
+
+		return .init(
+			domain: domainPostfix.map { "\(SSApp.idString) - \($0)" } ?? SSApp.idString,
+			code: 1, // This is what Swift errors end up as.
+			userInfo: userInfo
+		)
+	}
+}
+
+
+extension Button where Label == SwiftUI.Label<Text, Image> {
+	init(
+		_ title: String,
+		systemImage: String,
+		role: ButtonRole? = nil,
+		action: @escaping () -> Void
+	) {
+		self.init(
+			role: role,
+			action: action
+		) {
+			Label(title, systemImage: systemImage)
+		}
 	}
 }

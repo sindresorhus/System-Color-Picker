@@ -27,7 +27,7 @@ private struct RecentlyPickedColorsButton: View {
 						.labelStyle(.titleAndIcon)
 				}
 			}
-				// Without, it becomes disabled. (macOS 12.0.1)
+				// Without, it becomes disabled. (macOS 12.4)
 				.buttonStyle(.automatic)
 		} label: {
 			Image(systemName: "clock.fill")
@@ -35,7 +35,7 @@ private struct RecentlyPickedColorsButton: View {
 //				.padding(8) // Has no effect. (macOS 12.0.1)
 				.contentShape(.rectangle)
 		}
-			.menuIndicatorHidden()
+			.menuIndicator(.hidden)
 			.padding(8)
 			.fixedSize()
 			.opacity(0.6) // Try to match the other buttons.
@@ -117,7 +117,7 @@ private struct BarView: View {
 			.contentShape(.rectangle)
 			.fixedSize()
 			.opacity(0.6) // Try to match the other buttons.
-			.menuIndicatorHidden()
+			.menuIndicator(.hidden)
 	}
 }
 
@@ -162,7 +162,7 @@ struct ColorPickerScreen: View {
 					var hexColor = $0
 
 					if hexColor.hasPrefix("##") {
-						hexColor = hexColor.dropFirst().string
+						hexColor = hexColor.dropFirst().toString
 						self.hexColor = hexColor
 					}
 
@@ -178,14 +178,11 @@ struct ColorPickerScreen: View {
 						updateColorsFromPanel(excludeHex: true, preventUpdate: true)
 					}
 				}
-			Button {
+			Button("Copy Hex", systemImage: "doc.on.doc.fill") {
 				hexColor.copyToPasteboard()
-			} label: {
-				Image(systemName: "doc.on.doc.fill")
-					// TODO: Enable when targeting macOS 12 and remove `.fill` in the string. Also on the other buttons.
-//					.symbolVariant(.fill)
-//					.symbolRenderingMode(.hierarchical)
 			}
+				.labelStyle(.iconOnly)
+				.symbolRenderingMode(.hierarchical)
 				.buttonStyle(.borderless)
 				.contentShape(.rectangle)
 				.keyboardShortcut("h", modifiers: [.shift, .command])
@@ -214,11 +211,11 @@ struct ColorPickerScreen: View {
 						updateColorsFromPanel(excludeHSL: true, preventUpdate: true)
 					}
 				}
-			Button {
+			Button("Copy HSL", systemImage: "doc.on.doc.fill") {
 				hslColor.copyToPasteboard()
-			} label: {
-				Image(systemName: "doc.on.doc.fill")
 			}
+				.labelStyle(.iconOnly)
+				.symbolRenderingMode(.hierarchical)
 				.buttonStyle(.borderless)
 				.contentShape(.rectangle)
 				.keyboardShortcut("s", modifiers: [.shift, .command])
@@ -247,11 +244,11 @@ struct ColorPickerScreen: View {
 						updateColorsFromPanel(excludeRGB: true, preventUpdate: true)
 					}
 				}
-			Button {
+			Button("Copy RGB", systemImage: "doc.on.doc.fill") {
 				rgbColor.copyToPasteboard()
-			} label: {
-				Image(systemName: "doc.on.doc.fill")
 			}
+				.labelStyle(.iconOnly)
+				.symbolRenderingMode(.hierarchical)
 				.buttonStyle(.borderless)
 				.contentShape(.rectangle)
 				.keyboardShortcut("r", modifiers: [.shift, .command])
@@ -280,11 +277,11 @@ struct ColorPickerScreen: View {
 						updateColorsFromPanel(excludeLCH: true, preventUpdate: true)
 					}
 				}
-			Button {
+			Button("Copy LCH", systemImage: "doc.on.doc.fill") {
 				lchColor.copyToPasteboard()
-			} label: {
-				Image(systemName: "doc.on.doc.fill")
 			}
+				.labelStyle(.iconOnly)
+				.symbolRenderingMode(.hierarchical)
 				.buttonStyle(.borderless)
 				.contentShape(.rectangle)
 				.keyboardShortcut("l", modifiers: [.shift, .command])

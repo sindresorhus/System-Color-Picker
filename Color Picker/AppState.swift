@@ -98,7 +98,7 @@ final class AppState: ObservableObject {
 
 		let item = $0
 
-		$0.button!.onAction { [self] event in
+		$0.button!.onAction = { [self] event in
 			let isAlternative = event.isAlternativeClickForStatusItem
 
 			let showMenu = { [self] in
@@ -168,11 +168,6 @@ final class AppState: ObservableObject {
 
 		// Make the invisible native SwiftUI window not show up in mission control when in menu bar mode. (macOS 11.6)
 		SSApp.swiftUIMainWindow?.collectionBehavior = .stationary
-
-		// We hide the “View” menu as there's a macOS bug where it sometimes enables even though it doesn't work and then causes a crash when clicked. Hiding it does not work on macOS 12.
-		if #available(macOS 12, *) {} else {
-			NSApp.mainMenu?.item(withTitle: "View")?.isHidden = true
-		}
 	}
 
 	private func requestReview() {
@@ -208,9 +203,9 @@ final class AppState: ObservableObject {
 				return
 			}
 
-			self.colorPanel.color = color
-			self.addToRecentlyPickedColor(color)
-			self.requestReview()
+			colorPanel.color = color
+			addToRecentlyPickedColor(color)
+			requestReview()
 
 			if Defaults[.copyColorAfterPicking] {
 				color.stringRepresentation.copyToPasteboard()

@@ -1,6 +1,11 @@
 import SwiftUI
 import Defaults
 
+/**
+NOTES:
+- The "com.apple.security.files.user-selected.read-only" entitlement is required by the "Open" menu in the "Color Palettes" pane.
+*/
+
 @main
 struct AppMain: App {
 	@NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
@@ -49,23 +54,12 @@ struct AppMain: App {
 						.disabled(NSColor.fromPasteboardGraceful(.general) == nil)
 				}
 				CommandGroup(replacing: .help) {
-					Button("What is LCH color?") {
-						"https://lea.verou.me/2020/04/lch-colors-in-css-what-why-and-how/".openUrl()
-					}
-					Button("FAQ") {
-						"https://github.com/sindresorhus/System-Color-Picker#faq".openUrl()
-					}
+					Link("What is LCH color?", destination: "https://lea.verou.me/2020/04/lch-colors-in-css-what-why-and-how/")
+					Link("FAQ", destination: "https://github.com/sindresorhus/System-Color-Picker#faq")
 					Divider()
-					// TODO: Use `Link` when targeting macOS 12.
-					Button("Website") {
-						"https://sindresorhus.com/system-color-picker".openUrl()
-					}
-					Button("Rate on the App Store") {
-						"macappstore://apps.apple.com/app/id1545870783?action=write-review".openUrl()
-					}
-					Button("More Apps by Me") {
-						"macappstore://apps.apple.com/developer/id328077650".openUrl()
-					}
+					Link("Website", destination: "https://sindresorhus.com/system-color-picker")
+					Link("Rate on the App Store", destination: "macappstore://apps.apple.com/app/id1545870783?action=write-review")
+					Link("More Apps by Me", destination: "macappstore://apps.apple.com/developer/id328077650")
 					Divider()
 					Button("Send Feedback…") {
 						SSApp.openSendFeedbackPage()

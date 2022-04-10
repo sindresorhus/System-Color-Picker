@@ -7,11 +7,7 @@ extension AppState {
 	func setUpEvents() {
 		Defaults.publisher(.showInMenuBar)
 			.receive(on: DispatchQueue.main)
-			.sink { [weak self] in
-				guard let self = self else {
-					return
-				}
-
+			.sink { [self] in
 				// We only set the state if it's in Dock mode or menu bar mode showing the icon.
 				if !$0.newValue || ($0.newValue && !Defaults[.hideMenuBarIcon]) {
 					self.statusItem.isVisible = $0.newValue
@@ -41,12 +37,12 @@ extension AppState {
 			}
 			.store(in: &cancellables)
 
-		KeyboardShortcuts.onKeyUp(for: .pickColor) { [weak self] in
-			self?.pickColor()
+		KeyboardShortcuts.onKeyUp(for: .pickColor) { [self] in
+			pickColor()
 		}
 
-		KeyboardShortcuts.onKeyUp(for: .toggleWindow) { [weak self] in
-			self?.colorPanel.toggle()
+		KeyboardShortcuts.onKeyUp(for: .toggleWindow) { [self] in
+			colorPanel.toggle()
 		}
 
 		// We use this instead of `applicationShouldHandleReopen` because of the macOS bug.

@@ -13,6 +13,11 @@ Pick colors from anywhere using the built-in color picker.
 - Hide menu bar icon
 
 
+■ Tip
+
+Press the Space key while using the color sampler to show the RGB values. The color sampler is a system component and it can unfortunately not show other kinds of color values.
+
+
 ■ Keyboard shortcuts
 
 You can use the following keyboard shortcuts in the app:

@@ -17,7 +17,11 @@ The macOS color picker as an app with lots of extra features.
 
 [![](https://tools.applemediaservices.com/api/badges/download-on-the-mac-app-store/black/en-us?size=250x83&releaseDate=1615852800)](https://apps.apple.com/app/id1545870783)
 
-Requires macOS 11 or later.
+Requires macOS 12 or later.
+
+**Older versions**
+
+- [Last macOS 11 compatible version](https://github.com/sindresorhus/System-Color-Picker/releases/download/v1.9.6/Color.Picker.1.9.6.-.macOS.11.zip) *(1.9.6)*
 
 ## Features
 
@@ -29,6 +33,10 @@ Requires macOS 11 or later.
 - Recently picked colors
 - Shortcuts support
 - Hide menu bar icon
+
+## Tip
+
+Press the <kbd>Space</kbd> key while using the color sampler to show the RGB values. The color sampler is a system component and it can unfortunately not show other kinds of color values.
 
 ## Keyboard shortcuts
 
@@ -56,6 +64,10 @@ The built-in color picker supports plugins:
 ![](Stuff/screenshot2.jpg)
 
 ## FAQ
+
+#### The app does not show up in the menu bar
+
+macOS hides menu bar apps when there is no space left in the menu bar. This is a common problem on MacBooks with a notch. Try quitting some menu bar apps to free up space. If this does not solve it, try quitting Bartender if you have it installed.
 
 #### What is LCH color?
 
