@@ -80,7 +80,7 @@ private struct GeneralSettings: View {
 				.help("Make the color picker window stay on top of all other windows.")
 				.padding(.bottom, 8)
 			Defaults.Toggle("Show in menu bar instead of Dock", key: .showInMenuBar)
-				.help("If you have “Keep in Dock” enabled when activating this preference, you should disable that since the Dock icon will no longer be functional.")
+				.help("If you have “Keep in Dock” enabled when activating this setting, you should disable that since the Dock icon will no longer be functional.")
 			Group {
 				LaunchAtLogin.Toggle()
 					.help(showInMenuBar ? "" : "There is really no point in launching the app at login if it is not in the menu bar. You can instead just put it in the Dock and launch it when needed.")

@@ -184,7 +184,7 @@ enum SSApp {
 extension SSApp {
 	@MainActor
 	static var swiftUIMainWindow: NSWindow? {
-		NSApp.windows.first { $0.simpleClassName == "SwiftUIWindow" }
+		NSApp.windows.first { $0.simpleClassName == (OS.isMacOS13OrLater ? "AppKitWindow" : "SwiftUIWindow") }
 	}
 }
 
@@ -195,13 +195,17 @@ extension SSApp {
 	*/
 	@MainActor
 	static func showSettingsWindow() {
-		if NSApp.activationPolicy() == .accessory {
-			NSApp.activate(ignoringOtherApps: true)
-		}
-
 		// Run in the next runloop so it doesn't conflict with SwiftUI if run at startup.
 		DispatchQueue.main.async {
-			NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
+			if NSApp.activationPolicy() == .accessory {
+				NSApp.activate(ignoringOtherApps: true)
+			}
+
+			if #available(macOS 13, *) {
+				NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+			} else {
+				NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
+			}
 		}
 	}
 
@@ -1438,7 +1442,7 @@ extension NSMenu {
 
 	@discardableResult
 	func addSettingsItem() -> NSMenuItem {
-		addCallbackItem("Preferences…", key: ",") {
+		addCallbackItem(OS.isMacOS13OrLater ? "Settings…" : "Preferences…", key: ",") {
 			Task {
 				await SSApp.showSettingsWindow()
 			}
@@ -2960,3 +2964,57 @@ extension Button where Label == SwiftUI.Label<Text, Image> {
 		}
 	}
 }
+
+
+enum OperatingSystem {
+	case macOS
+	case iOS
+	case tvOS
+	case watchOS
+
+	#if os(macOS)
+	static let current = macOS
+	#elseif os(iOS)
+	static let current = iOS
+	#elseif os(tvOS)
+	static let current = tvOS
+	#elseif os(watchOS)
+	static let current = watchOS
+	#else
+	#error("Unsupported platform")
+	#endif
+}
+
+extension OperatingSystem {
+	/**
+	- Note: Only use this when you cannot use an `if #available` check. For example, inline in function calls.
+	*/
+	static let isMacOS14OrLater: Bool = {
+		#if os(macOS)
+		if #available(macOS 14, *) {
+			return true
+		} else {
+			return false
+		}
+		#else
+		return false
+		#endif
+	}()
+
+	/**
+	- Note: Only use this when you cannot use an `if #available` check. For example, inline in function calls.
+	*/
+	static let isMacOS13OrLater: Bool = {
+		#if os(macOS)
+		if #available(macOS 13, *) {
+			return true
+		} else {
+			return false
+		}
+		#else
+		return false
+		#endif
+	}()
+}
+
+typealias OS = OperatingSystem

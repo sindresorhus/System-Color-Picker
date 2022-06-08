@@ -102,7 +102,7 @@ private struct BarView: View {
 			}
 			if showInMenuBar {
 				Divider()
-				Button("Preferences…") {
+				Button(OS.isMacOS13OrLater ? "Settings…" : "Preferences…") {
 					SSApp.showSettingsWindow()
 				}
 					.keyboardShortcut(",")
