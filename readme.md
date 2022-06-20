@@ -34,9 +34,10 @@ Requires macOS 12 or later.
 - Shortcuts support
 - Hide menu bar icon
 
-## Tip
+## Tips
 
-Press the <kbd>Space</kbd> key while using the color sampler to show the RGB values. The color sampler is a system component and it can unfortunately not show other kinds of color values.
+- Press the <kbd>Space</kbd> key while using the color sampler to show the RGB values. The color sampler is a system component and it can unfortunately not show other kinds of color values.
+- Press the <kbd>Option</kbd> key when copying the Hex color to invert whether to include `#`.
 
 ## Keyboard shortcuts
 

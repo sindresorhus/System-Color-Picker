@@ -35,7 +35,7 @@ extension NSColor {
 		toSRGB.format(
 			.hex(
 				isUppercased: Defaults[.uppercaseHexColor],
-				hasPrefix: Defaults[.hashPrefixInHexColor]
+				hasPrefix: NSEvent.modifiers == .option ? !Defaults[.hashPrefixInHexColor] : Defaults[.hashPrefixInHexColor]
 			)
 		)
 	}
@@ -2887,6 +2887,14 @@ extension NSStatusItem {
 
 
 extension NSEvent {
+	static var modifiers: ModifierFlags {
+		modifierFlags
+			.intersection(.deviceIndependentFlagsMask)
+			// We remove `capsLock` as it shouldn't affect the modifiers.
+			// We remove `numericPad`/`function` as arrow keys trigger it, use `event.specialKeys` instead.
+			.subtracting([.capsLock, .numericPad, .function])
+	}
+
 	/**
 	Real modifiers.
 

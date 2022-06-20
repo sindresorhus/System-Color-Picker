@@ -122,6 +122,7 @@ private struct BarView: View {
 }
 
 struct ColorPickerScreen: View {
+	@EnvironmentObject private var appState: AppState
 	@Default(.uppercaseHexColor) private var uppercaseHexColor
 	@Default(.hashPrefixInHexColor) private var hashPrefixInHexColor
 	@Default(.legacyColorSyntax) private var legacyColorSyntax
@@ -179,7 +180,7 @@ struct ColorPickerScreen: View {
 					}
 				}
 			Button("Copy Hex", systemImage: "doc.on.doc.fill") {
-				hexColor.copyToPasteboard()
+				appState.colorPanel.color.hexColorString.copyToPasteboard()
 			}
 				.labelStyle(.iconOnly)
 				.symbolRenderingMode(.hierarchical)
