@@ -13,18 +13,24 @@ private struct RecentlyPickedColorsButton: View {
 
 	var body: some View {
 		Menu {
-			ForEach(recentlyPickedColors.reversed()) { color in
-				Button {
-					appState.colorPanel.color = color
-				} label: {
-					Label {
-						Text(color.stringRepresentation)
-					} icon: {
-						// We don't use SwiftUI here as it only supports showing an actual image. (macOS 12.0)
-						// https://github.com/feedback-assistant/reports/issues/247
-						Image(nsImage: color.swatchImage)
+			Group {
+				ForEach(recentlyPickedColors.reversed()) { color in
+					Button {
+						appState.colorPanel.color = color
+					} label: {
+						Label {
+							Text(color.stringRepresentation)
+						} icon: {
+							// We don't use SwiftUI here as it only supports showing an actual image. (macOS 12.0)
+							// https://github.com/feedback-assistant/reports/issues/247
+							Image(nsImage: color.swatchImage)
+						}
+							.labelStyle(.titleAndIcon)
 					}
-						.labelStyle(.titleAndIcon)
+				}
+				Divider()
+				Button("Clear") {
+					recentlyPickedColors = []
 				}
 			}
 				// Without, it becomes disabled. (macOS 12.4)

@@ -212,6 +212,7 @@ extension SSApp {
 	/**
 	The SwiftUI settings window.
 	*/
+	@MainActor
 	static var settingsWindow: NSWindow? {
 		NSApp.windows.first { $0.frameAutosaveName == "com_apple_SwiftUI_Settings_window" }
 	}
