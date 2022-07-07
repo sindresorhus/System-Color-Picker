@@ -1,9 +1,18 @@
 import SwiftUI
 import Defaults
+import LaunchAtLogin
 
 /**
 NOTES:
 - The "com.apple.security.files.user-selected.read-only" entitlement is required by the "Open" menu in the "Color Palettes" pane.
+
+TODO when targeting macOS 13:
+- Upload non-App Store version.
+
+TODO shortcut action ideas;
+- Convert color
+- Toggle color panel
+- Toggle color sampler in app
 */
 
 @main
@@ -56,8 +65,8 @@ struct AppMain: App {
 				CommandGroup(replacing: .help) {
 					Link("What is LCH color?", destination: "https://lea.verou.me/2020/04/lch-colors-in-css-what-why-and-how/")
 					Link("FAQ", destination: "https://github.com/sindresorhus/System-Color-Picker#faq")
-					Divider()
 					Link("Website", destination: "https://sindresorhus.com/system-color-picker")
+					Divider()
 					Link("Rate on the App Store", destination: "macappstore://apps.apple.com/app/id1545870783?action=write-review")
 					Link("More Apps by Me", destination: "macappstore://apps.apple.com/developer/id328077650")
 					Divider()
@@ -72,6 +81,8 @@ struct AppMain: App {
 	}
 
 	private func migrate() {
+		LaunchAtLogin.migrateIfNeeded()
+
 		// TODO: Remove in 2023.
 		SSApp.runOnce(identifier: "migrateShownColorFormats") {
 			guard !SSApp.isFirstLaunch else {
@@ -119,7 +130,11 @@ struct AppMain: App {
 
 @MainActor
 private final class AppDelegate: NSObject, NSApplicationDelegate {
-	func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
+	func applicationDidFinishLaunching(_ notification: Notification) {
+		if #available(macOS 13, *) {
+			SSApp.swiftUIMainWindow?.close()
+		}
+	}
 
 	// Does not work on macOS 12.0.1 because of `WindowGroup`: https://github.com/feedback-assistant/reports/issues/246
 	// This is only run when the app is started when it's already running.
