@@ -127,6 +127,106 @@ private struct BarView: View {
 	}
 }
 
+struct ColorInputView: View {
+    @EnvironmentObject private var appState: AppState
+    @State private var textColor: Color = .primary
+    @Binding var inputColorText: String
+    @Binding var isTextFieldFocused: Bool
+    @Binding var isPreventingUpdate: Bool
+    let colorPanel: NSColorPanel
+    let textFieldFontSize: Double
+    let inputColorType: colorType
+    enum colorType: String, CaseIterable {
+        case hex = "Hex"
+        case hsl = "HSL"
+        case rgb = "RGB"
+        case lch = "LCH"
+    }
+    var colorKeyboardShortcut: KeyEquivalent {
+        switch inputColorType {
+        case .hex:
+            return KeyEquivalent("h")
+        case .hsl:
+            return KeyEquivalent("s")
+        case .rgb:
+            return KeyEquivalent("r")
+        case .lch:
+            return KeyEquivalent("l")
+        }
+    }
+    var body: some View {
+        HStack {
+            NativeTextField(
+                text: $inputColorText,
+                placeholder: inputColorType.rawValue,
+                font: .monospacedSystemFont(ofSize: textFieldFontSize, weight: .regular),
+                isFocused: $isTextFieldFocused,
+                textColor: textColor
+            )
+                .controlSize(.large)
+                .onChange(of: inputColorText) {
+                    switch inputColorType {
+                    case .hex:
+                        if inputColorText.count > 6 {
+                            if inputColorText.prefix(1) == "#" {
+                                inputColorText = inputColorText.prefix(7).toString
+                            } else {
+                                inputColorText = inputColorText.prefix(6).toString
+                            }
+                        }
+
+                        // inputColorText = inputColorText.filter { "#abcdefABCDEF0123456789".contains($0) } // Hex text input filter
+
+                        var hexColor = $0
+
+                        if hexColor.hasPrefix("##") {
+                            hexColor = hexColor.dropFirst().toString
+                            inputColorText = hexColor
+                        }
+
+                        if
+                            isTextFieldFocused,
+                            !isPreventingUpdate,
+                            let newColor = NSColor(hexString: hexColor.trimmingCharacters(in: .whitespaces))
+                        {
+                            colorPanel.color = newColor
+                            textColor = .primary
+                        } else {
+                            textColor = .red
+                        }
+
+                        if !isPreventingUpdate {
+                          // updateColorsFromPanel(excludeHex: true, preventUpdate: true)
+                        }
+                    case .hsl:
+                        return
+                    case .rgb:
+                        return
+                    case .lch:
+                        return
+                    }
+                }
+            Button("Copy \(inputColorType.rawValue)", systemImage: "doc.on.doc.fill") {
+                switch inputColorType {
+                case .hex:
+                    appState.colorPanel.color.hexColorString.copyToPasteboard()
+                case .hsl:
+                    return
+                case .rgb:
+                    return
+                case .lch:
+                    return
+                }
+            }
+                .labelStyle(.iconOnly)
+                .symbolRenderingMode(.hierarchical)
+                .buttonStyle(.borderless)
+                .contentShape(.rectangle)
+                .keyboardShortcut(colorKeyboardShortcut, modifiers: [.shift, .command]) // TODO: need to pass kb shortcut somehow
+        }
+    }
+}
+
 struct ColorPickerScreen: View {
 	@EnvironmentObject private var appState: AppState
 	@Default(.uppercaseHexColor) private var uppercaseHexColor
@@ -143,6 +243,7 @@ struct ColorPickerScreen: View {
 	@State private var isTextFieldFocusedRGB = false
 	@State private var isTextFieldFocusedLCH = false
 	@State private var isPreventingUpdate = false
+    @State private var textColor = Color.primary
 
 	let colorPanel: NSColorPanel
 
@@ -162,7 +263,8 @@ struct ColorPickerScreen: View {
                 text: $hexColor,
                 placeholder: "Hex",
                 font: .monospacedSystemFont(ofSize: textFieldFontSize, weight: .regular),
-                isFocused: $isTextFieldFocusedHex
+                isFocused: $isTextFieldFocusedHex,
+                textColor: textColor
             )
 				.controlSize(.large)
 				.onChange(of: hexColor) {
@@ -202,7 +304,8 @@ struct ColorPickerScreen: View {
 				text: $hslColor,
 				placeholder: "HSL",
 				font: .monospacedSystemFont(ofSize: textFieldFontSize, weight: .regular),
-				isFocused: $isTextFieldFocusedHSL
+				isFocused: $isTextFieldFocusedHSL,
+                textColor: textColor
 			)
 				.controlSize(.large)
 				.onChange(of: hslColor) {
@@ -235,7 +338,8 @@ struct ColorPickerScreen: View {
 				text: $rgbColor,
 				placeholder: "RGB",
 				font: .monospacedSystemFont(ofSize: textFieldFontSize, weight: .regular),
-				isFocused: $isTextFieldFocusedRGB
+				isFocused: $isTextFieldFocusedRGB,
+                textColor: textColor
 			)
 				.controlSize(.large)
 				.onChange(of: rgbColor) {
@@ -268,7 +372,8 @@ struct ColorPickerScreen: View {
 				text: $lchColor,
 				placeholder: "LCH",
 				font: .monospacedSystemFont(ofSize: textFieldFontSize, weight: .regular),
-				isFocused: $isTextFieldFocusedLCH
+				isFocused: $isTextFieldFocusedLCH,
+                textColor: textColor
 			)
 				.controlSize(.large)
 				.onChange(of: lchColor) {
@@ -299,7 +404,14 @@ struct ColorPickerScreen: View {
 		VStack {
 			BarView()
 			if shownColorFormats.contains(.hex) {
-				hexColorView
+                ColorInputView(
+                    inputColorText: $hexColor,
+                    isTextFieldFocused: $isTextFieldFocusedHex,
+                    isPreventingUpdate: $isPreventingUpdate,
+                    colorPanel: colorPanel,
+                    textFieldFontSize: textFieldFontSize,
+                    inputColorType: .hex
+                )
 			}
 			if shownColorFormats.contains(.hsl) {
 				hslColorView

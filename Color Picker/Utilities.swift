@@ -1021,6 +1021,7 @@ struct NativeTextField: NSViewRepresentable {
 	var isFirstResponder = false
 	@Binding var isFocused: Bool // Note: This is only readable.
 	var isSingleLine = true
+    var textColor: Color
 
 	final class InternalTextField: NSTextField {
 		private var globalEventMonitor: GlobalEventMonitor?
@@ -1143,6 +1144,7 @@ struct NativeTextField: NSViewRepresentable {
 		nsView.bezelStyle = .roundedBezel
 		nsView.stringValue = text
 		nsView.placeholderString = placeholder
+        nsView.textColor = NSColor(textColor)
 
 		if let font = font {
 			nsView.font = font
