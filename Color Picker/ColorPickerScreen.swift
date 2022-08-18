@@ -134,7 +134,6 @@ struct ColorPickerScreen: View {
 	@Default(.legacyColorSyntax) private var legacyColorSyntax
 	@Default(.shownColorFormats) private var shownColorFormats
 	@Default(.largerText) private var largerText
-    @ObservedObject private var colorInputs = ColorChecker()
 	@State private var hexColor = ""
 	@State private var hslColor = ""
 	@State private var rgbColor = ""
@@ -158,25 +157,22 @@ struct ColorPickerScreen: View {
 
 	private var hexColorView: some View {
         HStack {
-            Image(systemName: colorInputs.hexColorValid ? "checkmark.circle" : "xmark.circle")
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(colorInputs.hexColorValid ? .green : .red)
-                .imageScale(.large)
 			// TODO: When I use `TextField`, add the copy button using `.safeAreaInset()`.
 			NativeTextField(
-                text: $colorInputs.hexColor,
+                text: $hexColor,
                 placeholder: "Hex",
                 font: .monospacedSystemFont(ofSize: textFieldFontSize, weight: .regular),
                 isFocused: $isTextFieldFocusedHex
             )
 				.controlSize(.large)
-				.onChange(of: colorInputs.hexColor) {
-                    colorInputs.checkHexColorTextInput()
+				.onChange(of: hexColor) {
 					var hexColor = $0
+
 					if hexColor.hasPrefix("##") {
 						hexColor = hexColor.dropFirst().toString
 						self.hexColor = hexColor
 					}
+
 					if
 						isTextFieldFocusedHex,
 						!isPreventingUpdate,
@@ -184,6 +180,7 @@ struct ColorPickerScreen: View {
 					{
 						colorPanel.color = newColor
 					}
+
 					if !isPreventingUpdate {
 						updateColorsFromPanel(excludeHex: true, preventUpdate: true)
 					}

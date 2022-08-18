@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		3DCF4CEE28AC2C0400CE25D5 /* ColorChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DCF4CED28AC2C0400CE25D5 /* ColorChecker.swift */; };
 		E32CF5572793FACD002DDBC0 /* Defaults in Frameworks */ = {isa = PBXBuildFile; productRef = E32CF5562793FACD002DDBC0 /* Defaults */; };
 		E38D432F263AAE8500701B82 /* SettingsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = E38D432E263AAE8500701B82 /* SettingsScreen.swift */; };
 		E38D4331263AAEA900701B82 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = E38D4330263AAEA900701B82 /* Constants.swift */; };
@@ -59,7 +58,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		3DCF4CED28AC2C0400CE25D5 /* ColorChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorChecker.swift; sourceTree = "<group>"; };
 		E38D432E263AAE8500701B82 /* SettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreen.swift; sourceTree = "<group>"; };
 		E38D4330263AAEA900701B82 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		E38D4332263AB24E00701B82 /* Utilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities.swift; sourceTree = "<group>"; };
@@ -162,7 +160,6 @@
 				E3A3B12025904E7D001B4D0C /* Assets.xcassets */,
 				E3E7D7A827218959009D71F4 /* Intents.intentdefinition */,
 				E322B6DB26416E1100ABB691 /* Other */,
-				3DCF4CED28AC2C0400CE25D5 /* ColorChecker.swift */,
 			);
 			path = "Color Picker";
 			sourceTree = "<group>";
@@ -344,7 +341,6 @@
 				E390D734263B3C71005FCB34 /* AppState.swift in Sources */,
 				E38D4331263AAEA900701B82 /* Constants.swift in Sources */,
 				E3DFA8C92662514800D2623E /* Events.swift in Sources */,
-				3DCF4CEE28AC2C0400CE25D5 /* ColorChecker.swift in Sources */,
 				E390D736263C6ACD005FCB34 /* ColorPanel.swift in Sources */,
 				E3E7D7A927218959009D71F4 /* Intents.intentdefinition in Sources */,
 				E38D4335263AEE3700701B82 /* ColorPickerScreen.swift in Sources */,
