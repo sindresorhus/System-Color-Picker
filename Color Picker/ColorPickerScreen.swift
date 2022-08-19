@@ -136,18 +136,7 @@ struct ColorInputView: View {
     let colorPanel: NSColorPanel
     let textFieldFontSize: Double
     let inputColorType: ColorFormat
-    var colorKeyboardShortcut: KeyEquivalent {
-        switch inputColorType {
-        case .hex:
-            return KeyEquivalent("h")
-        case .hsl:
-            return KeyEquivalent("s")
-        case .rgb:
-            return KeyEquivalent("r")
-        case .lch:
-            return KeyEquivalent("l")
-        }
-    }
+
     var body: some View {
         HStack {
             // TODO: When I use `TextField`, add the copy button using `.safeAreaInset()`.
@@ -169,8 +158,6 @@ struct ColorInputView: View {
                                 inputColorText = inputColorText.prefix(6).toString
                             }
                         }
-
-                        // inputColorText = inputColorText.filter { "#abcdefABCDEF0123456789".contains($0) } // Hex text input filter
 
                         var hexColor = $0
 
@@ -236,7 +223,7 @@ struct ColorInputView: View {
                 .symbolRenderingMode(.hierarchical)
                 .buttonStyle(.borderless)
                 .contentShape(.rectangle)
-                .keyboardShortcut(colorKeyboardShortcut, modifiers: [.shift, .command])
+                .keyboardShortcut(inputColorType.keyboardShortcut, modifiers: [.shift, .command])
         }
     }
 }
@@ -428,6 +415,21 @@ struct ColorPickerScreen: View {
 			}
 		}
 	}
+}
+
+extension ColorFormat {
+    fileprivate var keyboardShortcut: KeyEquivalent {
+        switch self {
+        case .hex:
+            return KeyEquivalent("h")
+        case .hsl:
+            return KeyEquivalent("s")
+        case .rgb:
+            return KeyEquivalent("r")
+        case .lch:
+            return KeyEquivalent("l")
+        }
+    }
 }
 
 struct ColorPickerScreen_Previews: PreviewProvider {
