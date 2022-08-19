@@ -202,9 +202,41 @@ struct ColorInputView: View {
                             // updateColorsFromPanel(excludeHSL: true, preventUpdate: true)
                         }
                     case .rgb:
-                        return
+                        if
+                            isTextFieldFocused,
+                            !isPreventingUpdate,
+                            let newColor = NSColor(cssRGBString: inputColorText.trimmingCharacters(in: .whitespaces))
+                        {
+                            colorPanel.color = newColor
+                        }
+
+                        if NSColor(cssRGBString: inputColorText.trimmingCharacters(in: .whitespaces)) != nil {
+                            textColor = .primary
+                        } else {
+                            textColor = .red
+                        }
+
+                        if !isPreventingUpdate {
+                            // updateColorsFromPanel(excludeRGB: true, preventUpdate: true)
+                        }
                     case .lch:
-                        return
+                        if
+                            isTextFieldFocused,
+                            !isPreventingUpdate,
+                            let newColor = NSColor(cssLCHString: inputColorText.trimmingCharacters(in: .whitespaces))
+                        {
+                            colorPanel.color = newColor
+                        }
+
+                        if NSColor(cssLCHString: inputColorText.trimmingCharacters(in: .whitespaces)) != nil {
+                            textColor = .primary
+                        } else {
+                            textColor = .red
+                        }
+
+                        if !isPreventingUpdate {
+                            // updateColorsFromPanel(excludeLCH: true, preventUpdate: true)
+                        }
                     }
                 }
             Button("Copy \(inputColorType.rawValue)", systemImage: "doc.on.doc.fill") {
@@ -214,9 +246,9 @@ struct ColorInputView: View {
                 case .hsl:
                     appState.colorPanel.color.hslColorString.copyToPasteboard()
                 case .rgb:
-                    return
+                    appState.colorPanel.color.rgbColorString.copyToPasteboard()
                 case .lch:
-                    return
+                    appState.colorPanel.color.lchColorString.copyToPasteboard()
                 }
             }
                 .labelStyle(.iconOnly)
@@ -257,74 +289,6 @@ struct ColorPickerScreen: View {
 
 	private var textFieldFontSize: Double { largerText ? 16 : 0 }
 
-	private var rgbColorView: some View {
-		HStack {
-			NativeTextField(
-				text: $rgbColor,
-				placeholder: "RGB",
-				font: .monospacedSystemFont(ofSize: textFieldFontSize, weight: .regular),
-				isFocused: $isTextFieldFocusedRGB,
-                textColor: textColor
-			)
-				.controlSize(.large)
-				.onChange(of: rgbColor) {
-					if
-						isTextFieldFocusedRGB,
-						!isPreventingUpdate,
-						let newColor = NSColor(cssRGBString: $0.trimmingCharacters(in: .whitespaces))
-					{
-						colorPanel.color = newColor
-					}
-
-					if !isPreventingUpdate {
-						updateColorsFromPanel(excludeRGB: true, preventUpdate: true)
-					}
-				}
-			Button("Copy RGB", systemImage: "doc.on.doc.fill") {
-				rgbColor.copyToPasteboard()
-			}
-				.labelStyle(.iconOnly)
-				.symbolRenderingMode(.hierarchical)
-				.buttonStyle(.borderless)
-				.contentShape(.rectangle)
-				.keyboardShortcut("r", modifiers: [.shift, .command])
-		}
-	}
-
-	private var lchColorView: some View {
-		HStack {
-			NativeTextField(
-				text: $lchColor,
-				placeholder: "LCH",
-				font: .monospacedSystemFont(ofSize: textFieldFontSize, weight: .regular),
-				isFocused: $isTextFieldFocusedLCH,
-                textColor: textColor
-			)
-				.controlSize(.large)
-				.onChange(of: lchColor) {
-					if
-						isTextFieldFocusedLCH,
-						!isPreventingUpdate,
-						let newColor = NSColor(cssLCHString: $0.trimmingCharacters(in: .whitespaces))
-					{
-						colorPanel.color = newColor
-					}
-
-					if !isPreventingUpdate {
-						updateColorsFromPanel(excludeLCH: true, preventUpdate: true)
-					}
-				}
-			Button("Copy LCH", systemImage: "doc.on.doc.fill") {
-				lchColor.copyToPasteboard()
-			}
-				.labelStyle(.iconOnly)
-				.symbolRenderingMode(.hierarchical)
-				.buttonStyle(.borderless)
-				.contentShape(.rectangle)
-				.keyboardShortcut("l", modifiers: [.shift, .command])
-		}
-	}
-
 	var body: some View {
 		VStack {
 			BarView()
@@ -349,10 +313,24 @@ struct ColorPickerScreen: View {
                 )
 			}
 			if shownColorFormats.contains(.rgb) {
-				rgbColorView
+                ColorInputView(
+                    inputColorText: $rgbColor,
+                    isTextFieldFocused: $isTextFieldFocusedRGB,
+                    isPreventingUpdate: $isPreventingUpdate,
+                    colorPanel: colorPanel,
+                    textFieldFontSize: textFieldFontSize,
+                    inputColorType: .rgb
+                )
 			}
 			if shownColorFormats.contains(.lch) {
-				lchColorView
+                ColorInputView(
+                    inputColorText: $lchColor,
+                    isTextFieldFocused: $isTextFieldFocusedLCH,
+                    isPreventingUpdate: $isPreventingUpdate,
+                    colorPanel: colorPanel,
+                    textFieldFontSize: textFieldFontSize,
+                    inputColorType: .lch
+                )
 			}
 		}
 			.padding(9)
