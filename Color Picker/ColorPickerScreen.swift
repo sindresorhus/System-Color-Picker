@@ -156,6 +156,7 @@ struct ColorInputView: View {
     }
     var body: some View {
         HStack {
+            // TODO: When I use `TextField`, add the copy button using `.safeAreaInset()`.
             NativeTextField(
                 text: $inputColorText,
                 placeholder: inputColorType.rawValue,
@@ -187,7 +188,7 @@ struct ColorInputView: View {
                         if
                             isTextFieldFocused,
                             !isPreventingUpdate,
-                            let newColor = NSColor(hexString: hexColor.trimmingCharacters(in: .whitespaces))
+                            let newColor = NSColor(hexString: inputColorText.trimmingCharacters(in: .whitespaces))
                         {
                             colorPanel.color = newColor
                             textColor = .primary
@@ -196,10 +197,23 @@ struct ColorInputView: View {
                         }
 
                         if !isPreventingUpdate {
-                          // updateColorsFromPanel(excludeHex: true, preventUpdate: true)
+                          // updateColorsFromPanel(excludeHex: true, preventUpdate: true) // TODO: Method needs refactoring to work here
                         }
                     case .hsl:
-                        return
+                        if
+                            isTextFieldFocused,
+                            !isPreventingUpdate,
+                            let newColor = NSColor(cssHSLString: inputColorText.trimmingCharacters(in: .whitespaces))
+                        {
+                            colorPanel.color = newColor
+                            textColor = .primary
+                        } else {
+                            textColor = .red
+                        }
+
+                        if !isPreventingUpdate {
+                            // updateColorsFromPanel(excludeHSL: true, preventUpdate: true)
+                        }
                     case .rgb:
                         return
                     case .lch:
@@ -211,7 +225,7 @@ struct ColorInputView: View {
                 case .hex:
                     appState.colorPanel.color.hexColorString.copyToPasteboard()
                 case .hsl:
-                    return
+                    appState.colorPanel.color.hslColorString.copyToPasteboard()
                 case .rgb:
                     return
                 case .lch:
@@ -222,7 +236,7 @@ struct ColorInputView: View {
                 .symbolRenderingMode(.hierarchical)
                 .buttonStyle(.borderless)
                 .contentShape(.rectangle)
-                .keyboardShortcut(colorKeyboardShortcut, modifiers: [.shift, .command]) // TODO: need to pass kb shortcut somehow
+                .keyboardShortcut(colorKeyboardShortcut, modifiers: [.shift, .command])
         }
     }
 }
@@ -255,82 +269,6 @@ struct ColorPickerScreen: View {
 	}
 
 	private var textFieldFontSize: Double { largerText ? 16 : 0 }
-
-	private var hexColorView: some View {
-        HStack {
-			// TODO: When I use `TextField`, add the copy button using `.safeAreaInset()`.
-			NativeTextField(
-                text: $hexColor,
-                placeholder: "Hex",
-                font: .monospacedSystemFont(ofSize: textFieldFontSize, weight: .regular),
-                isFocused: $isTextFieldFocusedHex,
-                textColor: textColor
-            )
-				.controlSize(.large)
-				.onChange(of: hexColor) {
-					var hexColor = $0
-
-					if hexColor.hasPrefix("##") {
-						hexColor = hexColor.dropFirst().toString
-						self.hexColor = hexColor
-					}
-
-					if
-						isTextFieldFocusedHex,
-						!isPreventingUpdate,
-						let newColor = NSColor(hexString: hexColor.trimmingCharacters(in: .whitespaces))
-					{
-						colorPanel.color = newColor
-					}
-
-					if !isPreventingUpdate {
-						updateColorsFromPanel(excludeHex: true, preventUpdate: true)
-					}
-				}
-            Button("Copy Hex", systemImage: "doc.on.doc.fill") {
-                appState.colorPanel.color.hexColorString.copyToPasteboard()
-            }
-				.labelStyle(.iconOnly)
-				.symbolRenderingMode(.hierarchical)
-				.buttonStyle(.borderless)
-				.contentShape(.rectangle)
-				.keyboardShortcut("h", modifiers: [.shift, .command])
-        }
-    }
-
-	private var hslColorView: some View {
-		HStack {
-			NativeTextField(
-				text: $hslColor,
-				placeholder: "HSL",
-				font: .monospacedSystemFont(ofSize: textFieldFontSize, weight: .regular),
-				isFocused: $isTextFieldFocusedHSL,
-                textColor: textColor
-			)
-				.controlSize(.large)
-				.onChange(of: hslColor) {
-					if
-						isTextFieldFocusedHSL,
-						!isPreventingUpdate,
-						let newColor = NSColor(cssHSLString: $0.trimmingCharacters(in: .whitespaces))
-					{
-						colorPanel.color = newColor
-					}
-
-					if !isPreventingUpdate {
-						updateColorsFromPanel(excludeHSL: true, preventUpdate: true)
-					}
-				}
-			Button("Copy HSL", systemImage: "doc.on.doc.fill") {
-				hslColor.copyToPasteboard()
-			}
-				.labelStyle(.iconOnly)
-				.symbolRenderingMode(.hierarchical)
-				.buttonStyle(.borderless)
-				.contentShape(.rectangle)
-				.keyboardShortcut("s", modifiers: [.shift, .command])
-		}
-	}
 
 	private var rgbColorView: some View {
 		HStack {
@@ -414,7 +352,14 @@ struct ColorPickerScreen: View {
                 )
 			}
 			if shownColorFormats.contains(.hsl) {
-				hslColorView
+                ColorInputView(
+                    inputColorText: $hslColor,
+                    isTextFieldFocused: $isTextFieldFocusedHSL,
+                    isPreventingUpdate: $isPreventingUpdate,
+                    colorPanel: colorPanel,
+                    textFieldFontSize: textFieldFontSize,
+                    inputColorType: .hsl
+                )
 			}
 			if shownColorFormats.contains(.rgb) {
 				rgbColorView
