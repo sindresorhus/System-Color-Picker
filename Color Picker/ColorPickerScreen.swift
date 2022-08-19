@@ -135,13 +135,7 @@ struct ColorInputView: View {
     @Binding var isPreventingUpdate: Bool
     let colorPanel: NSColorPanel
     let textFieldFontSize: Double
-    let inputColorType: colorType
-    enum colorType: String, CaseIterable {
-        case hex = "Hex"
-        case hsl = "HSL"
-        case rgb = "RGB"
-        case lch = "LCH"
-    }
+    let inputColorType: ColorFormat
     var colorKeyboardShortcut: KeyEquivalent {
         switch inputColorType {
         case .hex:
