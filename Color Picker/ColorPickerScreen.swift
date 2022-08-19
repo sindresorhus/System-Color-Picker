@@ -191,6 +191,9 @@ struct ColorInputView: View {
                             let newColor = NSColor(hexString: inputColorText.trimmingCharacters(in: .whitespaces))
                         {
                             colorPanel.color = newColor
+                        }
+
+                        if NSColor(hexString: inputColorText.trimmingCharacters(in: .whitespaces)) != nil {
                             textColor = .primary
                         } else {
                             textColor = .red
@@ -206,6 +209,9 @@ struct ColorInputView: View {
                             let newColor = NSColor(cssHSLString: inputColorText.trimmingCharacters(in: .whitespaces))
                         {
                             colorPanel.color = newColor
+                        }
+
+                        if NSColor(cssHSLString: inputColorText.trimmingCharacters(in: .whitespaces)) != nil {
                             textColor = .primary
                         } else {
                             textColor = .red
