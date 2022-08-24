@@ -132,7 +132,6 @@ struct ColorInputView: View {
     @State private var textColor: Color = .primary
     @Binding var inputColorText: String
     @Binding var isTextFieldFocused: Bool
-    @Binding var isPreventingUpdate: Bool
     let colorPanel: NSColorPanel
     let textFieldFontSize: Double
     let inputColorType: ColorFormat
@@ -168,7 +167,7 @@ struct ColorInputView: View {
 
                         if
                             isTextFieldFocused,
-                            !isPreventingUpdate,
+                            !appState.isPreventingUpdate,
                             let newColor = NSColor(hexString: inputColorText.trimmingCharacters(in: .whitespaces))
                         {
                             colorPanel.color = newColor
@@ -180,13 +179,13 @@ struct ColorInputView: View {
                             textColor = .red
                         }
 
-                        if !isPreventingUpdate {
-                          // updateColorsFromPanel(excludeHex: true, preventUpdate: true) // TODO: Method needs refactoring to work here
+                        if !appState.isPreventingUpdate {
+                            appState.updateColorsFromPanel(excludeHex: true, preventUpdate: true, color: colorPanel.color)
                         }
                     case .hsl:
                         if
                             isTextFieldFocused,
-                            !isPreventingUpdate,
+                            !appState.isPreventingUpdate,
                             let newColor = NSColor(cssHSLString: inputColorText.trimmingCharacters(in: .whitespaces))
                         {
                             colorPanel.color = newColor
@@ -198,13 +197,13 @@ struct ColorInputView: View {
                             textColor = .red
                         }
 
-                        if !isPreventingUpdate {
-                            // updateColorsFromPanel(excludeHSL: true, preventUpdate: true)
+                        if !appState.isPreventingUpdate {
+                            appState.updateColorsFromPanel(excludeHSL: true, preventUpdate: true, color: colorPanel.color)
                         }
                     case .rgb:
                         if
                             isTextFieldFocused,
-                            !isPreventingUpdate,
+                            !appState.isPreventingUpdate,
                             let newColor = NSColor(cssRGBString: inputColorText.trimmingCharacters(in: .whitespaces))
                         {
                             colorPanel.color = newColor
@@ -216,13 +215,13 @@ struct ColorInputView: View {
                             textColor = .red
                         }
 
-                        if !isPreventingUpdate {
-                            // updateColorsFromPanel(excludeRGB: true, preventUpdate: true)
+                        if !appState.isPreventingUpdate {
+                            appState.updateColorsFromPanel(excludeRGB: true, preventUpdate: true, color: colorPanel.color)
                         }
                     case .lch:
                         if
                             isTextFieldFocused,
-                            !isPreventingUpdate,
+                            !appState.isPreventingUpdate,
                             let newColor = NSColor(cssLCHString: inputColorText.trimmingCharacters(in: .whitespaces))
                         {
                             colorPanel.color = newColor
@@ -234,8 +233,8 @@ struct ColorInputView: View {
                             textColor = .red
                         }
 
-                        if !isPreventingUpdate {
-                            // updateColorsFromPanel(excludeLCH: true, preventUpdate: true)
+                        if !appState.isPreventingUpdate {
+                            appState.updateColorsFromPanel(excludeLCH: true, preventUpdate: true, color: colorPanel.color)
                         }
                     }
                 }
@@ -267,16 +266,10 @@ struct ColorPickerScreen: View {
 	@Default(.legacyColorSyntax) private var legacyColorSyntax
 	@Default(.shownColorFormats) private var shownColorFormats
 	@Default(.largerText) private var largerText
-	@State private var hexColor = ""
-	@State private var hslColor = ""
-	@State private var rgbColor = ""
-	@State private var lchColor = ""
 	@State private var isTextFieldFocusedHex = false
 	@State private var isTextFieldFocusedHSL = false
 	@State private var isTextFieldFocusedRGB = false
 	@State private var isTextFieldFocusedLCH = false
-	@State private var isPreventingUpdate = false
-    @State private var textColor = Color.primary
 
 	let colorPanel: NSColorPanel
 
@@ -294,9 +287,8 @@ struct ColorPickerScreen: View {
 			BarView()
 			if shownColorFormats.contains(.hex) {
                 ColorInputView(
-                    inputColorText: $hexColor,
+                    inputColorText: $appState.hexColor,
                     isTextFieldFocused: $isTextFieldFocusedHex,
-                    isPreventingUpdate: $isPreventingUpdate,
                     colorPanel: colorPanel,
                     textFieldFontSize: textFieldFontSize,
                     inputColorType: .hex
@@ -304,9 +296,8 @@ struct ColorPickerScreen: View {
 			}
 			if shownColorFormats.contains(.hsl) {
                 ColorInputView(
-                    inputColorText: $hslColor,
+                    inputColorText: $appState.hslColor,
                     isTextFieldFocused: $isTextFieldFocusedHSL,
-                    isPreventingUpdate: $isPreventingUpdate,
                     colorPanel: colorPanel,
                     textFieldFontSize: textFieldFontSize,
                     inputColorType: .hsl
@@ -314,9 +305,8 @@ struct ColorPickerScreen: View {
 			}
 			if shownColorFormats.contains(.rgb) {
                 ColorInputView(
-                    inputColorText: $rgbColor,
+                    inputColorText: $appState.rgbColor,
                     isTextFieldFocused: $isTextFieldFocusedRGB,
-                    isPreventingUpdate: $isPreventingUpdate,
                     colorPanel: colorPanel,
                     textFieldFontSize: textFieldFontSize,
                     inputColorType: .rgb
@@ -324,9 +314,8 @@ struct ColorPickerScreen: View {
 			}
 			if shownColorFormats.contains(.lch) {
                 ColorInputView(
-                    inputColorText: $lchColor,
+                    inputColorText: $appState.lchColor,
                     isTextFieldFocused: $isTextFieldFocusedLCH,
-                    isPreventingUpdate: $isPreventingUpdate,
                     colorPanel: colorPanel,
                     textFieldFontSize: textFieldFontSize,
                     inputColorType: .lch
@@ -337,61 +326,23 @@ struct ColorPickerScreen: View {
 			// 244 makes `HSL` always fit in the text field.
 			.frame(minWidth: 244, maxWidth: .infinity)
 			.onAppear {
-				updateColorsFromPanel()
+                appState.updateColorsFromPanel(color: colorPanel.color)
 			}
 			.onChange(of: uppercaseHexColor) { _ in
-				updateColorsFromPanel()
+                appState.updateColorsFromPanel(color: colorPanel.color)
 			}
 			.onChange(of: hashPrefixInHexColor) { _ in
-				updateColorsFromPanel()
+                appState.updateColorsFromPanel(color: colorPanel.color)
 			}
 			.onChange(of: legacyColorSyntax) { _ in
-				updateColorsFromPanel()
+                appState.updateColorsFromPanel(color: colorPanel.color)
 			}
 			.onReceive(colorPanel.colorDidChangePublisher) {
 				guard !isAnyTextFieldFocused else {
-					return
-				}
-
-				updateColorsFromPanel(preventUpdate: true)
+                    return
+                }
+                appState.updateColorsFromPanel(preventUpdate: true, color: colorPanel.color)
 			}
-	}
-
-	// TODO: Find a better way to handle this.
-	private func updateColorsFromPanel(
-		excludeHex: Bool = false,
-		excludeHSL: Bool = false,
-		excludeRGB: Bool = false,
-		excludeLCH: Bool = false,
-		preventUpdate: Bool = false
-	) {
-		if preventUpdate {
-			isPreventingUpdate = true
-		}
-
-		let color = colorPanel.color
-
-		if !excludeHex {
-			hexColor = color.hexColorString
-		}
-
-		if !excludeHSL {
-			hslColor = color.hslColorString
-		}
-
-		if !excludeRGB {
-			rgbColor = color.rgbColorString
-		}
-
-		if !excludeLCH {
-			lchColor = color.lchColorString
-		}
-
-		if preventUpdate {
-			DispatchQueue.main.async {
-				isPreventingUpdate = false
-			}
-		}
 	}
 }
 

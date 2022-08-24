@@ -5,6 +5,8 @@ import Sentry
 
 @MainActor
 final class AppState: ObservableObject {
+    // MARK: - Properties
+
 	static let shared = AppState()
 
 	var cancellables = Set<AnyCancellable>()
@@ -128,6 +130,14 @@ final class AppState: ObservableObject {
 		}
 	}
 
+    @Published var hexColor = ""
+    @Published var hslColor = ""
+    @Published var rgbColor = ""
+    @Published var lchColor = ""
+    @Published var isPreventingUpdate = false
+
+    // MARK: - Methods
+
 	init() {
 		setUpConfig()
 
@@ -224,4 +234,40 @@ final class AppState: ObservableObject {
 	func handleAppReopen() {
 		handleMenuBarIcon()
 	}
+
+    // TODO: Find a better way to handle this.
+    func updateColorsFromPanel(
+        excludeHex: Bool = false,
+        excludeHSL: Bool = false,
+        excludeRGB: Bool = false,
+        excludeLCH: Bool = false,
+        preventUpdate: Bool = false,
+        color: NSColor
+    ) {
+        if preventUpdate {
+            isPreventingUpdate = true
+        }
+
+        if !excludeHex {
+            hexColor = color.hexColorString
+        }
+
+        if !excludeHSL {
+            hslColor = color.hslColorString
+        }
+
+        if !excludeRGB {
+            rgbColor = color.rgbColorString
+        }
+
+        if !excludeLCH {
+            lchColor = color.lchColorString
+        }
+
+        if preventUpdate {
+            DispatchQueue.main.async {
+                self.isPreventingUpdate = false
+            }
+        }
+    }
 }
