@@ -1,5 +1,4 @@
 import SwiftUI
-import Defaults
 import LaunchAtLogin
 import KeyboardShortcuts
 
@@ -28,6 +27,8 @@ private struct GeneralSettings: View {
 			Section {
 				Defaults.Toggle("Stay on top", key: .stayOnTop)
 					.help("Make the color picker window stay on top of all other windows.")
+					.padding(.bottom, 8)
+				Defaults.Toggle("Copy color in preferred format after picking", key: .copyColorAfterPicking)
 					.padding(.bottom, 8)
 				Defaults.Toggle("Show in menu bar instead of Dock", key: .showInMenuBar)
 					.help("If you have “Keep in Dock” enabled when activating this setting, you should disable that since the Dock icon will no longer be functional.")
@@ -123,8 +124,8 @@ private struct AdvancedSettings: View {
 		Form {
 			Defaults.Toggle("Show color sampler when opening window", key: .showColorSamplerOnOpen)
 				.help("Show the color picker loupe when the color picker window is shown.")
-			Defaults.Toggle("Copy color in preferred format after picking", key: .copyColorAfterPicking)
 			Defaults.Toggle("Use larger text in text fields", key: .largerText)
+			Defaults.Toggle("Show accessibility color name", key: .showAccessibilityColorName)
 		}
 			.padding()
 			.padding(.vertical)

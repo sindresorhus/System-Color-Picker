@@ -1,6 +1,4 @@
 import SwiftUI
-import Combine
-import Defaults
 import Sentry
 
 @MainActor

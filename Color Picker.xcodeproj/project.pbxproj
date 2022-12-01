@@ -326,7 +326,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "swiftlint\n";
+			shellScript = "PATH=\"/opt/homebrew/bin/:${PATH}\"\nswiftlint\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -661,7 +661,7 @@
 			repositoryURL = "https://github.com/sindresorhus/Defaults";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 6.3.0;
+				minimumVersion = 7.1.0;
 			};
 		};
 		E3F4BC852788A5780075DC52 /* XCRemoteSwiftPackageReference "sentry-cocoa" */ = {

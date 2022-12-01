@@ -9,6 +9,10 @@ import Regex
 import Sentry
 #endif
 
+typealias Defaults = _Defaults
+typealias Default = _Default
+typealias AnyCancellable = Combine.AnyCancellable
+
 /*
 Non-reusable utilities
 */

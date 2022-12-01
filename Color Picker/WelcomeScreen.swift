@@ -6,6 +6,10 @@ extension AppState {
 			return
 		}
 
+		if NSWorkspace.shared.accessibilityDisplayShouldDifferentiateWithoutColor {
+			Defaults[.showAccessibilityColorName] = true
+		}
+
 		NSApp.activate(ignoringOtherApps: true)
 
 		NSAlert.showModal(

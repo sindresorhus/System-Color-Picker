@@ -1,5 +1,4 @@
 import Cocoa
-import Defaults
 import KeyboardShortcuts
 
 extension Defaults.Keys {
@@ -18,6 +17,7 @@ extension Defaults.Keys {
 	static let shownColorFormats = Key<Set<ColorFormat>>("shownColorFormats", default: [.hex, .hsl, .rgb, .lch])
 	static let largerText = Key<Bool>("largerText", default: false)
 	static let copyColorAfterPicking = Key<Bool>("copyColorAfterPicking", default: false)
+	static let showAccessibilityColorName = Key<Bool>("showAccessibilityColorName", default: false)
 
 	// Deprecated
 	static let colorFormatToCopyAfterPicking = Key<CopyColorFormat>("colorFormatToCopyAfterPicking", default: .none)

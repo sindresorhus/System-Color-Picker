@@ -1,6 +1,7 @@
 import SwiftUI
-import Defaults
 import LaunchAtLogin
+
+// TODO: Remove the view menu
 
 /**
 NOTES:
@@ -61,6 +62,10 @@ struct AppMain: App {
 						.help("Paste color in the format Hex, HSL, RGB, or LCH")
 						.keyboardShortcut("v", modifiers: [.shift, .command])
 						.disabled(NSColor.fromPasteboardGraceful(.general) == nil)
+				}
+				CommandGroup(after: .windowSize) {
+					Defaults.Toggle("Stay on Top", key: .stayOnTop)
+						.keyboardShortcut("t", modifiers: [.control, .command])
 				}
 				CommandGroup(replacing: .help) {
 					Link("What is LCH color?", destination: "https://lea.verou.me/2020/04/lch-colors-in-css-what-why-and-how/")
@@ -136,10 +141,11 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
 		}
 	}
 
-	// Does not work on macOS 12.0.1 because of `WindowGroup`: https://github.com/feedback-assistant/reports/issues/246
-	// This is only run when the app is started when it's already running.
-//	func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-//		AppState.shared.handleAppReopen()
-//		return true
-//	}
+	func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+		if #available(macOS 13, *) {
+			AppState.shared.handleAppReopen()
+		}
+
+		return false
+	}
 }

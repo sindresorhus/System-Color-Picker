@@ -1,5 +1,4 @@
 import Cocoa
-import Defaults
 
 @MainActor
 final class ColorPanel: NSColorPanel, NSWindowDelegate {
