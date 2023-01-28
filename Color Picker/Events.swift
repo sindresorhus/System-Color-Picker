@@ -44,16 +44,6 @@ extension AppState {
 			colorPanel.toggle()
 		}
 
-		if #unavailable(macOS 13) {
-			// We use this instead of `applicationShouldHandleReopen` because of the macOS bug.
-			// https://github.com/feedback-assistant/reports/issues/246
-			NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
-				.sink { [self] _ in
-					handleAppReopen()
-				}
-				.store(in: &cancellables)
-		}
-
 		// Workaround for the color picker window not becoming active after the settings window closes. (macOS 11.3)
 		NotificationCenter.default.publisher(for: NSWindow.willCloseNotification)
 			.sink { [self] _ in

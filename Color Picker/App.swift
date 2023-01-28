@@ -1,14 +1,8 @@
 import SwiftUI
-import LaunchAtLogin
-
-// TODO: Remove the view menu
 
 /**
 NOTES:
 - The "com.apple.security.files.user-selected.read-only" entitlement is required by the "Open" menu in the "Color Palettes" pane.
-
-TODO when targeting macOS 13:
-- Upload non-App Store version.
 
 TODO shortcut action ideas;
 - Convert color
@@ -23,7 +17,7 @@ struct AppMain: App {
 	@StateObject private var pasteboardObserver = NSPasteboard.SimpleObservable(.general, onlyWhileAppIsActive: true)
 
 	init() {
-		migrate()
+		setUpConfig()
 	}
 
 	var body: some Scene {
@@ -85,67 +79,25 @@ struct AppMain: App {
 		}
 	}
 
-	private func migrate() {
-		LaunchAtLogin.migrateIfNeeded()
-
-		// TODO: Remove in 2023.
-		SSApp.runOnce(identifier: "migrateShownColorFormats") {
-			guard !SSApp.isFirstLaunch else {
-				return
-			}
-
-			Defaults.migrate(.shownColorFormats, to: .v5)
-			Defaults.migrate(.colorFormatToCopyAfterPicking, to: .v5)
+	private func setUpConfig() {
+		#if !DEBUG
+		SentrySDK.start {
+			$0.dsn = "https://e89cb93d693444ee8829f521ab75025a@o844094.ingest.sentry.io/6139060"
+			$0.enableSwizzling = false
+			$0.enableAppHangTracking = false // https://github.com/getsentry/sentry-cocoa/issues/2643
 		}
-
-		// TODO: Remove in 2023.
-		SSApp.runOnce(identifier: "migrateToPreferredColorFormatSetting") {
-			guard !SSApp.isFirstLaunch else {
-				return
-			}
-
-			if Defaults[.colorFormatToCopyAfterPicking] != .none {
-				Defaults[.copyColorAfterPicking] = true
-			}
-
-			switch Defaults[.colorFormatToCopyAfterPicking] {
-			case .none:
-				break
-			case .hex:
-				Defaults[.preferredColorFormat] = .hex
-			case .hsl:
-				Defaults[.preferredColorFormat] = .hsl
-			case .rgb:
-				Defaults[.preferredColorFormat] = .rgb
-			case .lch:
-				Defaults[.preferredColorFormat] = .lch
-			}
-		}
-
-		// Preserve the old behavior for existing users.
-		SSApp.runOnce(identifier: "setDefaultsForMenuBarItemClickActionSetting") {
-			guard !SSApp.isFirstLaunch else {
-				return
-			}
-
-			Defaults[.menuBarItemClickAction] = .toggleWindow
-		}
+		#endif
 	}
 }
 
 @MainActor
 private final class AppDelegate: NSObject, NSApplicationDelegate {
 	func applicationDidFinishLaunching(_ notification: Notification) {
-		if #available(macOS 13, *) {
-			SSApp.swiftUIMainWindow?.close()
-		}
+		SSApp.swiftUIMainWindow?.close()
 	}
 
 	func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-		if #available(macOS 13, *) {
-			AppState.shared.handleAppReopen()
-		}
-
+		AppState.shared.handleAppReopen()
 		return false
 	}
 }

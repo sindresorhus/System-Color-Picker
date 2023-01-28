@@ -129,16 +129,13 @@ final class AppState: ObservableObject {
 		}
 	}
 
-	init() {
-		setUpConfig()
-
+	private init() {
 		DispatchQueue.main.async { [self] in
 			didLaunch()
 		}
 	}
 
 	private func didLaunch() {
-		fixStuff()
 		setUpEvents()
 		handleMenuBarIcon()
 		showWelcomeScreenIfNeeded()
@@ -155,30 +152,8 @@ final class AppState: ObservableObject {
 		#endif
 	}
 
-	private func setUpConfig() {
-		#if !DEBUG
-		SentrySDK.start {
-			$0.dsn = "https://e89cb93d693444ee8829f521ab75025a@o844094.ingest.sentry.io/6139060"
-			$0.enableSwizzling = false
-		}
-		#endif
-	}
-
-	private func fixStuff() {
-		if #available(macOS 13, *) {
-			SSApp.swiftUIMainWindow?.close()
-		} else {
-			// Make the invisible native SwitUI window not block access to the desktop. (macOS 12.0)
-			// https://github.com/feedback-assistant/reports/issues/253
-			SSApp.swiftUIMainWindow?.ignoresMouseEvents = true
-
-			// Make the invisible native SwiftUI window not show up in mission control when in menu bar mode. (macOS 11.6)
-			SSApp.swiftUIMainWindow?.collectionBehavior = .stationary
-		}
-	}
-
 	private func requestReview() {
-		SSApp.requestReviewAfterBeingCalledThisManyTimes([10, 100, 200, 1000])
+		SSApp.requestReviewAfterBeingCalledThisManyTimes([8, 100, 200, 1000])
 	}
 
 	private func addToRecentlyPickedColor(_ color: NSColor) {

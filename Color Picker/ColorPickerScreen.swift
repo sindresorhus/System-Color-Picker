@@ -188,6 +188,7 @@ struct ColorPickerScreen: View {
 				Text(colorPanel.color.accessibilityName)
 					.font(.system(largerText ? .title3 : .body))
 					.textSelection(.enabled)
+					.accessibilityHidden(true)
 			}
 		}
 			.padding(9)
@@ -291,7 +292,7 @@ private struct BarView: View {
 			actionButton
 			Spacer()
 		}
-			// Cannot do this as the `Menu` buttons don't respect it. (macOS 12.0.1)
+			// Cannot do this as the `Menu` buttons don't respect it. (macOS 13.2)
 			// https://github.com/feedback-assistant/reports/issues/249
 //			.font(.title3)
 			.background {
@@ -318,7 +319,7 @@ private struct BarView: View {
 				Divider()
 				Defaults.Toggle("Stay on Top", key: .stayOnTop)
 				Divider()
-				Button(OS.isMacOS13OrLater ? "Settings…" : "Preferences…") {
+				Button("Settings…") {
 					SSApp.showSettingsWindow()
 				}
 					.keyboardShortcut(",")
@@ -328,11 +329,8 @@ private struct BarView: View {
 				.labelStyle(.iconOnly)
 //				.padding(8) // Has no effect. (macOS 12.0.1)
 		}
-			// TODO: Remove when targeting macOS 13 where it's fixed.
-			.buttonStyle(.automatic) // Without, it becomes disabled: https://github.com/feedback-assistant/reports/issues/250 (macOS 12.0.1)
 			.padding(8)
 			.contentShape(.rectangle)
-			.fixedSize()
 			.opacity(0.6) // Try to match the other buttons.
 			.menuIndicator(.hidden)
 	}
@@ -370,9 +368,6 @@ private struct RecentlyPickedColorsButton: View {
 					recentlyPickedColors = []
 				}
 			}
-				// TODO: Remove when targeting macOS 13 where it's fixed.
-				// Without, it becomes disabled. (macOS 12.4)
-				.buttonStyle(.automatic)
 		} label: {
 			Image(systemName: "clock.fill")
 				.controlSize(.large)
@@ -381,7 +376,6 @@ private struct RecentlyPickedColorsButton: View {
 		}
 			.menuIndicator(.hidden)
 			.padding(8)
-			.fixedSize()
 			.opacity(0.6) // Try to match the other buttons.
 			.disabled(recentlyPickedColors.isEmpty)
 			.help(recentlyPickedColors.isEmpty ? "No recently picked colors" : "Recently picked colors")

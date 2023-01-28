@@ -14,7 +14,10 @@ struct SettingsScreen: View {
 			AdvancedSettings()
 				.settingsTabItem(.advanced)
 		}
-			.frame(width: 420)
+			.formStyle(.grouped)
+			.frame(width: 460)
+			.frame(maxHeight: 480)
+			.fixedSize()
 			.windowLevel(.floating + 1) // Ensure it's always above the color picker.
 	}
 }
@@ -23,99 +26,68 @@ private struct GeneralSettings: View {
 	@Default(.showInMenuBar) private var showInMenuBar
 
 	var body: some View {
-		VStack(alignment: .leading) {
+		Form {
 			Section {
-				Defaults.Toggle("Stay on top", key: .stayOnTop)
-					.help("Make the color picker window stay on top of all other windows.")
-					.padding(.bottom, 8)
-				Defaults.Toggle("Copy color in preferred format after picking", key: .copyColorAfterPicking)
-					.padding(.bottom, 8)
 				Defaults.Toggle("Show in menu bar instead of Dock", key: .showInMenuBar)
 					.help("If you have “Keep in Dock” enabled when activating this setting, you should disable that since the Dock icon will no longer be functional.")
-				Group {
+				if showInMenuBar {
 					LaunchAtLogin.Toggle()
-						.help(showInMenuBar ? "" : "There is really no point in launching the app at login if it is not in the menu bar. You can instead just put it in the Dock and launch it when needed.")
+						.help("There is really no point in launching the app at login if it is not in the menu bar. You can instead just put it in the Dock and launch it when needed.")
 					HideMenuBarIconSetting()
 					MenuBarItemClickActionSetting()
 				}
-					.disabled(!showInMenuBar)
-					.padding(.leading, 20)
-			} footer: {
+			}
+			Section {
+				Defaults.Toggle("Stay on top", key: .stayOnTop)
+					.help("Make the color picker window stay on top of all other windows.")
+				Defaults.Toggle("Copy color in preferred format after picking", key: .copyColorAfterPicking)
+			}
+			Section {} footer: {
 				Button("Feedback & Support") {
 					SSApp.openSendFeedbackPage()
 				}
 					.buttonStyle(.link)
-					.padding(.top)
-					.offset(y: 20)
+					.controlSize(.small)
 			}
 		}
-			.padding()
-			.padding()
-			.padding(.vertical)
 	}
 }
 
 private struct ColorSettings: View {
 	var body: some View {
-		VStack(alignment: .leading) {
-			Form {
+		Form {
+			Section {
+				PreferredColorFormatSetting()
+				ShownColorFormatsSetting()
+			}
+			Section {
 				Defaults.Toggle("Uppercase Hex color", key: .uppercaseHexColor)
 				Defaults.Toggle("Prefix Hex color with #", key: .hashPrefixInHexColor)
 				Defaults.Toggle("Use legacy syntax for HSL and RGB", key: .legacyColorSyntax)
 					.help("Use the legacy “hsl(198, 28%, 50%)” syntax instead of the modern “hsl(198deg 28% 50%)” syntax. This setting is meant for users that need to support older browsers. All modern browsers support the modern syntax.")
 			}
-				.padding()
-				.padding(.horizontal)
-			Divider()
-			Section {
-				PreferredColorFormatSetting()
-			}
-				.padding()
-				.padding(.horizontal)
-			Divider()
-			VStack(alignment: .leading) {
-				ShownColorFormatsSetting()
-			}
-				.padding()
-				.padding(.horizontal)
-			Divider()
-			Section {
+			Section {} footer: {
 				Link("What is LCH color?", destination: "https://lea.verou.me/2020/04/lch-colors-in-css-what-why-and-how/")
 					.controlSize(.small)
-					.padding(.top)
 			}
-				.frame(maxWidth: .infinity)
 		}
-			.padding(.vertical)
 	}
 }
 
 private struct ShortcutsSettings: View {
 	@Default(.showInMenuBar) private var showInMenuBar
-	private let maxWidth = 100.0
 
 	var body: some View {
 		Form {
-			KeyboardShortcuts.Recorder("Pick color:", name: .pickColor)
-				.padding(.bottom, 8)
-			KeyboardShortcuts.Recorder("Toggle window:", name: .toggleWindow)
+			KeyboardShortcuts.Recorder("Pick color", name: .pickColor)
+			KeyboardShortcuts.Recorder(for: .toggleWindow) {
+				Text("Toggle window")
+				if !showInMenuBar {
+					Text("Requires “Show in menu bar” to be enabled")
+				}
+			}
 				.disabled(!showInMenuBar)
-				.opacity(showInMenuBar ? 1 : 0.5)
-				.overlay(
-					showInMenuBar
-						? nil
-						: Text("Requires “Show in menu bar” to be enabled.")
-							.font(.system(size: 10))
-							.foregroundColor(.secondary)
-							.offset(y: 20),
-					alignment: .bottom
-				)
-				.padding(.bottom, showInMenuBar ? 0 : 20)
 		}
-			.padding()
-			.padding()
-			.padding(.vertical)
-			.offset(x: -10)
 	}
 }
 
@@ -127,9 +99,6 @@ private struct AdvancedSettings: View {
 			Defaults.Toggle("Use larger text in text fields", key: .largerText)
 			Defaults.Toggle("Show accessibility color name", key: .showAccessibilityColorName)
 		}
-			.padding()
-			.padding(.vertical)
-			.padding(.vertical)
 	}
 }
 
@@ -153,19 +122,11 @@ private struct MenuBarItemClickActionSetting: View {
 	@Default(.menuBarItemClickAction) private var menuBarItemClickAction
 
 	var body: some View {
-		VStack {
-			EnumPicker(enumBinding: $menuBarItemClickAction) { element, _ in
-				Text(element.title)
-			} label: {
-				Text("When clicking menu bar icon:")
-					.respectDisabled()
-					.fixedSize()
-			}
-				.fixedSize()
+		EnumPicker(selection: $menuBarItemClickAction) {
+			Text($0.title)
+		} label: {
+			Text("When clicking menu bar icon")
 			Text(menuBarItemClickAction.tip)
-				.offset(x: 2)
-				.settingSubtitleTextStyle()
-				.frame(maxWidth: .infinity, alignment: .trailing)
 		}
 	}
 }
@@ -174,20 +135,15 @@ private struct PreferredColorFormatSetting: View {
 	@Default(.preferredColorFormat) private var preferredColorFormat
 
 	var body: some View {
-		EnumPicker(enumBinding: $preferredColorFormat) { element, _ in
-			Text(element.title)
-		} label: {
-			Text("Preferred color format:")
-				.fixedSize()
+		EnumPicker("Preferred color format", selection: $preferredColorFormat) {
+			Text($0.title)
 		}
-			.fixedSize()
 	}
 }
 
 private struct ShownColorFormatsSetting: View {
 	var body: some View {
-		Section("Shown color formats:") {
-			// TODO: Use a dropdown when SwiftUI supports multiple selections in `Picker`.
+		LabeledContent("Shown color formats") {
 			Defaults.MultiCheckboxPicker(
 				key: .shownColorFormats,
 				data: ColorFormat.allCases

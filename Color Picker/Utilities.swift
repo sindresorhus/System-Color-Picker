@@ -3,7 +3,6 @@ import Combine
 import Carbon
 import StoreKit
 import Defaults
-import Regex
 
 #if !APP_EXTENSION
 import Sentry
@@ -188,7 +187,7 @@ enum SSApp {
 extension SSApp {
 	@MainActor
 	static var swiftUIMainWindow: NSWindow? {
-		NSApp.windows.first { $0.simpleClassName == (OS.isMacOS13OrLater ? "AppKitWindow" : "SwiftUIWindow") }
+		NSApp.windows.first { $0.simpleClassName == "AppKitWindow" }
 	}
 }
 
@@ -205,11 +204,7 @@ extension SSApp {
 				NSApp.activate(ignoringOtherApps: true)
 			}
 
-			if #available(macOS 13, *) {
-				NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-			} else {
-				NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
-			}
+			NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
 		}
 	}
 
@@ -409,13 +404,18 @@ final class LocalEventMonitor: ObservableObject {
 
 	@discardableResult
 	func start() -> Self {
-		monitor = NSEvent.addLocalMonitorForEvents(matching: events) { [weak self] in
+		monitor = NSEvent.addLocalMonitorForEvents(matching: events) { [weak self] event in
 			guard let self else {
-				return $0
+				return event
 			}
 
-			self.objectWillChange.send($0)
-			return self.callback?($0) ?? $0
+			self.objectWillChange.send(event)
+
+			if let callback = self.callback {
+				return callback(event)
+			}
+
+			return event
 		} as AnyObject
 
 		return self
@@ -668,7 +668,7 @@ extension Color {
 
 
 extension NSColor {
-	private static let cssHSLRegex = Regex(#"^\s*hsla?\((?<hue>\d+)(?:deg)?[\s,]*(?<saturation>[\d.]+)%[\s,]*(?<lightness>[\d.]+)%\);?\s*$"#)
+	private static let cssHSLRegex = /^\s*hsla?\((?<hue>\d+)(?:deg)?[\s,]*(?<saturation>[\d.]+)%[\s,]*(?<lightness>[\d.]+)%\);?\s*$/
 
 	// TODO: Should I move this to the `Colors.HSL` struct instead?
 	// TODO: Support `alpha` in HSL (both comma and `/` separated): https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/hsl()
@@ -678,13 +678,10 @@ extension NSColor {
 	*/
 	convenience init?(cssHSLString: String) {
 		guard
-			let match = Self.cssHSLRegex.firstMatch(in: cssHSLString),
-			let hueString = match.group(named: "hue")?.value,
-			let saturationString = match.group(named: "saturation")?.value,
-			let lightnessString = match.group(named: "lightness")?.value,
-			let hue = Double(hueString),
-			let saturation = Double(saturationString),
-			let lightness = Double(lightnessString),
+			let match = cssHSLString.wholeMatch(of: Self.cssHSLRegex)?.output,
+			let hue = Double(match.hue),
+			let saturation = Double(match.saturation),
+			let lightness = Double(match.lightness),
 			(0...360).contains(hue),
 			(0...100).contains(saturation),
 			(0...100).contains(lightness)
@@ -704,7 +701,7 @@ extension NSColor {
 
 
 extension NSColor {
-	private static let cssRGBRegex = Regex(#"^\s*rgba?\((?<red>[\d.]+)[\s,]*(?<green>[\d.]+)[\s,]*(?<blue>[\d.]+)\);?\s*$"#)
+	private static let cssRGBRegex = /^\s*rgba?\((?<red>[\d.]+)[\s,]*(?<green>[\d.]+)[\s,]*(?<blue>[\d.]+)\);?\s*$/
 
 	// TODO: Need to handle `rgb(10%, 10%, 10%)`.
 	// TODO: Support `alpha` in RGB (both comma and `/` separated): https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/hsl()
@@ -715,13 +712,10 @@ extension NSColor {
 	*/
 	convenience init?(cssRGBString: String) {
 		guard
-			let match = Self.cssRGBRegex.firstMatch(in: cssRGBString),
-			let redString = match.group(named: "red")?.value,
-			let greenString = match.group(named: "green")?.value,
-			let blueString = match.group(named: "blue")?.value,
-			let red = Double(redString),
-			let green = Double(greenString),
-			let blue = Double(blueString),
+			let match = cssRGBString.wholeMatch(of: Self.cssRGBRegex)?.output,
+			let red = Double(match.red),
+			let green = Double(match.green),
+			let blue = Double(match.blue),
 			(0...255).contains(red),
 			(0...255).contains(green),
 			(0...255).contains(blue)
@@ -741,7 +735,7 @@ extension NSColor {
 
 // https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/lch()
 extension NSColor {
-	private static let cssLCHRegex = Regex(#"^\s*lch\((?<lightness>[\d.]+)%\s+(?<chroma>[\d.]+)\s+(?<hue>[\d.]+)(?:deg)?\s*(?<alpha>\/\s+[\d.]+%?)?\)?;?$"#)
+	private static let cssLCHRegex = /^\s*lch\((?<lightness>[\d.]+)%\s+(?<chroma>[\d.]+)\s+(?<hue>[\d.]+)(?:deg)?\s*(?<alpha>\/\s+[\d.]+%?)?\)?;?$/
 
 	// TODO: Support `alpha`, both percentage and float format. Right now we accept such colors, but ignore the alpha.
 	// TODO: Write a lot of tests for the regex.
@@ -750,13 +744,10 @@ extension NSColor {
 	*/
 	convenience init?(cssLCHString: String) {
 		guard
-			let match = Self.cssLCHRegex.firstMatch(in: cssLCHString),
-			let lightnessString = match.group(named: "lightness")?.value,
-			let chromaString = match.group(named: "chroma")?.value,
-			let hueString = match.group(named: "hue")?.value,
-			let lightness = Double(lightnessString),
-			let chroma = Double(chromaString),
-			let hue = Double(hueString),
+			let match = cssLCHString.wholeMatch(of: Self.cssLCHRegex)?.output,
+			let lightness = Double(match.lightness),
+			let chroma = Double(match.chroma),
+			let hue = Double(match.hue),
 			(0...100).contains(lightness),
 			chroma >= 0, // Usually max 230, but theoretically unbounded.
 			(0...360).contains(hue)
@@ -1447,7 +1438,7 @@ extension NSMenu {
 
 	@discardableResult
 	func addSettingsItem() -> NSMenuItem {
-		addCallbackItem(OS.isMacOS13OrLater ? "Settings…" : "Preferences…", key: ",") {
+		addCallbackItem("Settings…", key: ",") {
 			Task {
 				await SSApp.showSettingsWindow()
 			}
@@ -1894,53 +1885,15 @@ extension RandomAccessCollection {
 }
 
 
-/**
-Create a `Picker` from an enum.
-
-- Note: The enum must conform to `CaseIterable`.
-
-```
-enum EventIndicatorsInCalendar: String, Codable, CaseIterable {
-	case none
-	case one
-	case maxThree
-
-	var title: String {
-		switch self {
-		case .none:
-			return "None"
-		case .one:
-			return "Single Gray Dot"
-		case .maxThree:
-			return "Up To Three Colored Dots"
-		}
-	}
-}
-
-struct ContentView: View {
-	@Default(.indicateEventsInCalendar) private var indicator
-
-	var body: some View {
-		EnumPicker(
-			"Foo",
-			enumCase: $indicator
-		) { element, isSelected in
-			Text(element.title)
-		}
-	}
-}
-```
-*/
 struct EnumPicker<Enum, Label, Content>: View where Enum: CaseIterable & Equatable, Enum.AllCases.Index: Hashable, Label: View, Content: View {
-	let enumBinding: Binding<Enum>
-	@ViewBuilder let content: (Enum, Bool) -> Content
+	let selection: Binding<Enum>
+	@ViewBuilder let content: (Enum) -> Content
 	@ViewBuilder let label: () -> Label
 
 	var body: some View {
-		Picker(selection: enumBinding.caseIndex) {
+		Picker(selection: selection.caseIndex) { // swiftlint:disable:this multiline_arguments
 			ForEach(Array(Enum.allCases).indexed(), id: \.0) { index, element in
-				// TODO: Is `isSelected` really useful? If not, remove it.
-				content(element, element == enumBinding.wrappedValue)
+				content(element)
 					.tag(index)
 			}
 		} label: {
@@ -1952,10 +1905,10 @@ struct EnumPicker<Enum, Label, Content>: View where Enum: CaseIterable & Equatab
 extension EnumPicker where Label == Text {
 	init(
 		_ title: some StringProtocol,
-		enumBinding: Binding<Enum>,
-		@ViewBuilder content: @escaping (Enum, Bool) -> Content
+		selection: Binding<Enum>,
+		@ViewBuilder content: @escaping (Enum) -> Content
 	) {
-		self.enumBinding = enumBinding
+		self.selection = selection
 		self.content = content
 		self.label = { Text(title) }
 	}
@@ -2103,7 +2056,7 @@ extension Colors {
 	https://en.wikipedia.org/wiki/SRGB
 	*/
 	fileprivate static func sRGBToLinearSRGB(colorComponent: Double) -> Double {
-		colorComponent > 0.040_45
+		colorComponent > 0.04045
 			? pow((colorComponent + 0.055) / 1.055, 2.40)
 			: (colorComponent / 12.92)
 	}
@@ -2114,7 +2067,7 @@ extension Colors {
 	https://en.wikipedia.org/wiki/SRGB
 	*/
 	fileprivate static func linearSRGBToSRGB(colorComponent: Double) -> Double {
-		colorComponent > 0.003_130_8
+		colorComponent > 0.0031308
 			? (pow(colorComponent, 1.0 / 2.4) * 1.055 - 0.055)
 			: (colorComponent * 12.92)
 	}
@@ -2131,9 +2084,9 @@ extension Colors {
 		blue: Double
 	) -> (x: Double, y: Double, z: Double) {
 		(
-			x: (red * 0.412_456_4) + (green * 0.357_576_1) + (blue * 0.180_437_5),
-			y: (red * 0.212_672_9) + (green * 0.715_152_2) + (blue * 0.072_175_0),
-			z: (red * 0.019_333_9) + (green * 0.119_192_0) + (blue * 0.950_304_1)
+			x: (red * 0.4124564) + (green * 0.3575761) + (blue * 0.1804375),
+			y: (red * 0.2126729) + (green * 0.7151522) + (blue * 0.0721750),
+			z: (red * 0.0193339) + (green * 0.1191920) + (blue * 0.9503041)
 		)
 	}
 
@@ -2146,9 +2099,9 @@ extension Colors {
 		z: Double
 	) -> (red: Double, green: Double, blue: Double) {
 		(
-			red: (x * 3.240_454_2) + (y * -1.537_138_5) + (z * -0.498_531_4),
-			green: (x * -0.969_266_0) + (y * 1.876_010_8) + (z * 0.041_556_0),
-			blue: (x * 0.055_643_4) + (y * -0.204_025_9) + (z * 1.057_225_2)
+			red: (x * 3.2404542) + (y * -1.5371385) + (z * -0.4985314),
+			green: (x * -0.9692660) + (y * 1.8760108) + (z * 0.0415560),
+			blue: (x * 0.0556434) + (y * -0.2040259) + (z * 1.0572252)
 		)
 	}
 
@@ -2163,9 +2116,9 @@ extension Colors {
 		z: Double
 	) -> (x: Double, y: Double, z: Double) {
 		(
-			x: (x * 1.047_811_2) + (y * 0.022_886_6) + (z * -0.050_127_0),
-			y: (x * 0.029_542_4) + (y * 0.990_484_4) + (z * -0.017_049_1),
-			z: (x * -0.009_234_5) + (y * 0.015_043_6) + (z * 0.752_131_6)
+			x: (x * 1.0478112) + (y * 0.0228866) + (z * -0.0501270),
+			y: (x * 0.0295424) + (y * 0.9904844) + (z * -0.0170491),
+			z: (x * -0.0092345) + (y * 0.0150436) + (z * 0.7521316)
 		)
 	}
 
@@ -2180,9 +2133,9 @@ extension Colors {
 		z: Double
 	) -> (x: Double, y: Double, z: Double) {
 		(
-			x: (x * 0.955_576_6) + (y * -0.023_039_3) + (z * 0.063_163_6),
-			y: (x * -0.028_289_5) + (y * 1.009_941_6) + (z * 0.021_007_7),
-			z: (x * 0.012_298_2) + (y * -0.020_483_0) + (z * 1.329_909_8)
+			x: (x * 0.9555766) + (y * -0.0230393) + (z * 0.0631636),
+			y: (x * -0.0282895) + (y * 1.0099416) + (z * 0.0210077),
+			z: (x * 0.0122982) + (y * -0.0204830) + (z * 1.3299098)
 		)
 	}
 
@@ -2202,9 +2155,9 @@ extension Colors {
 		// swiftlint:enable identifier_name
 
 		// Compute XYZ scaled relative to reference white.
-		let scaledX = x / 0.964_22
+		let scaledX = x / 0.96422
 		let scaledY = y / 1.0
-		let scaledZ = z / 0.825_21
+		let scaledZ = z / 0.82521
 
 		func computeF(_ value: Double) -> Double {
 			value > ε ? cbrt(value) : (κ * value + 16) / 116
@@ -2247,9 +2200,9 @@ extension Colors {
 
 		// Scaled by reference white.
 		return (
-			x: x * 0.964_22,
+			x: x * 0.96422,
 			y: y * 1.0,
-			z: z * 0.825_21
+			z: z * 0.82521
 		)
 	}
 
@@ -2456,12 +2409,9 @@ struct MultiCheckboxPicker<Data: RandomAccessCollection, ElementLabel: View>: Vi
 	@ViewBuilder var elementLabel: (Data.Element) -> ElementLabel
 
 	var body: some View {
-		VStack(alignment: .leading) {
-			ForEach(data) { element in
-				Toggle(isOn: $selection.contains(element)) {
-					elementLabel(element)
-				}
-					.toggleStyle(.checkbox)
+		ForEach(data) { element in
+			Toggle(isOn: $selection.contains(element)) {
+				elementLabel(element)
 			}
 		}
 	}
@@ -2854,13 +2804,6 @@ extension View {
 }
 
 
-extension Task<Never, Never> {
-	public static func sleep(seconds: TimeInterval) async throws {
-	   try await sleep(nanoseconds: UInt64(seconds * Double(NSEC_PER_SEC)))
-	}
-}
-
-
 extension NSStatusItem {
 	/**
 	Show a one-time menu from the status item.
@@ -2984,9 +2927,9 @@ extension OperatingSystem {
 	/**
 	- Note: Only use this when you cannot use an `if #available` check. For example, inline in function calls.
 	*/
-	static let isMacOS14OrLater: Bool = {
+	static let isMacOS15OrLater: Bool = {
 		#if os(macOS)
-		if #available(macOS 14, *) {
+		if #available(macOS 15, *) {
 			return true
 		} else {
 			return false
@@ -2999,9 +2942,9 @@ extension OperatingSystem {
 	/**
 	- Note: Only use this when you cannot use an `if #available` check. For example, inline in function calls.
 	*/
-	static let isMacOS13OrLater: Bool = {
+	static let isMacOS14OrLater: Bool = {
 		#if os(macOS)
-		if #available(macOS 13, *) {
+		if #available(macOS 14, *) {
 			return true
 		} else {
 			return false
