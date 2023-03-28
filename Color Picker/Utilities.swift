@@ -218,6 +218,22 @@ extension SSApp {
 }
 
 
+extension SSApp {
+	/**
+	Initialize Sentry.
+	*/
+	static func initSentry(_ dsn: String) {
+		#if !DEBUG && canImport(Sentry)
+		SentrySDK.start {
+			$0.dsn = dsn
+			$0.enableSwizzling = false
+			$0.enableAppHangTracking = false // https://github.com/getsentry/sentry-cocoa/issues/2643
+		}
+		#endif
+	}
+}
+
+
 enum Device {
 	static let osVersion: String = {
 		let os = ProcessInfo.processInfo.operatingSystemVersion
@@ -409,9 +425,9 @@ final class LocalEventMonitor: ObservableObject {
 				return event
 			}
 
-			self.objectWillChange.send(event)
+			objectWillChange.send(event)
 
-			if let callback = self.callback {
+			if let callback {
 				return callback(event)
 			}
 
@@ -1042,7 +1058,7 @@ struct NativeTextField: NSViewRepresentable {
 					return
 				}
 
-				self.unfocus()
+				unfocus()
 			}.start()
 
 			// Cannot be `.leftMouseUp` as the color wheel swallows it.
@@ -1059,14 +1075,14 @@ struct NativeTextField: NSViewRepresentable {
 					return event
 				}
 
-				let clickPoint = self.convert(event.locationInWindow, from: nil)
+				let clickPoint = convert(event.locationInWindow, from: nil)
 				let clickMargin = 3.0
 
-				if !self.frame.insetBy(dx: -clickMargin, dy: -clickMargin).contains(clickPoint) {
-					self.unfocus()
+				if !frame.insetBy(dx: -clickMargin, dy: -clickMargin).contains(clickPoint) {
+					unfocus()
 					return nil
 				} else {
-					self.parent.isFocused = true
+					parent.isFocused = true
 				}
 
 				return event
@@ -1321,7 +1337,7 @@ extension ControlActionClosureProtocol {
 
 			let trampoline = ActionTrampoline(action: newValue)
 			target = trampoline
-			self.action = #selector(ActionTrampoline.handleAction)
+			action = #selector(ActionTrampoline.handleAction)
 			objc_setAssociatedObject(self, &controlActionClosureProtocolAssociatedObjectKey, trampoline, .OBJC_ASSOCIATION_RETAIN)
 		}
 	}
@@ -1773,9 +1789,9 @@ extension NSPasteboard {
 						}
 
 						if isActive {
-							self.start()
+							start()
 						} else {
-							self.stop()
+							stop()
 						}
 					}
 					.store(in: &cancellables)
@@ -2367,7 +2383,7 @@ extension Binding where Value: SetAlgebra, Value.Element: Hashable {
 	}
 	```
 	*/
-	func contains<T>(_ element: T) -> Binding<Bool> where T == Value.Element {
+	func contains(_ element: Value.Element) -> Binding<Bool> {
 		.init(
 			get: { wrappedValue.contains(element) },
 			set: {

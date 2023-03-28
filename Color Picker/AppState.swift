@@ -1,5 +1,4 @@
 import SwiftUI
-import Sentry
 
 @MainActor
 final class AppState: ObservableObject {

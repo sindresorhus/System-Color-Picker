@@ -80,13 +80,7 @@ struct AppMain: App {
 	}
 
 	private func setUpConfig() {
-		#if !DEBUG
-		SentrySDK.start {
-			$0.dsn = "https://e89cb93d693444ee8829f521ab75025a@o844094.ingest.sentry.io/6139060"
-			$0.enableSwizzling = false
-			$0.enableAppHangTracking = false // https://github.com/getsentry/sentry-cocoa/issues/2643
-		}
-		#endif
+		SSApp.initSentry("https://e89cb93d693444ee8829f521ab75025a@o844094.ingest.sentry.io/6139060")
 	}
 }
 

@@ -17,11 +17,18 @@ The macOS color picker as an app with lots of extra features.
 
 [![](https://tools.applemediaservices.com/api/badges/download-on-the-mac-app-store/black/en-us?size=250x83&releaseDate=1615852800)](https://apps.apple.com/app/id1545870783)
 
-Requires macOS 12 or later.
+Requires macOS 13 or later.
 
 **Older versions**
 
-- [Last macOS 11 compatible version](https://github.com/sindresorhus/System-Color-Picker/releases/download/v1.9.6/Color.Picker.1.9.6.-.macOS.11.zip) *(1.9.6)*
+- [1.12.1](https://github.com/sindresorhus/System-Color-Picker/releases/download/v1.12.1/Color.Picker.1.12.1.-.macOS.12.zip) for macOS 12+
+- [1.9.6](https://github.com/sindresorhus/System-Color-Picker/releases/download/v1.9.6/Color.Picker.1.9.6.-.macOS.11.zip) for macOS 11+
+
+**Non-App Store version**
+
+A special version for users that cannot access the App Store. It won't receive updates.
+
+[Download](https://dsc.cloud/sindresorhus/Color-Picker-1.13.0-1679983870.zip) *(1.13.0 · macOS 13+)*
 
 ## Features
 

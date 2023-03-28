@@ -9,7 +9,7 @@ extension AppState {
 			.sink { [self] in
 				// We only set the state if it's in Dock mode or menu bar mode showing the icon.
 				if !$0.newValue || ($0.newValue && !Defaults[.hideMenuBarIcon]) {
-					self.statusItem.isVisible = $0.newValue
+					statusItem.isVisible = $0.newValue
 				}
 
 				SSApp.isDockIconVisible = !$0.newValue
@@ -17,7 +17,7 @@ extension AppState {
 
 				if !$0.newValue {
 					LaunchAtLogin.isEnabled = false
-					self.colorPanel.makeKeyAndOrderFront(nil)
+					colorPanel.makeKeyAndOrderFront(nil)
 				}
 			}
 			.store(in: &cancellables)
