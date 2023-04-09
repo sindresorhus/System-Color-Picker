@@ -1064,7 +1064,7 @@ struct NativeTextField: NSViewRepresentable {
 			// Cannot be `.leftMouseUp` as the color wheel swallows it.
 			localEventMonitor = LocalEventMonitor(events: [.leftMouseDown, .rightMouseDown, .keyDown]) { [weak self] event in
 				guard let self else {
-					return nil
+					return event
 				}
 
 				if event.type == .keyDown {
@@ -1080,7 +1080,6 @@ struct NativeTextField: NSViewRepresentable {
 
 				if !frame.insetBy(dx: -clickMargin, dy: -clickMargin).contains(clickPoint) {
 					unfocus()
-					return nil
 				} else {
 					parent.isFocused = true
 				}
