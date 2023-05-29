@@ -26,7 +26,7 @@ Requires macOS 13 or later.
 
 **Non-App Store version**
 
-A special version for users that cannot access the App Store. It won't receive updates.
+A special version for users that cannot access the App Store. It won't receive automatic updates. I will update it here once a year.
 
 [Download](https://dsc.cloud/sindresorhus/Color-Picker-1.13.0-1679983870.zip) *(1.13.0 · macOS 13+)*
 
@@ -104,7 +104,6 @@ I don't have any immediate plans to localize the app.
 ## Built with
 
 - [Defaults](https://github.com/sindresorhus/Defaults) - Swifty and modern UserDefaults
-- [Regex](https://github.com/sindresorhus/Regex) - Swifty regular expressions
 - [KeyboardShortcuts](https://github.com/sindresorhus/KeyboardShortcuts) - Add user-customizable global keyboard shortcuts to your macOS app
 - [LaunchAtLogin](https://github.com/sindresorhus/LaunchAtLogin) - Add “Launch at Login” functionality to your macOS app
 

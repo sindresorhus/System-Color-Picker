@@ -253,10 +253,8 @@ struct ColorPickerScreen: View {
 	}
 }
 
-struct ColorPickerScreen_Previews: PreviewProvider {
-	static var previews: some View {
-		ColorPickerScreen(colorPanel: .shared)
-	}
+#Preview {
+	ColorPickerScreen(colorPanel: .shared)
 }
 
 private struct BarView: View {

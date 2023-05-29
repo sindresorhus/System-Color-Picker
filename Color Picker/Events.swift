@@ -25,7 +25,9 @@ extension AppState {
 		Defaults.publisher(.stayOnTop)
 			.receive(on: DispatchQueue.main)
 			.sink { [weak self] in
-				self?.colorPanel.level = $0.newValue ? .floating : .normal
+				// We use `.utility` instead of `.floating` to ensure it's always above other windows.
+				// For example, the Simulator uses `.modalPane` level when "stay on top" is enabled.
+				self?.colorPanel.level = $0.newValue ? .utility : .normal
 			}
 			.store(in: &cancellables)
 
@@ -44,15 +46,17 @@ extension AppState {
 			colorPanel.toggle()
 		}
 
-		// Workaround for the color picker window not becoming active after the settings window closes. (macOS 11.3)
-		NotificationCenter.default.publisher(for: NSWindow.willCloseNotification)
-			.sink { [self] _ in
-				DispatchQueue.main.async { [self] in
-					if colorPanel.isVisible, SSApp.settingsWindow?.isVisible != true {
-						colorPanel.makeKeyAndOrderFront(nil)
+		if #unavailable(macOS 14) {
+			// Workaround for the color picker window not becoming active after the settings window closes. (macOS 11.3)
+			NotificationCenter.default.publisher(for: NSWindow.willCloseNotification)
+				.sink { [self] _ in
+					DispatchQueue.main.async { [self] in
+						if colorPanel.isVisible, SSApp.settingsWindow?.isVisible != true {
+							colorPanel.makeKeyAndOrderFront(nil)
+						}
 					}
 				}
-			}
-			.store(in: &cancellables)
+				.store(in: &cancellables)
+		}
 	}
 }

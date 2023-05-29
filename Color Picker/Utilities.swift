@@ -62,13 +62,13 @@ extension NSColor {
 	var stringRepresentation: String {
 		switch Defaults[.preferredColorFormat] {
 		case .hex:
-			return hexColorString
+			hexColorString
 		case .hsl:
-			return hslColorString
+			hslColorString
 		case .rgb:
-			return rgbColorString
+			rgbColorString
 		case .lch:
-			return lchColorString
+			lchColorString
 		}
 	}
 }
@@ -153,10 +153,10 @@ enum SSApp {
 
 		if UserDefaults.standard.bool(forKey: key) {
 			return false
-		} else {
-			UserDefaults.standard.set(true, forKey: key)
-			return true
 		}
+
+		UserDefaults.standard.set(true, forKey: key)
+		return true
 	}()
 
 	static func openSendFeedbackPage() {
@@ -204,7 +204,12 @@ extension SSApp {
 				NSApp.activate(ignoringOtherApps: true)
 			}
 
-			NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+			if #available(macOS 14, *) {
+				let menuItem = NSApp.mainMenu?.items.first?.submenu?.item(withTitle: "Settings…")
+				menuItem?.performAction()
+			} else {
+				NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+			}
 		}
 	}
 
@@ -1290,9 +1295,7 @@ extension View {
 		object: AnyObject? = nil,
 		perform action: @escaping (Notification) -> Void
 	) -> some View {
-		onReceive(NotificationCenter.default.publisher(for: name, object: object)) {
-			action($0)
-		}
+		onReceive(NotificationCenter.default.publisher(for: name, object: object), perform: action)
 	}
 }
 
@@ -1344,6 +1347,20 @@ extension ControlActionClosureProtocol {
 
 extension NSControl: ControlActionClosureProtocol {}
 extension NSMenuItem: ControlActionClosureProtocol {}
+
+
+extension NSMenuItem {
+	/**
+	Perform the default action for the menu item (click it).
+	*/
+	func performAction() {
+		guard let menu else {
+			return
+		}
+
+		menu.performActionForItem(at: menu.index(of: self))
+	}
+}
 
 
 extension NSWindow {
@@ -1510,10 +1527,10 @@ extension URL {
 extension String {
 	/*
 	```
-	"https://sindresorhus.com".openUrl()
+	"https://sindresorhus.com".openURL()
 	```
 	*/
-	func openUrl() {
+	func openURL() {
 		URL(string: self)?.open()
 	}
 }
@@ -1618,6 +1635,15 @@ extension View {
 			$0?.level = level
 		}
 	}
+}
+
+
+extension NSWindow.Level {
+	private static func level(for cgLevelKey: CGWindowLevelKey) -> Self {
+		.init(Int(CGWindowLevelForKey(cgLevelKey)))
+	}
+
+	public static let utility = level(for: .utilityWindow)
 }
 
 
@@ -2265,11 +2291,11 @@ enum SettingsTabType {
 	fileprivate var label: some View {
 		switch self {
 		case .general:
-			return Label("General", systemImage: "gearshape")
+			Label("General", systemImage: "gearshape")
 		case .advanced:
-			return Label("Advanced", systemImage: "gearshape.2")
+			Label("Advanced", systemImage: "gearshape.2")
 		case .shortcuts:
-			return Label("Shortcuts", systemImage: "command")
+			Label("Shortcuts", systemImage: "command")
 		}
 	}
 }
@@ -2397,28 +2423,7 @@ extension Binding where Value: SetAlgebra, Value.Element: Hashable {
 }
 
 
-/**
-A picker that supports multiple selections and renders as multiple checkboxes.
-
-```
-struct ContentView: View {
-	private var data = [DayOfWeek]()
-	@State private var selection = Set<DayOfWeek>()
-
-	var body: some View {
-		Defaults.MultiCheckboxPicker(
-			data: DayOfWeek.days,
-			selection: $selection
-		) {
-			Text($0.name)
-		}
-	}
-}
-```
-
-It intentionally does not support a `label` parameter as we cannot read `.labelsHidden()`, so we cannot respect that.
-*/
-struct MultiCheckboxPicker<Data: RandomAccessCollection, ElementLabel: View>: View where Data.Element: Hashable & Identifiable {
+struct MultiTogglePicker<Data: RandomAccessCollection, ElementLabel: View>: View where Data.Element: Hashable & Identifiable {
 	let data: Data
 	@Binding var selection: Set<Data.Element>
 	@ViewBuilder var elementLabel: (Data.Element) -> ElementLabel
@@ -2432,27 +2437,11 @@ struct MultiCheckboxPicker<Data: RandomAccessCollection, ElementLabel: View>: Vi
 	}
 }
 
-typealias _OriginalMultiCheckboxPicker = MultiCheckboxPicker
+typealias _OriginalMultiTogglePicker = MultiTogglePicker
 
 #if !APP_EXTENSION
 extension Defaults {
-	/**
-	A picker that supports multiple selections and renders as multiple checkboxes.
-
-	```
-	struct ContentView: View {
-		var body: some View {
-			Defaults.MultiCheckboxPicker(
-				key: .highlightedDaysInCalendar,
-				data: DayOfWeek.days(for: calendar)
-			) {
-				Text($0.name(for: calendar))
-			}
-		}
-	}
-	```
-	*/
-	struct MultiCheckboxPicker<Data: RandomAccessCollection, ElementLabel: View>: View where Data.Element: Hashable & Identifiable & Defaults.Serializable {
+	struct MultiTogglePicker<Data: RandomAccessCollection, ElementLabel: View>: View where Data.Element: Hashable & Identifiable & Defaults.Serializable {
 		typealias Element = Data.Element
 		typealias Selection = Set<Element>
 
@@ -2472,7 +2461,7 @@ extension Defaults {
 		}
 
 		var body: some View {
-			_OriginalMultiCheckboxPicker(
+			_OriginalMultiTogglePicker(
 				data: data,
 				selection: $selection
 			) {
@@ -2485,7 +2474,7 @@ extension Defaults {
 	}
 }
 
-extension Defaults.MultiCheckboxPicker {
+extension Defaults.MultiTogglePicker {
 	/**
 	Do something when the value changes to a different value.
 	*/
@@ -2946,9 +2935,9 @@ extension OperatingSystem {
 		#if os(macOS)
 		if #available(macOS 15, *) {
 			return true
-		} else {
-			return false
 		}
+
+		return false
 		#else
 		return false
 		#endif
@@ -2961,9 +2950,9 @@ extension OperatingSystem {
 		#if os(macOS)
 		if #available(macOS 14, *) {
 			return true
-		} else {
-			return false
 		}
+
+		return false
 		#else
 		return false
 		#endif

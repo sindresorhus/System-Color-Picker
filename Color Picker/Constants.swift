@@ -34,13 +34,13 @@ enum ColorFormat: String, CaseIterable, Defaults.Serializable {
 	var title: String {
 		switch self {
 		case .hex:
-			return "Hex"
+			"Hex"
 		case .hsl:
-			return "HSL"
+			"HSL"
 		case .rgb:
-			return "RGB"
+			"RGB"
 		case .lch:
-			return "LCH"
+			"LCH"
 		}
 	}
 }
@@ -57,20 +57,20 @@ enum MenuBarItemClickAction: String, CaseIterable, Defaults.Serializable {
 	var title: String {
 		switch self {
 		case .showMenu:
-			return "Show menu"
+			"Show menu"
 		case .showColorSampler:
-			return "Show color sampler"
+			"Show color sampler"
 		case .toggleWindow:
-			return "Toggle window"
+			"Toggle window"
 		}
 	}
 
 	var tip: String {
 		switch self {
 		case .showMenu:
-			return "Right-click to show the color sampler"
+			"Right-click to show the color sampler"
 		case .showColorSampler, .toggleWindow:
-			return "Right-click to show the menu"
+			"Right-click to show the menu"
 		}
 	}
 }

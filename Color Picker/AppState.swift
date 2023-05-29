@@ -23,6 +23,7 @@ final class AppState: ObservableObject {
 			// We cannot enable tiling as then it doesn't show up in fullscreen spaces. (macOS 12.5)
 //			.fullScreenAllowsTiling
 		]
+		colorPanel.center()
 		colorPanel.makeMain()
 
 		let view = ColorPickerScreen(colorPanel: colorPanel)
@@ -74,12 +75,6 @@ final class AppState: ObservableObject {
 		menu.addSeparator()
 
 		menu.addSettingsItem()
-
-		menu.addSeparator()
-
-		menu.addCallbackItem("Send Feedback…") {
-			SSApp.openSendFeedbackPage()
-		}
 
 		menu.addSeparator()
 

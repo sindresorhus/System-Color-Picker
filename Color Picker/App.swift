@@ -66,7 +66,9 @@ struct AppMain: App {
 					Link("FAQ", destination: "https://github.com/sindresorhus/System-Color-Picker#faq")
 					Link("Website", destination: "https://sindresorhus.com/system-color-picker")
 					Divider()
-					Link("Rate on the App Store", destination: "macappstore://apps.apple.com/app/id1545870783?action=write-review")
+					Link("Rate App", destination: "macappstore://apps.apple.com/app/id1545870783?action=write-review")
+					// TODO: Doesn't work. (macOS 14.0)
+//					ShareLink("Share App", item: "https://apps.apple.com/app/id1545870783")
 					Link("More Apps by Me", destination: "macappstore://apps.apple.com/developer/id328077650")
 					Divider()
 					Button("Send Feedback…") {
@@ -84,7 +86,6 @@ struct AppMain: App {
 	}
 }
 
-@MainActor
 private final class AppDelegate: NSObject, NSApplicationDelegate {
 	func applicationDidFinishLaunching(_ notification: Notification) {
 		SSApp.swiftUIMainWindow?.close()

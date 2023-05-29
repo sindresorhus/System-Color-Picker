@@ -18,7 +18,7 @@ struct SettingsScreen: View {
 			.frame(width: 460)
 			.frame(maxHeight: 480)
 			.fixedSize()
-			.windowLevel(.floating + 1) // Ensure it's always above the color picker.
+			.windowLevel(.utility + 1) // Ensure it's always above the color picker.
 	}
 }
 
@@ -144,7 +144,7 @@ private struct PreferredColorFormatSetting: View {
 private struct ShownColorFormatsSetting: View {
 	var body: some View {
 		LabeledContent("Shown color formats") {
-			Defaults.MultiCheckboxPicker(
+			Defaults.MultiTogglePicker(
 				key: .shownColorFormats,
 				data: ColorFormat.allCases
 			) {
@@ -155,8 +155,6 @@ private struct ShownColorFormatsSetting: View {
 	}
 }
 
-struct SettingsScreen_Previews: PreviewProvider {
-	static var previews: some View {
-		SettingsScreen()
-	}
+#Preview {
+	SettingsScreen()
 }
