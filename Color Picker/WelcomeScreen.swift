@@ -10,7 +10,7 @@ extension AppState {
 			Defaults[.showAccessibilityColorName] = true
 		}
 
-		NSApp.activate(ignoringOtherApps: true)
+		SSApp.activateIfAccessory()
 
 		NSAlert.showModal(
 			title: "Welcome to Color Picker!",

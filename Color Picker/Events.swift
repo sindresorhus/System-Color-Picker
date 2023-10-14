@@ -13,7 +13,7 @@ extension AppState {
 				}
 
 				SSApp.isDockIconVisible = !$0.newValue
-				NSApp.activate(ignoringOtherApps: true)
+				SSApp.forceActivate()
 
 				if !$0.newValue {
 					LaunchAtLogin.isEnabled = false

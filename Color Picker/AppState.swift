@@ -61,16 +61,18 @@ final class AppState: ObservableObject {
 		menu.addSeparator()
 
 		if let colors = Defaults[.recentlyPickedColors].reversed().nilIfEmpty {
-			menu.addHeader("Recently Picked Colors")
+			menu.addHeader("Recently Picked")
 
 			for color in colors {
 				let menuItem = menu.addCallbackItem(color.stringRepresentation) {
 					color.stringRepresentation.copyToPasteboard()
 				}
 
-				menuItem.image = color.swatchImage
+				menuItem.image = color.swatchImage(size: 20)
 			}
 		}
+
+		addPalettes(menu)
 
 		menu.addSeparator()
 
@@ -136,6 +138,7 @@ final class AppState: ObservableObject {
 		requestReview()
 
 		if Defaults[.showInMenuBar] {
+			SSApp.isDockIconVisible = false
 			colorPanel.close()
 		} else {
 			colorPanel.makeKeyAndOrderFront(nil)
@@ -186,6 +189,10 @@ final class AppState: ObservableObject {
 			if Defaults[.copyColorAfterPicking] {
 				color.stringRepresentation.copyToPasteboard()
 			}
+
+			if NSEvent.modifiers == .shift {
+				pickColor()
+			}
 		}
 	}
 
@@ -199,5 +206,45 @@ final class AppState: ObservableObject {
 
 	func handleAppReopen() {
 		handleMenuBarIcon()
+	}
+
+	private func addPalettes(_ menu: NSMenu) {
+		func createColorListMenu(menu: NSMenu, colorList: NSColorList) {
+			for (key, color) in colorList.keysAndColors {
+				let menuItem = menu.addCallbackItem(key) {
+					color.stringRepresentation.copyToPasteboard()
+				}
+
+				// TODO: Cache the swatch image.
+				menuItem.image = color.swatchImage(size: Constants.swatchImageSize)
+			}
+		}
+
+		if
+			let colorListName = Defaults[.stickyPaletteName],
+			let colorList = NSColorList(named: colorListName)
+		{
+			menu.addHeader(colorList.name ?? "<Unnamed>")
+			createColorListMenu(menu: menu, colorList: colorList)
+		}
+
+		guard let colorLists = NSColorList.all.withoutStickyPalette().nilIfEmpty else {
+			return
+		}
+
+		menu.addHeader("Palettes")
+
+		for colorList in colorLists {
+			guard let colorListName = colorList.name else {
+				continue
+			}
+
+			menu.addItem(colorListName)
+				.withSubmenuLazy {
+					let menu = SSMenu()
+					createColorListMenu(menu: menu, colorList: colorList)
+					return menu
+				}
+		}
 	}
 }

@@ -40,11 +40,13 @@ A special version for users that cannot access the App Store. It won't receive a
 - Recently picked colors
 - Shortcuts support
 - Hide menu bar icon
+- Palettes
 
 ## Tips
 
 - Press the <kbd>Space</kbd> key while using the color sampler to show the RGB values. The color sampler is a system component and it can unfortunately not show other kinds of color values.
 - Press the <kbd>Option</kbd> key when copying the Hex color to invert whether to include `#`.
+- Press the <kbd>Shift</kbd> key while selecting a color using the color sampler to prevent it from disappearing after your selection.
 
 ## Keyboard shortcuts
 
@@ -86,6 +88,16 @@ Note that the LCH color is [currently clamped to sRGB range](https://github.com/
 #### The color changes if I copy and then paste it
 
 That is because the default color space in the picker is [Display P3](https://en.wikipedia.org/wiki/DCI-P3), which is [part of CSS Color 4](https://drafts.csswg.org/css-color-4/#valdef-color-display-p3), but the color space used for the legacy CSS color formats is [sRGB](https://en.wikipedia.org/wiki/SRGB) (browsers are starting to [handle color spaces](https://css-tricks.com/the-expanding-gamut-of-color-on-the-web/) but they are not all there yet).
+
+#### How do I use palettes?
+
+You can manage palettes by selecting the third tab in the window toolbar.
+
+The fastest way to add a color to a palette is to paste a Hex color value into the app and then click the `+` button in the palette. You can also drag and drop a color into the palette from anywhere.
+
+Palettes can be accessed both from the app and the menu bar icon (if enabled). You can even access them in other apps that use the system color picker.
+
+You can find palettes on [Coolors](https://coolors.co/palettes/trending).
 
 #### How do I change the color space?
 

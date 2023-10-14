@@ -22,6 +22,10 @@ struct SettingsScreen: View {
 	}
 }
 
+#Preview {
+	SettingsScreen()
+}
+
 private struct GeneralSettings: View {
 	@Default(.showInMenuBar) private var showInMenuBar
 
@@ -98,6 +102,7 @@ private struct AdvancedSettings: View {
 				.help("Show the color picker loupe when the color picker window is shown.")
 			Defaults.Toggle("Use larger text in text fields", key: .largerText)
 			Defaults.Toggle("Show accessibility color name", key: .showAccessibilityColorName)
+			StickyPaletteSetting()
 		}
 	}
 }
@@ -155,6 +160,24 @@ private struct ShownColorFormatsSetting: View {
 	}
 }
 
-#Preview {
-	SettingsScreen()
+private struct StickyPaletteSetting: View {
+	@Default(.stickyPaletteName) private var stickyPalette
+	@Default(.showInMenuBar) private var showInMenuBar
+
+	var body: some View {
+		Picker(selection: $stickyPalette) {
+			Text("None")
+				.tag(nil as String?)
+			Divider()
+			ForEach(NSColorList.all, id: \.self) { colorList in
+				if let name = colorList.name {
+					Text(name)
+						.tag(name as String?)
+				}
+			}
+		} label: {
+			Text("Sticky palette")
+			Text(showInMenuBar ? "Palette to show at the top-level of the menu bar menu and at the top of the palette menu in the color picker window" : "Palette to show at the top of the palette menu")
+		}
+	}
 }

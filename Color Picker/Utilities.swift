@@ -3,6 +3,7 @@ import Combine
 import Carbon
 import StoreKit
 import Defaults
+import UniformTypeIdentifiers
 
 #if !APP_EXTENSION
 import Sentry
@@ -75,13 +76,13 @@ extension NSColor {
 #endif
 
 extension NSColor {
-	var swatchImage: NSImage {
+	func swatchImage(size: Double) -> NSImage {
 		.color(
 			self,
-			size: CGSize(width: 16, height: 16),
-			borderWidth: 1,
+			size: CGSize(width: size, height: size),
+			borderWidth: (NSScreen.main?.backingScaleFactor ?? 2) > 1 ? 0.5 : 1,
 			borderColor: (SSApp.isDarkMode ? NSColor.white : .black).withAlphaComponent(0.2),
-			cornerRadius: 4
+			cornerRadius: 5
 		)
 	}
 }
@@ -92,9 +93,9 @@ extension NSColor {
 */
 
 
-#if canImport(AppKit)
+#if os(macOS)
 typealias XColor = NSColor
-#elseif canImport(UIKit)
+#else
 typealias XColor = UIColor
 #endif
 
@@ -185,6 +186,28 @@ enum SSApp {
 
 
 extension SSApp {
+	//	@MainActor
+	static func forceActivate() {
+		if #available(macOS 14, *) {
+			NSApp.yieldActivation(toApplicationWithBundleIdentifier: idString)
+			NSApp.activate()
+		} else {
+			NSApp.activate(ignoringOtherApps: true)
+		}
+	}
+
+	@MainActor
+	static func activateIfAccessory() {
+		guard NSApp.activationPolicy() == .accessory else {
+			return
+		}
+
+		forceActivate()
+	}
+}
+
+
+extension SSApp {
 	@MainActor
 	static var swiftUIMainWindow: NSWindow? {
 		NSApp.windows.first { $0.simpleClassName == "AppKitWindow" }
@@ -200,9 +223,7 @@ extension SSApp {
 	static func showSettingsWindow() {
 		// Run in the next runloop so it doesn't conflict with SwiftUI if run at startup.
 		DispatchQueue.main.async {
-			if NSApp.activationPolicy() == .accessory {
-				NSApp.activate(ignoringOtherApps: true)
-			}
+			SSApp.activateIfAccessory()
 
 			if #available(macOS 14, *) {
 				let menuItem = NSApp.mainMenu?.items.first?.submenu?.item(withTitle: "Settings…")
@@ -236,6 +257,11 @@ extension SSApp {
 		}
 		#endif
 	}
+}
+
+
+extension UTType {
+	static var adobeSwatchExchange: Self { .init(filenameExtension: "ase", conformingTo: .data)! }
 }
 
 
@@ -506,12 +532,12 @@ extension NSView {
 
 extension NSColor {
 	var rgb: Colors.RGB {
-		#if canImport(AppKit)
+		#if os(macOS)
 		guard let color = usingColorSpace(.extendedSRGB) else {
 			assertionFailure("Unsupported color space")
 			return .init(red: 0, green: 0, blue: 0, alpha: 0)
 		}
-		#elseif canImport(UIKit)
+		#else
 		let color = self
 		#endif
 
@@ -570,12 +596,12 @@ extension NSColor {
 	}
 
 	var hsb: HSB {
-		#if canImport(AppKit)
+		#if os(macOS)
 		guard let color = usingColorSpace(.extendedSRGB) else {
 			assertionFailure("Unsupported color space")
 			return HSB(0, 0, 0, 0)
 		}
-		#elseif canImport(UIKit)
+		#else
 		let color = self
 		#endif
 
@@ -854,6 +880,7 @@ extension NSColor {
 		)
 	}
 
+	// TODO: Parse alpha hex color.
 	convenience init?(hexString: String, alpha: Double = 1) {
 		var string = hexString
 
@@ -874,6 +901,7 @@ extension NSColor {
 
 	/**
 	- Important: Don't forget to convert it to the correct color space first.
+	- Note: It respects the opacity of the color.
 
 	```
 	NSColor(hexString: "#fefefe")!.hex
@@ -881,7 +909,7 @@ extension NSColor {
 	```
 	*/
 	var hex: Int {
-		#if canImport(AppKit)
+		#if os(macOS)
 		guard numberOfComponents == 4 else {
 			assertionFailure()
 			return 0x0
@@ -891,12 +919,14 @@ extension NSColor {
 		let red = Int((redComponent * 0xFF).rounded())
 		let green = Int((greenComponent * 0xFF).rounded())
 		let blue = Int((blueComponent * 0xFF).rounded())
+		let opacity = Int((alphaComponent * 0xFF).rounded())
 
-		return red << 16 | green << 8 | blue
+		return opacity << 24 | red << 16 | green << 8 | blue
 	}
 
 	/**
 	- Important: Don't forget to convert it to the correct color space first.
+	- Note: It includes the opacity of the color if not `1`.
 
 	```
 	NSColor(hexString: "#fefefe")!.hexString
@@ -904,7 +934,11 @@ extension NSColor {
 	```
 	*/
 	var hexString: String {
-		String(format: "#%06x", hex)
+		if alphaComponent < 1 {
+			String(format: "#%08x", hex)
+		} else {
+			String(format: "#%06x", hex & 0xFFFFFF) // Masking to remove the alpha portion for full opacity
+		}
 	}
 }
 
@@ -1363,15 +1397,180 @@ extension NSMenuItem {
 }
 
 
+extension NSMenuItem {
+	/**
+	The menu is only created when it's enabled.
+
+	```
+	menu.addItem("Foo")
+		.withSubmenu(createCalendarEventMenu(with: event))
+	```
+	*/
+	@discardableResult
+	func withSubmenu(_ menu: @autoclosure () -> NSMenu) -> Self {
+		submenu = isEnabled ? menu() : NSMenu()
+		return self
+	}
+
+	/**
+	The menu is only created when it's enabled.
+
+	```
+	menu
+		.addItem("Foo")
+		.withSubmenu { menu in
+
+		}
+	```
+	*/
+	@discardableResult
+	func withSubmenu(_ menuBuilder: (NSMenu) -> NSMenu) -> Self {
+		withSubmenu(menuBuilder(NSMenu()))
+	}
+
+	/**
+	The menu is only created when it's enabled and it's created only when it's being shown.
+
+	```
+	menu.addItem("Foo")
+		.withSubmenuLazy { [self] in
+			createCalendarEventMenu(with: event)
+		}
+	```
+
+	- Note: You cannot use any events like `.onOpenClose` on the given menu as the menu is created lazily.
+	*/
+	@discardableResult
+	func withSubmenuLazy(
+		_ menu: @escaping () -> NSMenu,
+		onOpenClose: ((Bool) -> Void)? = nil
+	) -> Self {
+		let emptyMenu = SSMenu()
+		submenu = emptyMenu
+
+		if isEnabled {
+			emptyMenu.isOpenPublisher.sink { isOpen in
+				onOpenClose?(isOpen)
+
+				guard
+					isOpen,
+					emptyMenu.items.isEmpty
+				else {
+					return
+				}
+
+				let menu = menu()
+				let items = menu.items
+				menu.items.removeAll()
+				emptyMenu.items = items
+			}
+				.store(forTheLifetimeOf: self)
+		}
+
+		return self
+	}
+}
+
+
+final class SSMenu: NSMenu, NSMenuDelegate {
+	private let isOpenSubject = CurrentValueSubject<Bool, Never>(false)
+
+	private(set) var isOpen = false
+
+	let isOpenPublisher: AnyPublisher<Bool, Never>
+
+
+	override init(title: String) {
+		self.isOpenPublisher = isOpenSubject.eraseToAnyPublisher()
+		super.init(title: title)
+		self.delegate = self
+		self.autoenablesItems = false
+	}
+
+	@available(*, unavailable)
+	required init(coder decoder: NSCoder) {
+		fatalError() // swiftlint:disable:this fatal_error_message
+	}
+
+	func menuWillOpen(_ menu: NSMenu) {
+		isOpen = true
+		isOpenSubject.send(true)
+	}
+
+	func menuDidClose(_ menu: NSMenu) {
+		isOpen = false
+		isOpenSubject.send(false)
+	}
+}
+
+
+enum AssociationPolicy {
+	case assign
+	case retainNonatomic
+	case copyNonatomic
+	case retain
+	case copy
+
+	var rawValue: objc_AssociationPolicy {
+		switch self {
+		case .assign:
+			.OBJC_ASSOCIATION_ASSIGN
+		case .retainNonatomic:
+			.OBJC_ASSOCIATION_RETAIN_NONATOMIC
+		case .copyNonatomic:
+			.OBJC_ASSOCIATION_COPY_NONATOMIC
+		case .retain:
+			.OBJC_ASSOCIATION_RETAIN
+		case .copy:
+			.OBJC_ASSOCIATION_COPY
+		}
+	}
+}
+
+
+final class ObjectAssociation<Value> {
+	private let defaultValue: Value
+	private let policy: AssociationPolicy
+
+	init(defaultValue: Value, policy: AssociationPolicy = .retainNonatomic) {
+		self.defaultValue = defaultValue
+		self.policy = policy
+	}
+
+	subscript(index: AnyObject) -> Value {
+		get {
+			objc_getAssociatedObject(index, Unmanaged.passUnretained(self).toOpaque()) as? Value ?? defaultValue
+		}
+		set {
+			objc_setAssociatedObject(index, Unmanaged.passUnretained(self).toOpaque(), newValue, policy.rawValue)
+		}
+	}
+}
+
+
+extension AnyCancellable {
+	private enum AssociatedKeys {
+		static let cancellables = ObjectAssociation<Set<AnyCancellable>>(defaultValue: [])
+	}
+
+	/**
+	Stores this AnyCancellable for the lifetime of the given `object`.
+	*/
+	func store(forTheLifetimeOf object: AnyObject) {
+		store(in: &AssociatedKeys.cancellables[object])
+	}
+}
+
+
 extension NSWindow {
 	func toggle() {
-		if isVisible, isKeyWindow {
+		if
+			isVisible,
+			isKeyWindow
+		{
 			performClose(nil)
 		} else {
-			if NSApp.activationPolicy() == .accessory {
-				NSApp.activate(ignoringOtherApps: true)
-			}
-
+			SSApp.activateIfAccessory()
 			makeKeyAndOrderFront(nil)
 		}
 	}
@@ -1424,7 +1623,118 @@ extension CallbackMenuItem: NSMenuItemValidation {
 }
 
 
+extension NSMenuItem {
+	convenience init(
+		_ title: String,
+		key: String = "",
+		keyModifiers: NSEvent.ModifierFlags? = nil,
+		isEnabled: Bool = true,
+		isChecked: Bool = false,
+		isHidden: Bool = false
+	) {
+		self.init(title: title, action: nil, keyEquivalent: key)
+		self.isEnabled = isEnabled
+		self.isChecked = isChecked
+		self.isHidden = isHidden
+
+		if let keyModifiers {
+			self.keyEquivalentModifierMask = keyModifiers
+		}
+	}
+
+	convenience init(
+		_ attributedTitle: NSAttributedString,
+		key: String = "",
+		keyModifiers: NSEvent.ModifierFlags? = nil,
+		isEnabled: Bool = true,
+		isChecked: Bool = false,
+		isHidden: Bool = false
+	) {
+		self.init(
+			"",
+			key: key,
+			keyModifiers: keyModifiers,
+			isEnabled: isEnabled,
+			isChecked: isChecked,
+			isHidden: isHidden
+		)
+		self.attributedTitle = attributedTitle
+	}
+
+	var isChecked: Bool {
+		get { state == .on }
+		set {
+			state = newValue ? .on : .off
+		}
+	}
+}
+
+
 extension NSMenu {
+	@discardableResult
+	func add(_ menuItem: NSMenuItem) -> NSMenuItem {
+		addItem(menuItem)
+		return menuItem
+	}
+
+	@discardableResult
+	func addDisabled(_ title: String) -> NSMenuItem {
+		let menuItem = NSMenuItem(title)
+		menuItem.isEnabled = false
+		addItem(menuItem)
+		return menuItem
+	}
+
+	@discardableResult
+	func addDisabled(_ attributedTitle: NSAttributedString) -> NSMenuItem {
+		let menuItem = NSMenuItem(attributedTitle)
+		menuItem.isEnabled = false
+		addItem(menuItem)
+		return menuItem
+	}
+
+	@discardableResult
+	func addItem(
+		_ title: String,
+		key: String = "",
+		keyModifiers: NSEvent.ModifierFlags? = nil,
+		isEnabled: Bool = true,
+		isChecked: Bool = false,
+		isHidden: Bool = false
+	) -> NSMenuItem {
+		let menuItem = NSMenuItem(
+			title,
+			key: key,
+			keyModifiers: keyModifiers,
+			isEnabled: isEnabled,
+			isChecked: isChecked,
+			isHidden: isHidden
+		)
+		addItem(menuItem)
+		return menuItem
+	}
+
+	@discardableResult
+	func addItem(
+		_ attributedTitle: NSAttributedString,
+		key: String = "",
+		keyModifiers: NSEvent.ModifierFlags? = nil,
+		isEnabled: Bool = true,
+		isChecked: Bool = false,
+		isHidden: Bool = false
+	) -> NSMenuItem {
+		let menuItem = NSMenuItem(
+			attributedTitle,
+			key: key,
+			keyModifiers: keyModifiers,
+			isEnabled: isEnabled,
+			isChecked: isChecked,
+			isHidden: isHidden
+		)
+		addItem(menuItem)
+		return menuItem
+	}
+
 	@discardableResult
 	func addCallbackItem(
 		_ title: String,
@@ -1465,7 +1775,12 @@ extension NSMenu {
 
 	@discardableResult
 	func addHeader(_ title: String, hasSeparatorAbove: Bool = true) -> NSMenuItem {
-		addHeader(title.toNSAttributedString, hasSeparatorAbove: hasSeparatorAbove)
+		// Doesn't work yet.
+//		if #available(macOS 14, *) {
+//			.sectionHeader(title: title)
+//		} else {
+			addHeader(title.toNSAttributedString, hasSeparatorAbove: hasSeparatorAbove)
+//		}
 	}
 
 	@discardableResult
@@ -2939,7 +3254,7 @@ extension OperatingSystem {
 
 		return false
 		#else
-		return false
+		false
 		#endif
 	}()
 
@@ -2954,9 +3269,64 @@ extension OperatingSystem {
 
 		return false
 		#else
-		return false
+		false
 		#endif
 	}()
 }
 
 typealias OS = OperatingSystem
+
+
+extension Sequence where Element: Hashable {
+	func removingDuplicates() -> [Element] {
+		var seen = Set<Element>()
+		return filter { seen.insert($0).inserted }
+	}
+}
+
+extension Sequence where Element: Equatable {
+	func removingDuplicates() -> [Element] {
+		reduce(into: []) { result, element in
+			if !result.contains(element) {
+				result.append(element)
+			}
+		}
+	}
+}
+
+
+extension NSColorList {
+	static var all: [NSColorList] {
+		availableColorLists
+			.filter { !$0.allKeys.isEmpty }
+			// `availableColorLists` returns duplicates after editing a palette, for example, adding a color to it.
+			.removingDuplicates()
+	}
+
+	var colors: [NSColor] {
+		allKeys.compactMap { color(withKey: $0) }
+	}
+
+	var keysAndColors: [NSColorList.Name: NSColor] {
+		.init(zip(allKeys, colors)) { first, _ in first }
+	}
+}
+
+
+final class ListenOnlyPublisherObservable: ObservableObject {
+	let objectWillChange = ObservableObjectPublisher()
+	private var cancellable: AnyCancellable?
+
+	init(for publisher: some Publisher) {
+		self.cancellable = publisher.receive(on: DispatchQueue.main).sink(
+			receiveCompletion: { _ in },
+			receiveValue: { [weak self] _ in
+				self?.objectWillChange.send()
+			}
+		)
+	}
+}
+
+extension Publisher {
+	func toListenOnlyObservableObject() -> ListenOnlyPublisherObservable { .init(for: self) }
+}

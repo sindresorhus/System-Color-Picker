@@ -261,7 +261,6 @@ private struct BarView: View {
 	@Environment(\.colorScheme) private var colorScheme
 	@EnvironmentObject private var appState: AppState
 	@StateObject private var pasteboardObserver = NSPasteboard.SimpleObservable(.general).stop()
-	@Default(.showInMenuBar) private var showInMenuBar
 
 	var body: some View {
 		HStack(spacing: 12) {
@@ -287,7 +286,8 @@ private struct BarView: View {
 				.keyboardShortcut("v", modifiers: [.shift, .command])
 				.disabled(NSColor.fromPasteboardGraceful(.general) == nil)
 			RecentlyPickedColorsButton()
-			actionButton
+			PalettesButton()
+			ActionButton()
 			Spacer()
 		}
 			// Cannot do this as the `Menu` buttons don't respect it. (macOS 13.2)
@@ -307,8 +307,13 @@ private struct BarView: View {
 				pasteboardObserver.stop()
 			}
 	}
+}
 
-	private var actionButton: some View {
+private struct ActionButton: View {
+	@EnvironmentObject private var appState: AppState
+	@Default(.showInMenuBar) private var showInMenuBar
+
+	var body: some View {
 		Menu {
 			Button("Copy as HSB") {
 				appState.colorPanel.color.hsbColorString.copyToPasteboard()
@@ -354,9 +359,9 @@ private struct RecentlyPickedColorsButton: View {
 						Label {
 							Text(color.stringRepresentation)
 						} icon: {
-							// We don't use SwiftUI here as it only supports showing an actual image. (macOS 12.0)
+							// We don't use SwiftUI here as it only supports showing an actual image. (macOS 14.0)
 							// https://github.com/feedback-assistant/reports/issues/247
-							Image(nsImage: color.swatchImage)
+							Image(nsImage: color.swatchImage(size: Constants.swatchImageSize))
 						}
 							.labelStyle(.titleAndIcon)
 					}
@@ -377,5 +382,61 @@ private struct RecentlyPickedColorsButton: View {
 			.opacity(0.6) // Try to match the other buttons.
 			.disabled(recentlyPickedColors.isEmpty)
 			.help(recentlyPickedColors.isEmpty ? "No recently picked colors" : "Recently picked colors")
+	}
+}
+
+private struct PalettesButton: View {
+	@EnvironmentObject private var appState: AppState
+	@StateObject private var updates = NotificationCenter.default.publisher(for: NSColorList.didChangeNotification).toListenOnlyObservableObject()
+	@Default(.stickyPaletteName) private var stickyPaletteName
+
+	var body: some View {
+		let colorLists = NSColorList.all.withoutStickyPalette()
+		Menu {
+			if
+				let colorListName = stickyPaletteName,
+				let colorList = NSColorList(named: colorListName)
+			{
+				Section(colorListName) {
+					createColorList(colorList)
+				}
+			}
+			Section {
+				ForEach(colorLists, id: \.name) { colorList in
+					if let name = colorList.name {
+						Menu(name) {
+							createColorList(colorList)
+						}
+					}
+				}
+			}
+		} label: {
+			Image(systemName: "swatchpalette.fill")
+				.controlSize(.large)
+//				.padding(8) // Has no effect. (macOS 12.0.1)
+				.contentShape(.rectangle)
+		}
+			.menuIndicator(.hidden)
+			.padding(8)
+			.opacity(0.6) // Try to match the other buttons.
+			.disabled(colorLists.isEmpty)
+			.help(colorLists.isEmpty ? "No palettes" : "Palettes")
+	}
+
+	private func createColorList(_ colorList: NSColorList) -> some View {
+		ForEach(Array(colorList.keysAndColors), id: \.key) { key, color in
+			Button {
+				appState.colorPanel.color = color
+			} label: {
+				Label {
+					Text(key)
+				} icon: {
+					// We don't use SwiftUI here as it only supports showing an actual image. (macOS 14.0)
+					// https://github.com/feedback-assistant/reports/issues/247
+					Image(nsImage: color.swatchImage(size: Constants.swatchImageSize))
+				}
+					.labelStyle(.titleAndIcon)
+			}
+		}
 	}
 }

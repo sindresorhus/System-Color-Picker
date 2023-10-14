@@ -1,6 +1,10 @@
 import Cocoa
 import KeyboardShortcuts
 
+enum Constants {
+	static let swatchImageSize = 20.0
+}
+
 extension Defaults.Keys {
 	static let recentlyPickedColors = Key<[NSColor]>("recentlyPickedColors", default: [])
 
@@ -18,6 +22,7 @@ extension Defaults.Keys {
 	static let largerText = Key<Bool>("largerText", default: false)
 	static let copyColorAfterPicking = Key<Bool>("copyColorAfterPicking", default: false)
 	static let showAccessibilityColorName = Key<Bool>("showAccessibilityColorName", default: false)
+	static let stickyPaletteName = Key<String?>("stickyPaletteName")
 }
 
 extension KeyboardShortcuts.Name {
@@ -71,6 +76,22 @@ enum MenuBarItemClickAction: String, CaseIterable, Defaults.Serializable {
 			"Right-click to show the color sampler"
 		case .showColorSampler, .toggleWindow:
 			"Right-click to show the menu"
+		}
+	}
+}
+
+extension [NSColorList] {
+	func withoutStickyPalette() -> Self {
+		filter {
+			// Don't show sticky palette.
+			if
+				let colorListName = Defaults[.stickyPaletteName],
+				$0 == NSColorList(named: colorListName)
+			{
+				return false
+			}
+
+			return true
 		}
 	}
 }

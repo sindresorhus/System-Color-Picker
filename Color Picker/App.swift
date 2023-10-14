@@ -4,6 +4,15 @@ import SwiftUI
 NOTES:
 - The "com.apple.security.files.user-selected.read-only" entitlement is required by the "Open" menu in the "Color Palettes" pane.
 
+TODO:
+ - test the action when not already running:
+  if NSApp.activationPolicy() == .prohibited {
+	  SSApp.url.open()
+  }
+- Show screenshot in App Store of the palette in menu bar.
+
+- Use `Color.Resolved` instead of `XColor` and `RGBA`.
+
 TODO shortcut action ideas;
 - Convert color
 - Toggle color panel

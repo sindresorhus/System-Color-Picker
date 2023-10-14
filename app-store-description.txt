@@ -11,6 +11,7 @@ Pick colors from anywhere using the built-in color picker.
 - Recently picked colors
 - Shortcuts support
 - Hide menu bar icon
+- Palettes
 
 
 ■ Tip
