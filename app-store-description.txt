@@ -3,15 +3,15 @@ Pick colors from anywhere using the built-in color picker.
 
 ■ Features
 
+- Palettes
+- Recently picked colors
 - Quickly copy, paste, and convert colors in Hex, HSL, RGB, LCH format
 - Show as a normal app or in the menu bar
 - Pick a color or toggle the window from anywhere with a global keyboard shortcut
 - Make the window stay on top of all other windows
 - Launch it at login (when in the menu bar)
-- Recently picked colors
-- Shortcuts support
 - Hide menu bar icon
-- Palettes
+- Shortcuts support
 
 
 ■ Tip
@@ -29,11 +29,12 @@ You can use the following keyboard shortcuts in the app:
 - Copy as RGB: Shift+Command+r
 - Copy as LCH: Shift+Command+l
 - Paste color: Shift+Command+v (In the format Hex, HSL, RGB, or LCH)
+- Reset opacity: Control+Shift+o
 
 
 ■ Support
 
-Use the feedback button in the “Help” menu in the app or email me at sindresorhus@gmail.com
+Use the feedback button in the “Help” menu in the app.
 
 
 ■ Open-source

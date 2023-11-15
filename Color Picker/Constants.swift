@@ -1,4 +1,4 @@
-import Cocoa
+import SwiftUI
 import KeyboardShortcuts
 
 enum Constants {
@@ -47,6 +47,19 @@ enum ColorFormat: String, CaseIterable, Defaults.Serializable {
 			"RGB"
 		case .lch:
 			"LCH"
+		}
+	}
+
+	var keyboardShortcutKey: KeyEquivalent {
+		switch self {
+		case .hex:
+			"h"
+		case .hsl:
+			"s"
+		case .rgb:
+			"r"
+		case .lch:
+			"l"
 		}
 	}
 }

@@ -1,189 +1,28 @@
 import SwiftUI
 
 struct ColorPickerScreen: View {
-	@EnvironmentObject private var appState: AppState
 	@Default(.uppercaseHexColor) private var uppercaseHexColor
 	@Default(.hashPrefixInHexColor) private var hashPrefixInHexColor
 	@Default(.legacyColorSyntax) private var legacyColorSyntax
 	@Default(.shownColorFormats) private var shownColorFormats
 	@Default(.largerText) private var largerText
 	@Default(.showAccessibilityColorName) private var showAccessibilityColorName
-	@State private var hexColor = ""
-	@State private var hslColor = ""
-	@State private var rgbColor = ""
-	@State private var lchColor = ""
-	@State private var isTextFieldFocusedHex = false
-	@State private var isTextFieldFocusedHSL = false
-	@State private var isTextFieldFocusedRGB = false
-	@State private var isTextFieldFocusedLCH = false
 	@State private var isPreventingUpdate = false
+	@State private var focusedTextField: ColorFormat?
+
+	@State private var colorStrings: [ColorFormat: String] = [
+		.hex: "",
+		.hsl: "",
+		.rgb: "",
+		.lch: ""
+	]
 
 	let colorPanel: NSColorPanel
-
-	private var isAnyTextFieldFocused: Bool {
-		isTextFieldFocusedHex
-			|| isTextFieldFocusedHSL
-			|| isTextFieldFocusedRGB
-			|| isTextFieldFocusedLCH
-	}
-
-	private var textFieldFontSize: Double { largerText ? 16 : 0 }
-
-	private var hexColorView: some View {
-		HStack {
-			// TODO: When I use `TextField`, add the copy button using `.safeAreaInset()`.
-			NativeTextField(
-				text: $hexColor,
-				placeholder: "Hex",
-				font: .monospacedSystemFont(ofSize: textFieldFontSize, weight: .regular),
-				isFocused: $isTextFieldFocusedHex
-			)
-				.controlSize(.large)
-				.onChange(of: hexColor) {
-					var hexColor = $0
-
-					if hexColor.hasPrefix("##") {
-						hexColor = hexColor.dropFirst().toString
-						self.hexColor = hexColor
-					}
-
-					if
-						isTextFieldFocusedHex,
-						!isPreventingUpdate,
-						let newColor = NSColor(hexString: hexColor.trimmingCharacters(in: .whitespaces))
-					{
-						colorPanel.color = newColor
-					}
-
-					if !isPreventingUpdate {
-						updateColorsFromPanel(excludeHex: true, preventUpdate: true)
-					}
-				}
-			Button("Copy Hex", systemImage: "doc.on.doc.fill") {
-				appState.colorPanel.color.hexColorString.copyToPasteboard()
-			}
-				.labelStyle(.iconOnly)
-				.symbolRenderingMode(.hierarchical)
-				.buttonStyle(.borderless)
-				.contentShape(.rectangle)
-				.keyboardShortcut("h", modifiers: [.shift, .command])
-		}
-	}
-
-	private var hslColorView: some View {
-		HStack {
-			NativeTextField(
-				text: $hslColor,
-				placeholder: "HSL",
-				font: .monospacedSystemFont(ofSize: textFieldFontSize, weight: .regular),
-				isFocused: $isTextFieldFocusedHSL
-			)
-				.controlSize(.large)
-				.onChange(of: hslColor) {
-					if
-						isTextFieldFocusedHSL,
-						!isPreventingUpdate,
-						let newColor = NSColor(cssHSLString: $0.trimmingCharacters(in: .whitespaces))
-					{
-						colorPanel.color = newColor
-					}
-
-					if !isPreventingUpdate {
-						updateColorsFromPanel(excludeHSL: true, preventUpdate: true)
-					}
-				}
-			Button("Copy HSL", systemImage: "doc.on.doc.fill") {
-				hslColor.copyToPasteboard()
-			}
-				.labelStyle(.iconOnly)
-				.symbolRenderingMode(.hierarchical)
-				.buttonStyle(.borderless)
-				.contentShape(.rectangle)
-				.keyboardShortcut("s", modifiers: [.shift, .command])
-		}
-	}
-
-	private var rgbColorView: some View {
-		HStack {
-			NativeTextField(
-				text: $rgbColor,
-				placeholder: "RGB",
-				font: .monospacedSystemFont(ofSize: textFieldFontSize, weight: .regular),
-				isFocused: $isTextFieldFocusedRGB
-			)
-				.controlSize(.large)
-				.onChange(of: rgbColor) {
-					if
-						isTextFieldFocusedRGB,
-						!isPreventingUpdate,
-						let newColor = NSColor(cssRGBString: $0.trimmingCharacters(in: .whitespaces))
-					{
-						colorPanel.color = newColor
-					}
-
-					if !isPreventingUpdate {
-						updateColorsFromPanel(excludeRGB: true, preventUpdate: true)
-					}
-				}
-			Button("Copy RGB", systemImage: "doc.on.doc.fill") {
-				rgbColor.copyToPasteboard()
-			}
-				.labelStyle(.iconOnly)
-				.symbolRenderingMode(.hierarchical)
-				.buttonStyle(.borderless)
-				.contentShape(.rectangle)
-				.keyboardShortcut("r", modifiers: [.shift, .command])
-		}
-	}
-
-	private var lchColorView: some View {
-		HStack {
-			NativeTextField(
-				text: $lchColor,
-				placeholder: "LCH",
-				font: .monospacedSystemFont(ofSize: textFieldFontSize, weight: .regular),
-				isFocused: $isTextFieldFocusedLCH
-			)
-				.controlSize(.large)
-				.onChange(of: lchColor) {
-					if
-						isTextFieldFocusedLCH,
-						!isPreventingUpdate,
-						let newColor = NSColor(cssLCHString: $0.trimmingCharacters(in: .whitespaces))
-					{
-						colorPanel.color = newColor
-					}
-
-					if !isPreventingUpdate {
-						updateColorsFromPanel(excludeLCH: true, preventUpdate: true)
-					}
-				}
-			Button("Copy LCH", systemImage: "doc.on.doc.fill") {
-				lchColor.copyToPasteboard()
-			}
-				.labelStyle(.iconOnly)
-				.symbolRenderingMode(.hierarchical)
-				.buttonStyle(.borderless)
-				.contentShape(.rectangle)
-				.keyboardShortcut("l", modifiers: [.shift, .command])
-		}
-	}
 
 	var body: some View {
 		VStack {
 			BarView()
-			if shownColorFormats.contains(.hex) {
-				hexColorView
-			}
-			if shownColorFormats.contains(.hsl) {
-				hslColorView
-			}
-			if shownColorFormats.contains(.rgb) {
-				rgbColorView
-			}
-			if shownColorFormats.contains(.lch) {
-				lchColorView
-			}
+			colorInputs
 			if showAccessibilityColorName {
 				Text(colorPanel.color.accessibilityName)
 					.font(.system(largerText ? .title3 : .body))
@@ -197,17 +36,18 @@ struct ColorPickerScreen: View {
 			.task {
 				updateColorsFromPanel()
 			}
-			.onChange(of: uppercaseHexColor) { _ in
+			// TODO: Use a tuple here when tuples can be equatable.
+			.onChange(of: uppercaseHexColor) {
 				updateColorsFromPanel()
 			}
-			.onChange(of: hashPrefixInHexColor) { _ in
+			.onChange(of: hashPrefixInHexColor) {
 				updateColorsFromPanel()
 			}
-			.onChange(of: legacyColorSyntax) { _ in
+			.onChange(of: legacyColorSyntax) {
 				updateColorsFromPanel()
 			}
 			.onReceive(colorPanel.colorDidChangePublisher) {
-				guard !isAnyTextFieldFocused else {
+				guard focusedTextField == nil else {
 					return
 				}
 
@@ -215,39 +55,77 @@ struct ColorPickerScreen: View {
 			}
 	}
 
-	// TODO: Find a better way to handle this.
 	private func updateColorsFromPanel(
-		excludeHex: Bool = false,
-		excludeHSL: Bool = false,
-		excludeRGB: Bool = false,
-		excludeLCH: Bool = false,
+		excluding excludedFormat: ColorFormat? = nil,
 		preventUpdate: Bool = false
 	) {
 		if preventUpdate {
 			isPreventingUpdate = true
 		}
 
-		let color = colorPanel.color
+		let color = colorPanel.resolvedColor
 
-		if !excludeHex {
-			hexColor = color.hexColorString
-		}
-
-		if !excludeHSL {
-			hslColor = color.hslColorString
-		}
-
-		if !excludeRGB {
-			rgbColor = color.rgbColorString
-		}
-
-		if !excludeLCH {
-			lchColor = color.lchColorString
+		for format in ColorFormat.allCases where format != excludedFormat {
+			colorStrings[format] = color.colorString(for: format)
 		}
 
 		if preventUpdate {
 			DispatchQueue.main.async {
 				isPreventingUpdate = false
+			}
+		}
+	}
+
+	private func updateColorFromTextField(
+		colorFormat: ColorFormat,
+		colorString: String
+	) {
+		guard
+			focusedTextField == colorFormat,
+			!isPreventingUpdate
+		else {
+			return
+		}
+
+		var colorString = colorString
+
+		if colorFormat == .hex {
+			if colorString.hasPrefix("##") {
+				colorString = colorString.dropFirst().toString
+				colorStrings[.hex] = colorString
+			}
+		}
+
+		let newColor = switch colorFormat {
+		case .hex:
+			Color.Resolved(cssHexString: colorString)
+		case .hsl:
+			Color.Resolved(cssHSLString: colorString)
+		case .rgb:
+			Color.Resolved(cssRGBString: colorString)
+		case .lch:
+			Color.Resolved(cssLCHString: colorString)
+		}
+
+		guard let newColor else {
+			return
+		}
+
+		colorPanel.resolvedColor = newColor
+		updateColorsFromPanel(excluding: colorFormat, preventUpdate: true)
+	}
+
+	private var colorInputs: some View {
+		ForEach(ColorFormat.allCases.filter(allowedValues: shownColorFormats)) { format in
+			ColorInputView(
+				format: format,
+				colorString: $colorStrings[format, default: ""],
+				focusedTextField: $focusedTextField
+			) { newColor in
+				updateColorFromTextField(
+					colorFormat: format,
+					colorString: newColor
+				)
 			}
 		}
 	}
@@ -257,49 +135,91 @@ struct ColorPickerScreen: View {
 	ColorPickerScreen(colorPanel: .shared)
 }
 
+private struct ColorInputView: View {
+	@Default(.largerText) private var largerText
+
+	let format: ColorFormat
+	@Binding var colorString: String
+	@Binding var focusedTextField: ColorFormat?
+	let updateColor: (String) -> Void
+
+	var body: some View {
+		HStack {
+			NativeTextField(
+				text: $colorString,
+				placeholder: format.title,
+				font: .monospacedSystemFont(ofSize: largerText ? 16 : 0, weight: .regular),
+				isFocused: .conditionalSetOrClearBinding(to: format, with: $focusedTextField)
+			)
+			.controlSize(.large)
+			.onChange(of: colorString) {
+				updateColor(colorString)
+			}
+			Button("Copy \(format.title)", systemImage: "doc.on.doc.fill") {
+				colorString.copyToPasteboard()
+			}
+			.labelStyle(.iconOnly)
+			.symbolRenderingMode(.hierarchical)
+			.buttonStyle(.borderless)
+			.contentShape(.rect)
+			.keyboardShortcut(format.keyboardShortcutKey, modifiers: [.shift, .command])
+		}
+	}
+}
+
 private struct BarView: View {
 	@Environment(\.colorScheme) private var colorScheme
-	@EnvironmentObject private var appState: AppState
-	@StateObject private var pasteboardObserver = NSPasteboard.SimpleObservable(.general).stop()
 
 	var body: some View {
 		HStack(spacing: 12) {
-			Button {
-				appState.pickColor()
-			} label: {
-				Image(systemName: "eyedropper")
-					.font(.system(size: 14).bold())
-					.padding(8)
-			}
-				.contentShape(.rectangle)
-				.help("Pick color")
-				.keyboardShortcut("p")
-				.padding(.leading, 4)
-			Button {
-				appState.pasteColor()
-			} label: {
-				Image(systemName: "paintbrush.fill")
-					.padding(8)
-			}
-				.contentShape(.rectangle)
-				.help("Paste color in the format Hex, HSL, RGB, or LCH")
-				.keyboardShortcut("v", modifiers: [.shift, .command])
-				.disabled(NSColor.fromPasteboardGraceful(.general) == nil)
+			pickColorButton
+			PasteColorButton()
 			RecentlyPickedColorsButton()
 			PalettesButton()
-			ActionButton()
+			MoreButton()
 			Spacer()
 		}
 			// Cannot do this as the `Menu` buttons don't respect it. (macOS 13.2)
 			// https://github.com/feedback-assistant/reports/issues/249
 //			.font(.title3)
 			.background {
-				RoundedRectangle(cornerRadius: 6, style: .continuous)
+				RoundedRectangle(cornerRadius: 6)
 					.fill(Color.black.opacity(colorScheme == .dark ? 0.17 : 0.05))
 			}
 			.padding(.vertical, 4)
 			.buttonStyle(.borderless)
-			.menuStyle(.borderlessButton)
+	}
+
+	@MainActor
+	private var pickColorButton: some View {
+		Button {
+			AppState.shared.pickColor()
+		} label: {
+			Image(systemName: "eyedropper")
+				.font(.system(size: 14).bold())
+				.padding(8)
+		}
+			.contentShape(.rect)
+			.help("Pick color")
+			.keyboardShortcut("p")
+			.padding(.leading, 4)
+	}
+}
+
+private struct PasteColorButton: View {
+	@StateObject private var pasteboardObserver = NSPasteboard.SimpleObservable(.general).stop()
+
+	var body: some View {
+		Button {
+			AppState.shared.pasteColor()
+		} label: {
+			Image(systemName: "paintbrush.fill")
+				.padding(8)
+		}
+			.contentShape(.rect)
+			.help("Paste color in the format Hex, HSL, RGB, or LCH")
+			.keyboardShortcut("v", modifiers: [.shift, .command])
+			.disabled(Color.Resolved.fromPasteboardGraceful(.general) == nil)
 			.onAppearOnScreen {
 				pasteboardObserver.start()
 			}
@@ -309,14 +229,13 @@ private struct BarView: View {
 	}
 }
 
-private struct ActionButton: View {
-	@EnvironmentObject private var appState: AppState
+private struct MoreButton: View {
 	@Default(.showInMenuBar) private var showInMenuBar
 
 	var body: some View {
 		Menu {
 			Button("Copy as HSB") {
-				appState.colorPanel.color.hsbColorString.copyToPasteboard()
+				AppState.shared.colorPanel.resolvedColor.ss_hsbColorString.copyToPasteboard()
 			}
 			if showInMenuBar {
 				Divider()
@@ -328,19 +247,18 @@ private struct ActionButton: View {
 					.keyboardShortcut(",")
 			}
 		} label: {
-			Label("Action", systemImage: "ellipsis.circle.fill")
+			Label("More", systemImage: "ellipsis.circle.fill")
 				.labelStyle(.iconOnly)
 //				.padding(8) // Has no effect. (macOS 12.0.1)
 		}
-			.padding(8)
-			.contentShape(.rectangle)
-			.opacity(0.6) // Try to match the other buttons.
 			.menuIndicator(.hidden)
+			.padding(8)
+			.contentShape(.rect)
+			.opacity(0.6) // Try to match the other buttons.
 	}
 }
 
 private struct RecentlyPickedColorsButton: View {
-	@EnvironmentObject private var appState: AppState
 	@Default(.recentlyPickedColors) private var recentlyPickedColors
 
 	// TODO: Find a better way to handle this than having to subscribe to each key.
@@ -352,16 +270,16 @@ private struct RecentlyPickedColorsButton: View {
 	var body: some View {
 		Menu {
 			Group {
-				ForEach(recentlyPickedColors.reversed()) { color in
+				ForEach(recentlyPickedColors.map(\.toResolvedColor).reversed(), id: \.self) { color in
 					Button {
-						appState.colorPanel.color = color
+						AppState.shared.colorPanel.resolvedColor = color
 					} label: {
 						Label {
-							Text(color.stringRepresentation)
+							Text(color.ss_stringRepresentation)
 						} icon: {
 							// We don't use SwiftUI here as it only supports showing an actual image. (macOS 14.0)
 							// https://github.com/feedback-assistant/reports/issues/247
-							Image(nsImage: color.swatchImage(size: Constants.swatchImageSize))
+							Image(nsImage: color.toColor.swatchImage(size: Constants.swatchImageSize))
 						}
 							.labelStyle(.titleAndIcon)
 					}
@@ -375,7 +293,7 @@ private struct RecentlyPickedColorsButton: View {
 			Image(systemName: "clock.fill")
 				.controlSize(.large)
 //				.padding(8) // Has no effect. (macOS 12.0.1)
-				.contentShape(.rectangle)
+				.contentShape(.rect)
 		}
 			.menuIndicator(.hidden)
 			.padding(8)
@@ -386,7 +304,6 @@ private struct RecentlyPickedColorsButton: View {
 }
 
 private struct PalettesButton: View {
-	@EnvironmentObject private var appState: AppState
 	@StateObject private var updates = NotificationCenter.default.publisher(for: NSColorList.didChangeNotification).toListenOnlyObservableObject()
 	@Default(.stickyPaletteName) private var stickyPaletteName
 
@@ -414,7 +331,7 @@ private struct PalettesButton: View {
 			Image(systemName: "swatchpalette.fill")
 				.controlSize(.large)
 //				.padding(8) // Has no effect. (macOS 12.0.1)
-				.contentShape(.rectangle)
+				.contentShape(.rect)
 		}
 			.menuIndicator(.hidden)
 			.padding(8)
@@ -426,14 +343,14 @@ private struct PalettesButton: View {
 	private func createColorList(_ colorList: NSColorList) -> some View {
 		ForEach(Array(colorList.keysAndColors), id: \.key) { key, color in
 			Button {
-				appState.colorPanel.color = color
+				AppState.shared.colorPanel.resolvedColor = color
 			} label: {
 				Label {
 					Text(key)
 				} icon: {
 					// We don't use SwiftUI here as it only supports showing an actual image. (macOS 14.0)
 					// https://github.com/feedback-assistant/reports/issues/247
-					Image(nsImage: color.swatchImage(size: Constants.swatchImageSize))
+					Image(nsImage: color.toColor.swatchImage(size: Constants.swatchImageSize))
 				}
 					.labelStyle(.titleAndIcon)
 			}

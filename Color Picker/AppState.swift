@@ -1,7 +1,7 @@
 import SwiftUI
 
 @MainActor
-final class AppState: ObservableObject {
+final class AppState {
 	static let shared = AppState()
 
 	var cancellables = Set<AnyCancellable>()
@@ -27,7 +27,7 @@ final class AppState: ObservableObject {
 		colorPanel.makeMain()
 
 		let view = ColorPickerScreen(colorPanel: colorPanel)
-			.environmentObject(self)
+//			.environment(self)
 		let accessoryView = NSHostingView(rootView: view)
 		colorPanel.accessoryView = accessoryView
 		accessoryView.constrainEdgesToSuperview()
@@ -64,11 +64,12 @@ final class AppState: ObservableObject {
 			menu.addHeader("Recently Picked")
 
 			for color in colors {
-				let menuItem = menu.addCallbackItem(color.stringRepresentation) {
-					color.stringRepresentation.copyToPasteboard()
+				let colorString = color.toResolvedColor.ss_stringRepresentation
+				let menuItem = menu.addCallbackItem(colorString) {
+					colorString.copyToPasteboard()
 				}
 
-				menuItem.image = color.swatchImage(size: 20)
+				menuItem.image = color.toColor.swatchImage(size: 20)
 			}
 		}
 
@@ -150,13 +151,15 @@ final class AppState: ObservableObject {
 	}
 
 	private func requestReview() {
-		SSApp.requestReviewAfterBeingCalledThisManyTimes([8, 100, 200, 1000])
+		SSApp.requestReviewAfterBeingCalledThisManyTimes([6, 100, 200, 1000])
 	}
 
-	private func addToRecentlyPickedColor(_ color: NSColor) {
+	private func addToRecentlyPickedColor(_ color: Color.Resolved) {
+		let xColor = color.toXColor
+
 		Defaults[.recentlyPickedColors] = Defaults[.recentlyPickedColors]
-			.removingAll(color)
-			.appending(color)
+			.removingAll(xColor)
+			.appending(xColor)
 			.truncatingFromStart(toCount: 6)
 	}
 
@@ -178,16 +181,16 @@ final class AppState: ObservableObject {
 
 	func pickColor() {
 		Task {
-			guard let color = await NSColorSampler().sample() else {
+			guard let color = await NSColorSampler().sample()?.toResolvedColor else {
 				return
 			}
 
-			colorPanel.color = color
+			colorPanel.resolvedColor = color
 			addToRecentlyPickedColor(color)
 			requestReview()
 
 			if Defaults[.copyColorAfterPicking] {
-				color.stringRepresentation.copyToPasteboard()
+				color.ss_stringRepresentation.copyToPasteboard()
 			}
 
 			if NSEvent.modifiers == .shift {
@@ -205,11 +208,11 @@ final class AppState: ObservableObject {
 	}
 
 	func pasteColor() {
-		guard let color = NSColor.fromPasteboardGraceful(.general) else {
+		guard let color = Color.Resolved.fromPasteboardGraceful(.general) else {
 			return
 		}
 
-		colorPanel.color = color.usingColorSpace(.sRGB) ?? color
+		colorPanel.resolvedColor = color
 	}
 
 	func handleAppReopen() {
@@ -220,11 +223,11 @@ final class AppState: ObservableObject {
 		func createColorListMenu(menu: NSMenu, colorList: NSColorList) {
 			for (key, color) in colorList.keysAndColors {
 				let menuItem = menu.addCallbackItem(key) {
-					color.stringRepresentation.copyToPasteboard()
+					color.ss_stringRepresentation.copyToPasteboard()
 				}
 
 				// TODO: Cache the swatch image.
-				menuItem.image = color.swatchImage(size: Constants.swatchImageSize)
+				menuItem.image = color.toColor.swatchImage(size: Constants.swatchImageSize)
 			}
 		}
 

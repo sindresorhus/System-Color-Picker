@@ -17,10 +17,11 @@ The macOS color picker as an app with lots of extra features.
 
 [![](https://tools.applemediaservices.com/api/badges/download-on-the-mac-app-store/black/en-us?size=250x83&releaseDate=1615852800)](https://apps.apple.com/app/id1545870783)
 
-Requires macOS 13 or later.
+Requires macOS 14 or later.
 
 **Older versions**
 
+- [1.15.0](https://github.com/sindresorhus/System-Color-Picker/releases/download/v1.15.0/Color.Picker.1.15.0.-.macOS.13.zip) for macOS 13+
 - [1.12.1](https://github.com/sindresorhus/System-Color-Picker/releases/download/v1.12.1/Color.Picker.1.12.1.-.macOS.12.zip) for macOS 12+
 - [1.9.6](https://github.com/sindresorhus/System-Color-Picker/releases/download/v1.9.6/Color.Picker.1.9.6.-.macOS.11.zip) for macOS 11+
 
@@ -28,19 +29,19 @@ Requires macOS 13 or later.
 
 A special version for users that cannot access the App Store. It won't receive automatic updates. I will update it here once a year.
 
-[Download](https://dsc.cloud/sindresorhus/Color-Picker-1.13.0-1679983870.zip) *(1.13.0 · macOS 13+)*
+[Download]() *(2.0.0 · macOS 14+)*
 
 ## Features
 
+- Palettes
+- Recently picked colors
 - Quickly copy, paste, and convert colors in Hex, HSL, RGB, LCH format
 - Show as a normal app or in the menu bar
 - Pick a color or toggle the window from anywhere with a global keyboard shortcut
 - Make the window stay on top of all other windows
 - Launch it at login (when in the menu bar)
-- Recently picked colors
-- Shortcuts support
 - Hide menu bar icon
-- Palettes
+- Shortcuts support
 
 ## Tips
 
@@ -58,6 +59,7 @@ You can use the following keyboard shortcuts in the app:
 - Copy as RGB: <kbd>Shift</kbd> <kbd>Command</kbd> <kbd>r</kbd>
 - Copy as LCH: <kbd>Shift</kbd> <kbd>Command</kbd> <kbd>l</kbd>
 - Paste color: <kbd>Shift</kbd> <kbd>Command</kbd> <kbd>v</kbd> *(In the format Hex, HSL, RGB, or LCH)*
+- Reset opacity: <kbd>Control</kbd> <kbd>Shift</kbd> <kbd>o</kbd>
 
 ## Plugins
 
@@ -83,8 +85,6 @@ macOS hides menu bar apps when there is no space left in the menu bar. This is a
 
 [It's a more human-friendly color format.](https://lea.verou.me/2020/04/lch-colors-in-css-what-why-and-how/)
 
-Note that the LCH color is [currently clamped to sRGB range](https://github.com/sindresorhus/System-Color-Picker/issues/13).
-
 #### The color changes if I copy and then paste it
 
 That is because the default color space in the picker is [Display P3](https://en.wikipedia.org/wiki/DCI-P3), which is [part of CSS Color 4](https://drafts.csswg.org/css-color-4/#valdef-color-display-p3), but the color space used for the legacy CSS color formats is [sRGB](https://en.wikipedia.org/wiki/SRGB) (browsers are starting to [handle color spaces](https://css-tricks.com/the-expanding-gamut-of-color-on-the-web/) but they are not all there yet).
@@ -101,9 +101,9 @@ You can find palettes on [Coolors](https://coolors.co/palettes/trending).
 
 #### How do I change the color space?
 
-Right-click the color wheel. You probably want to select “sRGB”.
+Right-click the color wheel. You want to select “Display P3” if you use LCH or “sRGB” if you use Hex, HSL, or RGB.
 
-Note that the color strings will always be converted to [sRGB](https://en.wikipedia.org/wiki/SRGB) color space.
+Note that the HSL and RGB format will always be clamped to [sRGB](https://en.wikipedia.org/wiki/SRGB) color space.
 
 #### Can you support `SwiftUI.Color` / `UIColor` / `NSColor` formats?
 
@@ -111,7 +111,9 @@ The best practice is to use [Asset Catalog for colors](https://devblog.xero.com/
 
 #### Can I contribute localizations?
 
-I don't have any immediate plans to localize the app.
+I don't plan to localize the app.
+
+#### [More FAQs…](https://sindresorhus.com/apps/faq)
 
 ## Built with
 

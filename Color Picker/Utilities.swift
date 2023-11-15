@@ -18,70 +18,43 @@ Non-reusable utilities
 */
 
 #if !APP_EXTENSION
-extension NSColor {
-	var toSRGB: NSColor {
-		guard let color = usingColorSpace(.sRGB) else {
-			let error = NSError.appError("Failed to convert color with color space \(colorSpace.localizedName ?? "<Unknown>") to sRGB")
-
-			SentrySDK.capture(error: error)
-
-			DispatchQueue.main.async {
-				NSApp.presentError(error)
-			}
-
-			return self
-		}
-
-		return color
-	}
-
-	var hexColorString: String {
-		toSRGB.format(
-			.hex(
-				isUppercased: Defaults[.uppercaseHexColor],
-				hasPrefix: NSEvent.modifiers == .option ? !Defaults[.hashPrefixInHexColor] : Defaults[.hashPrefixInHexColor]
+extension Color.Resolved {
+	func colorString(for colorFormat: ColorFormat) -> String {
+		switch colorFormat {
+		case .hex:
+			format(
+				.hex(
+					isUppercased: Defaults[.uppercaseHexColor],
+					hasPrefix: NSEvent.modifiers == .option ? !Defaults[.hashPrefixInHexColor] : Defaults[.hashPrefixInHexColor]
+				)
 			)
-		)
+		case .hsl:
+			format(Defaults[.legacyColorSyntax] ? .cssHSLLegacy : .cssHSL)
+		case .rgb:
+			format(Defaults[.legacyColorSyntax] ? .cssRGBLegacy : .cssRGB)
+		case .lch:
+			format(.cssLCH)
+		}
 	}
 
-	var hslColorString: String {
-		toSRGB.format(Defaults[.legacyColorSyntax] ? .cssHSLLegacy : .cssHSL)
-	}
-
-	var rgbColorString: String {
-		toSRGB.format(Defaults[.legacyColorSyntax] ? .cssRGBLegacy : .cssRGB)
-	}
-
-	var lchColorString: String {
-		toSRGB.format(.cssLCH)
-	}
-
-	var hsbColorString: String {
+	var ss_hsbColorString: String {
 		format(.hsb)
 	}
 
-	var stringRepresentation: String {
-		switch Defaults[.preferredColorFormat] {
-		case .hex:
-			hexColorString
-		case .hsl:
-			hslColorString
-		case .rgb:
-			rgbColorString
-		case .lch:
-			lchColorString
-		}
+	var ss_stringRepresentation: String {
+		colorString(for: Defaults[.preferredColorFormat])
 	}
 }
 #endif
 
-extension NSColor {
+// TODO: Should this be extension on Color or Color.Resolved?
+extension Color {
 	func swatchImage(size: Double) -> NSImage {
 		.color(
 			self,
 			size: CGSize(width: size, height: size),
 			borderWidth: (NSScreen.main?.backingScaleFactor ?? 2) > 1 ? 0.5 : 1,
-			borderColor: (SSApp.isDarkMode ? NSColor.white : .black).withAlphaComponent(0.2),
+			borderColor: (SSApp.isDarkMode ? Color.white : .black).opacity(0.2),
 			cornerRadius: 5
 		)
 	}
@@ -107,23 +80,58 @@ typealias XColor = UIColor
 //	}
 //}
 
-// TODO: Don't make this use `Task` for at least another two years (2024). There are a lot of things that don't work with `Task`.
+// TODO: Don't make this use `Task` for at least another two years (2025). There are a lot of things that don't work with `Task`.
 func delay(seconds: TimeInterval, closure: @escaping () -> Void) {
 	DispatchQueue.main.asyncAfter(deadline: .now() + seconds, execute: closure)
 }
 
 
-extension XColor {
+extension Float {
+	var toDouble: Double { .init(self) }
+}
+
+extension Double {
+	var toFloat: Float { .init(self) }
+}
+
+
+extension Sequence where Element: Hashable {
+	/**
+	Filters the elements of the sequence based on a set of allowed values.
+
+	- Parameters:
+	 - allowedValues: A set containing the values to be retained in the sequence.
+
+	- Returns: An array containing only elements that are also in the set.
+	*/
+	func filter(allowedValues: Set<Element>) -> [Element] {
+		filter { allowedValues.contains($0) }
+	}
+}
+
+
+extension Color.Resolved {
 	/**
 	Generate a random color, avoiding black and white.
 	*/
 	static func randomAvoidingBlackAndWhite() -> Self {
-		self.init(
+		// TODO: Use `Color.Resolved` init.
+		XColor(
 			hue: .random(in: 0...1),
 			saturation: .random(in: 0.5...1), // 0.5 is to get away from white
 			brightness: .random(in: 0.5...1), // 0.5 is to get away from black
 			alpha: 1
 		)
+		.toResolvedColor
+	}
+}
+
+
+extension Color.Resolved {
+	func withOpacity(_ opacity: Double) -> Self {
+		var copy = self
+		copy.opacity = opacity.toFloat
+		return copy
 	}
 }
 
@@ -188,12 +196,8 @@ enum SSApp {
 extension SSApp {
 	//	@MainActor
 	static func forceActivate() {
-		if #available(macOS 14, *) {
-			NSApp.yieldActivation(toApplicationWithBundleIdentifier: idString)
-			NSApp.activate()
-		} else {
-			NSApp.activate(ignoringOtherApps: true)
-		}
+		NSApp.yieldActivation(toApplicationWithBundleIdentifier: idString)
+		NSApp.activate()
 	}
 
 	@MainActor
@@ -225,12 +229,8 @@ extension SSApp {
 		DispatchQueue.main.async {
 			SSApp.activateIfAccessory()
 
-			if #available(macOS 14, *) {
-				let menuItem = NSApp.mainMenu?.items.first?.submenu?.item(withTitle: "Settings…")
-				menuItem?.performAction()
-			} else {
-				NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-			}
+			let menuItem = NSApp.mainMenu?.items.first?.submenu?.item(withTitle: "Settings…")
+			menuItem?.performAction()
 		}
 	}
 
@@ -530,105 +530,104 @@ extension NSView {
 }
 
 
-extension NSColor {
-	var rgb: Colors.RGB {
-		#if os(macOS)
-		guard let color = usingColorSpace(.extendedSRGB) else {
-			assertionFailure("Unsupported color space")
-			return .init(red: 0, green: 0, blue: 0, alpha: 0)
-		}
-		#else
-		let color = self
-		#endif
-
-		// swiftlint:disable no_cgfloat
-		var red: CGFloat = 0
-		var green: CGFloat = 0
-		var blue: CGFloat = 0
-		var alpha: CGFloat = 0
-		// swiftlint:enable no_cgfloat
-
-		color.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-
-		return .init(
-			red: red,
-			green: green,
-			blue: blue,
-			alpha: alpha
-		)
+extension Color.Resolved {
+	/**
+	The default debug description is useless.
+	*/
+	var debugString: String {
+		"Color.Resolved(red: \(red), blue: \(blue), green: \(green), opacity: \(opacity))"
 	}
 }
 
 
-extension NSColor {
-	typealias HSB = (hue: Double, saturation: Double, brightness: Double, alpha: Double)
-
+enum CSSTools {
 	/**
-	This preserves the original color space as long as it is RGB, otherwise, it is normalized to extended sRGB.
+	Converts a CSS angle value to degrees.
+
+	- Parameter angleString: A string representing the angle in CSS format (e.g., "45deg", "0.5turn").
+	- Returns: The angle in degrees if conversion is possible, otherwise nil.
+
+	```
+	let degrees = CSSTools.convertAngleToDegrees("45rad")
+	//=> 2291.83
+	```
 	*/
-	var hsbRaw: HSB {
-		var color = self
+	static func parseAngleColorComponentToDegrees(_ angleString: String) -> Double? {
+		let value = angleString
+			.replacing(/deg|rad|grad|turn/, with: "")
+			.trimmingCharacters(in: .whitespacesAndNewlines)
 
-		if colorSpace.colorSpaceModel != .rgb {
-			guard let color_ = usingColorSpace(.extendedSRGB) else {
-				assertionFailure("Unsupported color space")
-				return HSB(0, 0, 0, 0)
-			}
-
-			color = color_
+		guard let hue = Double(value) else {
+			return nil
 		}
 
-		// swiftlint:disable no_cgfloat
-		var hue: CGFloat = 0
-		var saturation: CGFloat = 0
-		var brightness: CGFloat = 0
-		var alpha: CGFloat = 0
-		// swiftlint:enable no_cgfloat
+		if angleString.hasSuffix("rad") {
+			return (hue * 180) / .pi
+		}
 
-		color.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha)
+		if angleString.hasSuffix("grad") {
+			return hue * 0.9
+		}
 
-		return HSB(
-			hue: hue.toDouble,
-			saturation: saturation.toDouble,
-			brightness: brightness.toDouble,
-			alpha: alpha.toDouble
-		)
+		if angleString.hasSuffix("turn") {
+			return hue * 360
+		}
+
+		return hue // Already in degrees or a plain number
 	}
+}
+
+
+extension Color.Resolved {
+	typealias HSB = (
+		hue: Double,
+		saturation: Double,
+		brightness: Double,
+		opacity: Double
+	)
 
 	var hsb: HSB {
-		#if os(macOS)
-		guard let color = usingColorSpace(.extendedSRGB) else {
-			assertionFailure("Unsupported color space")
-			return HSB(0, 0, 0, 0)
-		}
-		#else
-		let color = self
-		#endif
-
 		// swiftlint:disable no_cgfloat
 		var hue: CGFloat = 0
 		var saturation: CGFloat = 0
 		var brightness: CGFloat = 0
-		var alpha: CGFloat = 0
+		var opacity: CGFloat = 0
 		// swiftlint:enable no_cgfloat
 
-		color.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha)
+		// TODO: Rewrite this to a pure Swift algorithm.
+		toXColor.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &opacity)
 
 		return HSB(
 			hue: hue.toDouble,
 			saturation: saturation.toDouble,
 			brightness: brightness.toDouble,
-			alpha: alpha.toDouble
+			opacity: opacity.toDouble
 		)
+	}
+
+	/**
+	Create from HSB components.
+	*/
+	init(
+		hue: Double,
+		saturation: Double,
+		brightness: Double,
+		opacity: Double = 1
+	) {
+		// TODO: Rewrite this to a pure Swift algorithm.
+		self = Color(
+			hue: hue,
+			saturation: saturation,
+			brightness: brightness,
+			opacity: opacity
+		)
+		.resolve(in: .init())
 	}
 }
 
 
-extension NSColor {
-	/**
-	- Important: Ensure you use a compatible color space, otherwise it will just be black.
-	*/
-	var hsl: Colors.HSL {
+extension Color.Resolved {
+	var toHSL: HSL {
 		let hsb = hsb
 
 		var saturation = hsb.saturation * hsb.brightness
@@ -645,47 +644,12 @@ extension NSColor {
 			hue: hsb.hue,
 			saturation: saturation,
 			lightness: lightness,
-			alpha: hsb.alpha
+			opacity: hsb.opacity
 		)
 	}
 
 	/**
 	Create from HSL components.
-	*/
-	convenience init(
-		colorSpace: NSColorSpace,
-		hue: Double,
-		saturation: Double,
-		lightness: Double,
-		alpha: Double
-	) {
-		precondition(
-			0...1 ~= hue
-				&& 0...1 ~= saturation
-				&& 0...1 ~= lightness
-				&& 0...1 ~= alpha,
-			"Input is out of range 0...1"
-		)
-
-		let brightness = lightness + saturation * min(lightness, 1 - lightness)
-		let newSaturation = brightness == 0 ? 0 : (2 * (1 - lightness / brightness))
-
-		self.init(
-			colorSpace: colorSpace,
-			hue: hue,
-			saturation: newSaturation,
-			brightness: brightness,
-			alpha: alpha
-		)
-	}
-}
-
-
-extension Color {
-	/**
-	Create a `Color` from HSL components.
-
-	Assumes `extendedSRGB` input.
 	*/
 	init(
 		hue: Double,
@@ -693,14 +657,6 @@ extension Color {
 		lightness: Double,
 		opacity: Double
 	) {
-		precondition(
-			0...1 ~= hue
-				&& 0...1 ~= saturation
-				&& 0...1 ~= lightness
-				&& 0...1 ~= opacity,
-			"Input is out of range 0...1"
-		)
-
 		let brightness = lightness + saturation * min(lightness, 1 - lightness)
 		let newSaturation = brightness == 0 ? 0 : (2 * (1 - lightness / brightness))
 
@@ -714,18 +670,26 @@ extension Color {
 }
 
 
-extension NSColor {
-	private static let cssHSLRegex = /^\s*hsla?\((?<hue>\d+)(?:deg)?[\s,]*(?<saturation>[\d.]+)%[\s,]*(?<lightness>[\d.]+)%\);?\s*$/
+// https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/hsl
+extension Color.Resolved {
+	private static let cssHSLRegex = /^\s*hsla?\((?<hue>\d+)(?:deg)?[\s,]*(?<saturation>[\d.]+)%[\s,]*(?<lightness>[\d.]+)%(?:\s*[,\/]\s*(?<opacity>[\d.]+%?))?\);?\s*$/
 
-	// TODO: Should I move this to the `Colors.HSL` struct instead?
-	// TODO: Support `alpha` in HSL (both comma and `/` separated): https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/hsl()
-	// TODO: Write a lot of tests for the regex.
-	/**
-	Assumes `sRGB` color space.
-	*/
-	convenience init?(cssHSLString: String) {
+	fileprivate static func parseMatchOpacity(_ opacityString: String?) -> Double {
+		guard let opacityString else {
+			return 1
+		}
+
+		let rawOpacity = Double(opacityString.replacing("%", with: ""))
+		let opacity = opacityString.hasSuffix("%") ? ((rawOpacity ?? 100) / 100) : (rawOpacity ?? 1)
+		return opacity.clamped(to: 0...1)
+	}
+
+	init?(
+		cssHSLString: String,
+		colorSpace: Color.RGBColorSpace = .sRGB
+	) {
 		guard
-			let match = cssHSLString.wholeMatch(of: Self.cssHSLRegex)?.output,
+			let match = cssHSLString.trimmingCharacters(in: .whitespaces).wholeMatch(of: Self.cssHSLRegex)?.output,
 			let hue = Double(match.hue),
 			let saturation = Double(match.saturation),
 			let lightness = Double(match.lightness),
@@ -737,64 +701,97 @@ extension NSColor {
 		}
 
 		self.init(
-			colorSpace: .sRGB,
 			hue: hue / 360,
 			saturation: saturation / 100,
 			lightness: lightness / 100,
-			alpha: 1
+			opacity: Self.parseMatchOpacity(match.opacity?.toString)
 		)
 	}
 }
 
 
-extension NSColor {
-	private static let cssRGBRegex = /^\s*rgba?\((?<red>[\d.]+)[\s,]*(?<green>[\d.]+)[\s,]*(?<blue>[\d.]+)\);?\s*$/
-
-	// TODO: Need to handle `rgb(10%, 10%, 10%)`.
-	// TODO: Support `alpha` in RGB (both comma and `/` separated): https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/hsl()
-	// TODO: Write a lot of tests for the regex.
+// https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/rgb
+extension Color.Resolved {
 	// Fixture: rgb(27.59% 41.23% 100%)
-	/**
-	Assumes `sRGB` color space.
-	*/
-	convenience init?(cssRGBString: String) {
+	private static let cssRGBRegex = /^\s*rgba?\((?<red>[\d.]+)[\s,]*(?<green>[\d.]+)[\s,]*(?<blue>[\d.]+)(?:\s*[,\/]\s*(?<opacity>[\d.]+%?))?\);?\s*$/
+
+	// For `rgb(10%, 10%, 10%)` type syntax.
+	// Same as the above regex but with added `%`.
+	private static let cssRGBPercentRegex = /^\s*rgba?\((?<red>[\d.]+)%[\s,]*(?<green>[\d.]+)%[\s,]*(?<blue>[\d.]+)%(?:\s*[,\/]\s*(?<opacity>[\d.]+%?))?\);?\s*$/
+
+	init?(
+		cssRGBString: String,
+		colorSpace: Color.RGBColorSpace = .sRGB
+	) {
+		let string = cssRGBString.trimmingCharacters(in: .whitespaces)
+
 		guard
-			let match = cssRGBString.wholeMatch(of: Self.cssRGBRegex)?.output,
-			let red = Double(match.red),
-			let green = Double(match.green),
-			let blue = Double(match.blue),
+			let match = string.wholeMatch(of: Self.cssRGBRegex)?.output,
+			let red = Float(match.red),
+			let green = Float(match.green),
+			let blue = Float(match.blue),
 			(0...255).contains(red),
 			(0...255).contains(green),
 			(0...255).contains(blue)
+		else {
+			self.init(cssRGBPercentString: string, colorSpace: colorSpace)
+			return
+		}
+
+		self.init(
+			colorSpace: colorSpace,
+			red: red / 255,
+			green: green / 255,
+			blue: blue / 255,
+			opacity: Self.parseMatchOpacity(match.opacity?.toString).toFloat
+		)
+	}
+
+	private init?(
+		cssRGBPercentString: String,
+		colorSpace: Color.RGBColorSpace = .sRGB
+	) {
+		guard
+			let match = cssRGBPercentString.wholeMatch(of: Self.cssRGBPercentRegex)?.output,
+			let red = Float(match.red),
+			let green = Float(match.green),
+			let blue = Float(match.blue),
+			(0...100).contains(red),
+			(0...100).contains(green),
+			(0...100).contains(blue)
 		else {
 			return nil
 		}
 
 		self.init(
-			srgbRed: red / 255,
-			green: green / 255,
-			blue: blue / 255,
-			alpha: 1
+			colorSpace: colorSpace,
+			red: red / 100,
+			green: green / 100,
+			blue: blue / 100,
+			opacity: Self.parseMatchOpacity(match.opacity?.toString).toFloat
 		)
 	}
 }
 
 
 // https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/lch()
-extension NSColor {
-	private static let cssLCHRegex = /^\s*lch\((?<lightness>[\d.]+)%\s+(?<chroma>[\d.]+)\s+(?<hue>[\d.]+)(?:deg)?\s*(?<alpha>\/\s+[\d.]+%?)?\)?;?$/
+extension Color.Resolved {
+	private static let cssLCHRegex = /^\s*lch\((?<lightness>[\d.]+%?)\s+(?<chroma>[\d.]+%?)\s+(?<hue>[\d.]+(?:deg|rad|grad|turn)?)\s*(?:\/\s*(?<opacity>[\d.]+%?))?\)?;?$/
 
-	// TODO: Support `alpha`, both percentage and float format. Right now we accept such colors, but ignore the alpha.
-	// TODO: Write a lot of tests for the regex.
-	/**
-	Assumes `sRGB` color space.
-	*/
-	convenience init?(cssLCHString: String) {
+	init?(cssLCHString: String) {
 		guard
-			let match = cssLCHString.wholeMatch(of: Self.cssLCHRegex)?.output,
-			let lightness = Double(match.lightness),
-			let chroma = Double(match.chroma),
-			let hue = Double(match.hue),
+			let match = cssLCHString.trimmingCharacters(in: .whitespaces).wholeMatch(of: Self.cssLCHRegex)?.output,
+			let lightnessValue = Double(match.lightness.replacing("%", with: "")),
+			let chromaValue = Double(match.chroma.replacing("%", with: "")),
+			let hue = CSSTools.parseAngleColorComponentToDegrees(match.hue.toString)
+		else {
+			return nil
+		}
+
+		let lightness = match.lightness.hasSuffix("%") ? lightnessValue : (lightnessValue * 100)
+		let chroma = match.chroma.hasSuffix("%") ? (chromaValue * (150 / 100)) : chromaValue // 100% means 150.
+
+		guard
 			(0...100).contains(lightness),
 			chroma >= 0, // Usually max 230, but theoretically unbounded.
 			(0...360).contains(hue)
@@ -802,60 +799,68 @@ extension NSColor {
 			return nil
 		}
 
-		let lch = Colors.LCH(
+		self = LCH(
 			lightness: lightness,
 			chroma: chroma,
 			hue: hue,
-			alpha: 1
+			opacity: Self.parseMatchOpacity(match.opacity?.toString)
 		)
-
-		self.init(lch.toRGB())
+		.toResolved()
 	}
 }
 
 
-extension NSColor {
+extension Color.Resolved {
+	// TODO: Should this accept a color space?
 	/**
 	Create a color from a CSS color string in the format Hex, HSL, or RGB.
 
-	Assumes `sRGB` color space.
+	- Note: Assumes `sRGB` color space.
 	*/
-	static func from(cssString: String) -> NSColor? {
-		if let color = NSColor(hexString: cssString) {
-			return color
+	init?(cssString: String) {
+		let result: Color.Resolved? = {
+			if let color = Color.Resolved(cssHexString: cssString) {
+				return color
+			}
+
+			if let color = Color.Resolved(cssHSLString: cssString) {
+				return color
+			}
+
+			if let color = Color.Resolved(cssRGBString: cssString) {
+				return color
+			}
+
+			if let color = Color.Resolved(cssLCHString: cssString) {
+				return color
+			}
+
+			return nil
+		}()
+
+		guard let result else {
+			return nil
 		}
 
-		if let color = NSColor(cssHSLString: cssString) {
-			return color
-		}
-
-		if let color = NSColor(cssRGBString: cssString) {
-			return color
-		}
-
-		if let color = NSColor(cssLCHString: cssString) {
-			return color
-		}
-
-		return nil
+		self = result
 	}
 }
 
 
-extension NSColor {
+extension Color.Resolved {
 	/**
 	Loosely gets a color from the pasteboard.
 
-	It first tries to get an actual `NSColor` and then tries to parse a CSS string (ignoring leading/trailing whitespace) for Hex, HSL, and RGB.
+	It first tries to get an actual color object and then tries to parse a CSS string (ignoring leading/trailing whitespace) for Hex, HSL, and RGB.
 	*/
-	static func fromPasteboardGraceful(_ pasteboard: NSPasteboard) -> NSColor? {
-		if let color = self.init(from: pasteboard) {
+	static func fromPasteboardGraceful(_ pasteboard: NSPasteboard) -> Self? {
+		if let color = XColor(from: pasteboard)?.toResolvedColor {
 			return color
 		}
 
 		guard
 			let string = pasteboard.string(forType: .string)?.trimmingCharacters(in: .whitespaces),
-			let color = from(cssString: string)
+			let color = self.init(cssString: string)
 		else {
 			return nil
 		}
@@ -865,85 +870,94 @@ extension NSColor {
 }
 
 
-extension NSColor {
-	/**
-	```
-	NSColor(hex: 0xFFFFFF)
-	```
-	*/
-	convenience init(hex: Int, alpha: Double = 1) {
-		self.init(
-			red: Double((hex >> 16) & 0xFF) / 255,
-			green: Double((hex >> 8) & 0xFF) / 255,
-			blue: Double(hex & 0xFF) / 255,
-			alpha: alpha
-		)
-	}
+extension Color.Resolved {
+	init?(
+		cssHexString: String,
+		colorSpace: Color.RGBColorSpace = .sRGB
+	) {
+		var string = cssHexString.trimmingCharacters(in: .whitespaces)
 
-	// TODO: Parse alpha hex color.
-	convenience init?(hexString: String, alpha: Double = 1) {
-		var string = hexString
-
-		if hexString.hasPrefix("#") {
-			string = String(hexString.dropFirst())
+		if cssHexString.hasPrefix("#") {
+			string = String(cssHexString.dropFirst())
 		}
 
-		if string.count == 3 {
+		if string.count == 3 || string.count == 4 { // 4 is with opacity.
 			string = string.map { "\($0)\($0)" }.joined()
 		}
 
-		guard let hex = Int(string, radix: 16) else {
+		guard
+			string.count == 6 || string.count == 8,
+			let hexValue = Int(string, radix: 16)
+		else {
 			return nil
 		}
 
-		self.init(hex: hex, alpha: alpha)
+		let red, green, blue, opacity: Float
+		if string.count == 6 {
+			red = Float((hexValue >> 16) & 0xFF) / 255
+			green = Float((hexValue >> 8) & 0xFF) / 255
+			blue = Float(hexValue & 0xFF) / 255
+			opacity = 1
+		} else {
+			red = Float((hexValue >> 24) & 0xFF) / 255
+			green = Float((hexValue >> 16) & 0xFF) / 255
+			blue = Float((hexValue >> 8) & 0xFF) / 255
+			opacity = Float(hexValue & 0xFF) / 255
+		}
+
+		self.init(
+			colorSpace: colorSpace,
+			red: red,
+			green: green,
+			blue: blue,
+			opacity: opacity
+		)
 	}
 
 	/**
-	- Important: Don't forget to convert it to the correct color space first.
+	- Note: Unlike in CSS, the opacity is placed first.
 	- Note: It respects the opacity of the color.
 
 	```
-	NSColor(hexString: "#fefefe")!.hex
+	Color.Resolved(cssHexString: "#fefefe")!.hex
 	//=> 0xFEFEFE
 	```
 	*/
 	var hex: Int {
-		#if os(macOS)
-		guard numberOfComponents == 4 else {
-			assertionFailure()
-			return 0x0
-		}
-		#endif
-
-		let red = Int((redComponent * 0xFF).rounded())
-		let green = Int((greenComponent * 0xFF).rounded())
-		let blue = Int((blueComponent * 0xFF).rounded())
-		let opacity = Int((alphaComponent * 0xFF).rounded())
-
-		return opacity << 24 | red << 16 | green << 8 | blue
+		let red = Int((red.clamped(to: 0...1) * 0xFF).rounded())
+		let green = Int((green.clamped(to: 0...1) * 0xFF).rounded())
+		let blue = Int((blue.clamped(to: 0...1) * 0xFF).rounded())
+		let opacity = Int((opacity.clamped(to: 0...1) * 0xFF).rounded())
+		return red << 16 | green << 8 | blue << 0 | opacity << 24
 	}
 
 	/**
-	- Important: Don't forget to convert it to the correct color space first.
 	- Note: It includes the opacity of the color if not `1`.
+	- Note: The opacity is last.
 
 	```
-	NSColor(hexString: "#fefefe")!.hexString
+	Color.Resolved(cssHexString: "#fefefe")!.hexString
 	//=> "#fefefe"
 	```
 	*/
 	var hexString: String {
-		if alphaComponent < 1 {
-			String(format: "#%08x", hex)
-		} else {
-			String(format: "#%06x", hex & 0xFFFFFF) // Masking to remove the alpha portion for full opacity
+		let red = Int(red.clamped(to: 0...1) * 255)
+		let green = Int(green.clamped(to: 0...1) * 255)
+		let blue = Int(blue.clamped(to: 0...1) * 255)
+
+		var hex = String(format: "#%02x%02x%02x", red, green, blue)
+
+		if opacity < 1 {
+			assert(opacity <= 1)
+			hex = hex.appendingFormat("%02x", Int(opacity.clamped(to: 0...1) * 255))
 		}
+
+		return hex
 	}
 }
 
 
-extension NSColor {
+extension Color.Resolved {
 	enum ColorStringFormat {
 		case hex(isUppercased: Bool = false, hasPrefix: Bool = false)
 		case cssHSL
@@ -972,41 +986,63 @@ extension NSColor {
 
 			return string
 		case .cssHSL:
-			let hsl = hsl
-			let hue = Int((hsl.hue * 360).rounded())
-			let saturation = Int((hsl.saturation * 100).rounded())
-			let lightness = Int((hsl.lightness * 100).rounded())
-			return String(format: "hsl(%ddeg %d%% %d%%)", hue, saturation, lightness)
+			let hsl = toHSL
+			let hue = Int((hsl.hue.clamped(to: 0...1) * 360).rounded())
+			let saturation = Int((hsl.saturation.clamped(to: 0...1) * 100).rounded())
+			let lightness = Int((hsl.lightness.clamped(to: 0...1) * 100).rounded())
+			let opacity = Int((hsl.opacity.clamped(to: 0...1) * 100).rounded())
+
+			return opacity < 100
+				? String(format: "hsl(%ddeg %d%% %d%% / %d%%)", hue, saturation, lightness, opacity)
+				: String(format: "hsl(%ddeg %d%% %d%%)", hue, saturation, lightness)
 		case .cssRGB:
-			let rgb = rgb
-			let red = Int((rgb.red * 0xFF).rounded())
-			let green = Int((rgb.green * 0xFF).rounded())
-			let blue = Int((rgb.blue * 0xFF).rounded())
-			return String(format: "rgb(%d %d %d)", red, green, blue)
+			let red = Int((red.clamped(to: 0...1) * 0xFF).rounded())
+			let green = Int((green.clamped(to: 0...1) * 0xFF).rounded())
+			let blue = Int((blue.clamped(to: 0...1) * 0xFF).rounded())
+			let opacity = Int((opacity.clamped(to: 0...1) * 100).rounded())
+
+			return opacity < 100
+				? String(format: "rgb(%d %d %d / %d%%)", red, green, blue, opacity)
+				: String(format: "rgb(%d %d %d)", red, green, blue)
 		case .cssLCH:
-			let lch = rgb.toLCH()
+			let lch = toLCH
 			let lightness = Int(lch.lightness.rounded())
 			let chroma = Int(lch.chroma.rounded())
 			let hue = Int(lch.hue.rounded())
-			return String(format: "lch(%d%% %d %ddeg)", lightness, chroma, hue)
+			let opacity = Int((toHSL.opacity.clamped(to: 0...1) * 100).rounded())
+
+			return opacity < 100
+				? String(format: "lch(%d%% %d %ddeg / %d%%)", lightness, chroma, hue, opacity)
+				: String(format: "lch(%d%% %d %ddeg)", lightness, chroma, hue)
 		case .cssHSLLegacy:
-			let hsl = hsl
-			let hue = Int((hsl.hue * 360).rounded())
-			let saturation = Int((hsl.saturation * 100).rounded())
-			let lightness = Int((hsl.lightness * 100).rounded())
-			return String(format: "hsl(%d, %d%%, %d%%)", hue, saturation, lightness)
+			let hsl = toHSL
+			let hue = Int((hsl.hue.clamped(to: 0...1) * 360).rounded())
+			let saturation = Int((hsl.saturation.clamped(to: 0...1) * 100).rounded())
+			let lightness = Int((hsl.lightness.clamped(to: 0...1) * 100).rounded())
+			let opacity = opacity.clamped(to: 0...1)
+
+			return opacity < 1
+				? String(format: "hsl(%d, %d%%, %d%%, %.2f)", hue, saturation, lightness, opacity)
+				: String(format: "hsl(%d, %d%%, %d%%)", hue, saturation, lightness)
 		case .cssRGBLegacy:
-			let rgb = rgb
-			let red = Int((rgb.red * 0xFF).rounded())
-			let green = Int((rgb.green * 0xFF).rounded())
-			let blue = Int((rgb.blue * 0xFF).rounded())
-			return String(format: "rgb(%d, %d, %d)", red, green, blue)
+			let red = Int((red.clamped(to: 0...1) * 0xFF).rounded())
+			let green = Int((green.clamped(to: 0...1) * 0xFF).rounded())
+			let blue = Int((blue.clamped(to: 0...1) * 0xFF).rounded())
+			let opacity = opacity.clamped(to: 0...1)
+
+			return opacity < 1
+				? String(format: "rgb(%d, %d, %d, %.2f)", red, green, blue, opacity)
+				: String(format: "rgb(%d, %d, %d)", red, green, blue)
 		case .hsb:
-			let hsb = hsbRaw // We use the current color space.
+			let hsb = hsb
 			let hue = Int((hsb.hue * 360).rounded())
 			let saturation = Int((hsb.saturation * 100).rounded())
 			let brightness = Int((hsb.brightness * 100).rounded())
-			return String(format: "%d %d%% %d%%", hue, saturation, brightness)
+			let opacity = Int((toHSL.opacity.clamped(to: 0...1) * 100).rounded())
+
+			return opacity < 100
+				? String(format: "%d %d%% %d%% / %d%%", hue, saturation, brightness, opacity)
+				: String(format: "%d %d%% %d%%", hue, saturation, brightness)
 		}
 	}
 }
@@ -1218,11 +1254,10 @@ extension NSColorPanel {
 	/**
 	Publishes when the color in the color panel changes.
 	*/
-	var colorDidChangePublisher: AnyPublisher<Void, Never> {
+	var colorDidChangePublisher: some Publisher<Void, Never> {
 		NotificationCenter.default
 			.publisher(for: Self.colorDidChangeNotification, object: self)
 			.map { _ in }
-			.eraseToAnyPublisher()
 	}
 }
 
@@ -1478,7 +1513,6 @@ final class SSMenu: NSMenu, NSMenuDelegate {
 	private(set) var isOpen = false
 
 	let isOpenPublisher: AnyPublisher<Bool, Never>
-
 
 	override init(title: String) {
 		self.isOpenPublisher = isOpenSubject.eraseToAnyPublisher()
@@ -1809,14 +1843,6 @@ extension NSMenu {
 }
 
 
-private struct RespectDisabledViewModifier: ViewModifier {
-	@Environment(\.isEnabled) private var isEnabled
-
-	func body(content: Content) -> some View {
-		content.opacity(isEnabled ? 1 : 0.5)
-	}
-}
-
 extension Text {
 	/**
 	Make some text respect the current view environment being disabled.
@@ -1825,6 +1851,14 @@ extension Text {
 	*/
 	func respectDisabled() -> some View {
 		modifier(RespectDisabledViewModifier())
+	}
+}
+
+private struct RespectDisabledViewModifier: ViewModifier {
+	@Environment(\.isEnabled) private var isEnabled
+
+	func body(content: Content) -> some View {
+		content.opacity(isEnabled ? 1 : 0.5)
 	}
 }
 
@@ -2000,14 +2034,13 @@ enum SSPublishers {
 	/**
 	Publishes when the app becomes active/inactive.
 	*/
-	static var appIsActive: AnyPublisher<Bool, Never> {
+	static var appIsActive: some Publisher<Bool, Never> {
 		Publishers.Merge(
 			NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
 				.map { _ in true },
 			NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)
 				.map { _ in false }
 		)
-			.eraseToAnyPublisher()
 	}
 }
 
@@ -2077,7 +2110,7 @@ extension NSPasteboard {
 	/**
 	Returns a publisher that emits when the pasteboard changes.
 	*/
-	var simplePublisher: AnyPublisher<Void, Never> {
+	var simplePublisher: some Publisher<Void, Never> {
 		Timer.publish(every: 0.2, tolerance: 0.1, on: .main, in: .common)
 			.autoconnect()
 			.prepend([]) // We want the publisher to also emit immediately when someone subscribes.
@@ -2086,7 +2119,6 @@ extension NSPasteboard {
 			}
 			.removeDuplicates()
 			.map { _ in }
-			.eraseToAnyPublisher()
 	}
 }
 
@@ -2271,22 +2303,10 @@ extension EnumPicker where Label == Text {
 }
 
 
-// TODO: I plan to extract this out into a Swift package when it's more mature.
 enum Colors {}
 
-extension Colors {
-	/**
-	RGB color in the `extendedSRGB` color space.
 
-	The components are usually in the range `0...1` but could extend it (except `alpha`).
-	*/
-	struct RGB: Hashable {
-		let red: Double
-		let green: Double
-		let blue: Double
-		let alpha: Double
-	}
-
+extension Color.Resolved {
 	/**
 	HSL color.
 
@@ -2296,7 +2316,7 @@ extension Colors {
 		let hue: Double
 		let saturation: Double
 		let lightness: Double
-		let alpha: Double
+		let opacity: Double
 	}
 
 	struct LCH: Hashable {
@@ -2318,38 +2338,24 @@ extension Colors {
 		/**
 		Range: `0...1`
 		*/
-		let alpha: Double
+		let opacity: Double
 	}
 }
 
-extension XColor {
-	/**
-	Initialize from a `RGB` color.
-	*/
-	convenience init(_ rgbColor: Colors.RGB) {
-		self.init(
-			red: rgbColor.red,
-			green: rgbColor.green,
-			blue: rgbColor.blue,
-			alpha: rgbColor.alpha
-		)
-	}
-}
 
-extension Colors.RGB {
+extension Color.Resolved {
 	/**
-	Convert sRGB to LCH.
+	Convert to LCH.
 	*/
-	func toLCH() -> Colors.LCH {
+	var toLCH: LCH {
 		// Algorithm: https://www.w3.org/TR/css-color-4/#rgb-to-lab
 
-		// Convert from sRGB to linear-light sRGB (undo gamma encoding).
-		let red = Colors.sRGBToLinearSRGB(colorComponent: red)
-		let green = Colors.sRGBToLinearSRGB(colorComponent: green)
-		let blue = Colors.sRGBToLinearSRGB(colorComponent: blue)
-
 		// Convert from linear sRGB to D65-adapted XYZ.
-		let xyz = Colors.linearSRGBToXYZ(red: red, green: green, blue: blue)
+		let xyz = Colors.linearSRGBToXYZ(
+			red: linearRed.toDouble,
+			green: linearGreen.toDouble,
+			blue: linearBlue.toDouble
+		)
 
 		// Convert from a D65 whitepoint (used by sRGB) to the D50 whitepoint used in Lab, with the Bradford transform.
 		let xyz2 = Colors.d65ToD50(x: xyz.x, y: xyz.y, z: xyz.z)
@@ -2364,19 +2370,16 @@ extension Colors.RGB {
 			lightness: lch.lightness,
 			chroma: lch.chroma,
 			hue: lch.hue,
-			alpha: alpha
+			opacity: opacity.toDouble
 		)
 	}
-
-	// Convert to NSColor/UIColor.
-	func toXColor() -> XColor { .init(self) }
 }
 
-extension Colors.LCH {
+extension Color.Resolved.LCH {
 	/**
 	Convert LCH to sRGB.
 	*/
-	func toRGB() -> Colors.RGB {
+	func toResolved() -> Color.Resolved {
 		// Algorithm: https://www.w3.org/TR/css-color-4/#lab-to-rgb
 
 		// Convert LCH to Lab.
@@ -2391,17 +2394,26 @@ extension Colors.LCH {
 		// Convert from D65-adapted XYZ to linear-light sRGB.
 		let rgb = Colors.xyzToLinearSRGB(x: xyz2.x, y: xyz2.y, z: xyz2.z)
 
-		// Convert from linear-light sRGB to sRGB (do gamma encoding).
-		let red = Colors.linearSRGBToSRGB(colorComponent: rgb.red)
-		let green = Colors.linearSRGBToSRGB(colorComponent: rgb.green)
-		let blue = Colors.linearSRGBToSRGB(colorComponent: rgb.blue)
-
 		return .init(
-			red: red,
-			green: green,
-			blue: blue,
-			alpha: alpha
+			colorSpace: .sRGBLinear,
+			red: rgb.red.toFloat,
+			green: rgb.green.toFloat,
+			blue: rgb.blue.toFloat,
+			opacity: opacity.toFloat
 		)
+
+		// TODO: Remove at some point.
+		// Convert from linear-light sRGB to sRGB (do gamma encoding).
+//		let red = Colors.linearSRGBToSRGB(colorComponent: rgb.red)
+//		let green = Colors.linearSRGBToSRGB(colorComponent: rgb.green)
+//		let blue = Colors.linearSRGBToSRGB(colorComponent: rgb.blue)
+//
+//		return .init(
+//			red: red.toFloat,
+//			green: green.toFloat,
+//			blue: blue.toFloat,
+//			opacity: opacity
+//		)
 	}
 }
 
@@ -2738,6 +2750,78 @@ extension Binding where Value: SetAlgebra, Value.Element: Hashable {
 }
 
 
+/**
+Creates a binding that sets a specified enum value when a condition is true and clears it (sets to nil if it equals the current value) when false.
+
+- Parameters:
+	- value: The enum value to be set when the condition is true.
+	- boundValue: The binding to the optional enum variable that needs to be conditionally set or cleared.
+
+- Returns: A Boolean binding that, when true, sets `boundValue` to `value`, and when false, sets `boundValue` to nil if it currently equals `value`.
+*/
+extension Binding where Value: Equatable {
+	static func conditionalSetOrClearBinding<T: Equatable>(
+		to value: T,
+		with boundValue: Binding<T?>
+	) -> Binding<Bool> {
+		Binding<Bool>(
+			get: { boundValue.wrappedValue == value },
+			set: { isActive in
+				if isActive {
+					boundValue.wrappedValue = value
+				} else if boundValue.wrappedValue == value {
+					boundValue.wrappedValue = nil
+				}
+			}
+		)
+	}
+}
+
+
+extension Binding {
+	// Keywords: dictionary key binding keybinding
+	/**
+	Creates a binding to a value in a dictionary for a given key.
+
+	- Parameters:
+	 - key: The key for the value in the dictionary.
+	 - default: The default value to use if the key does not exist in the dictionary.
+
+	- Returns: A binding to the value in the dictionary for the given key.
+	*/
+	subscript<T, V>(
+		key: T,
+		default defaultValue: @autoclosure @escaping () -> V
+	) -> Binding<V> where Value == [T: V] {
+		.init(
+			get: { wrappedValue[key, default: defaultValue()] },
+			set: {
+				wrappedValue[key] = $0
+			}
+		)
+	}
+
+	/**
+	Creates a binding to a value in a dictionary for a given key.
+
+	- Parameters:
+	 - key: The key for the value in the dictionary.
+
+	- Returns: A binding to the value in the dictionary for the given key.
+	*/
+	subscript<T, V>(
+		key: T
+	) -> Binding<V?> where Value == [T: V] {
+		.init(
+			get: { wrappedValue[key] },
+			set: {
+				wrappedValue[key] = $0
+			}
+		)
+	}
+}
+
+
 struct MultiTogglePicker<Data: RandomAccessCollection, ElementLabel: View>: View where Data.Element: Hashable & Identifiable {
 	let data: Data
 	@Binding var selection: Set<Data.Element>
@@ -2783,7 +2867,7 @@ extension Defaults {
 				elementLabel($0)
 			}
 				.onChange(of: selection) {
-					onChange?($0)
+					onChange?(selection)
 				}
 		}
 	}
@@ -2806,17 +2890,18 @@ extension NSImage {
 	Draw a color as an image.
 	*/
 	static func color(
-		_ color: NSColor,
+		_ color: Color,
 		size: CGSize,
 		borderWidth: Double = 0,
-		borderColor: NSColor? = nil,
+		borderColor: Color? = nil,
 		cornerRadius: Double? = nil
 	) -> Self {
+		// TODO: Render this with Canvas and ImageRender.
 		Self(size: size, flipped: false) { bounds in
 			NSGraphicsContext.current?.imageInterpolation = .high
 
 			guard let cornerRadius else {
-				color.drawSwatch(in: bounds)
+				color.toXColor.drawSwatch(in: bounds)
 				return true
 			}
 
@@ -2831,14 +2916,14 @@ extension NSImage {
 				yRadius: cornerRadius
 			)
 
-			color.set()
+			color.toXColor.set()
 			bezierPath.fill()
 
 			if
 				borderWidth > 0,
 				let borderColor
 			{
-				borderColor.setStroke()
+				borderColor.toXColor.setStroke()
 				bezierPath.lineWidth = borderWidth
 				bezierPath.stroke()
 			}
@@ -2940,65 +3025,6 @@ extension View {
 	func secondaryTextStyle() -> some View {
 		font(.system(size: NSFont.smallSystemFontSize))
 			.foregroundColor(.secondary)
-	}
-}
-
-
-extension View {
-	/**
-	Usually used for a verbose description of a settings item.
-	*/
-	func settingSubtitleTextStyle() -> some View {
-		secondaryTextStyle()
-			.multilineText()
-	}
-}
-
-
-extension NSColor: Identifiable {
-	public var id: String { "\(rgb.hashValue) - \(colorSpace.localizedName ?? "")" }
-}
-
-
-#if canImport(Intents)
-import Intents
-
-extension NSImage {
-	var inImage: INImage {
-		// `tiffRepresentation` is very unlikely to fail, so we just fall back to an empty image.
-		INImage(imageData: tiffRepresentation ?? Data())
-	}
-}
-#endif
-
-
-extension Shape where Self == Rectangle {
-	static var rectangle: Self { .init() }
-}
-
-extension Shape where Self == Circle {
-	static var circle: Self { .init() }
-}
-
-extension Shape where Self == Capsule {
-	static var capsule: Self { .init() }
-}
-
-extension Shape where Self == Ellipse {
-	static var ellipse: Self { .init() }
-}
-
-extension Shape where Self == ContainerRelativeShape {
-	static var containerRelative: Self { .init() }
-}
-
-extension Shape where Self == RoundedRectangle {
-	static func roundedRectangle(cornerRadius: Double, style: RoundedCornerStyle = .circular) -> Self {
-		.init(cornerRadius: cornerRadius, style: style)
-	}
-
-	static func roundedRectangle(cornerSize: CGSize, style: RoundedCornerStyle = .circular) -> Self {
-		.init(cornerSize: cornerSize, style: style)
 	}
 }
 
@@ -3206,23 +3232,6 @@ extension NSError {
 }
 
 
-extension Button<Label<Text, Image>> {
-	init(
-		_ title: String,
-		systemImage: String,
-		role: ButtonRole? = nil,
-		action: @escaping () -> Void
-	) {
-		self.init(
-			role: role,
-			action: action
-		) {
-			Label(title, systemImage: systemImage)
-		}
-	}
-}
-
-
 enum OperatingSystem {
 	case macOS
 	case iOS
@@ -3246,9 +3255,9 @@ extension OperatingSystem {
 	/**
 	- Note: Only use this when you cannot use an `if #available` check. For example, inline in function calls.
 	*/
-	static let isMacOS15OrLater: Bool = {
+	static let isMacOS16OrLater: Bool = {
 		#if os(macOS)
-		if #available(macOS 15, *) {
+		if #available(macOS 16, *) {
 			return true
 		}
 
@@ -3261,9 +3270,9 @@ extension OperatingSystem {
 	/**
 	- Note: Only use this when you cannot use an `if #available` check. For example, inline in function calls.
 	*/
-	static let isMacOS14OrLater: Bool = {
+	static let isMacOS15OrLater: Bool = {
 		#if os(macOS)
-		if #available(macOS 14, *) {
+		if #available(macOS 15, *) {
 			return true
 		}
 
@@ -3303,11 +3312,11 @@ extension NSColorList {
 			.removingDuplicates()
 	}
 
-	var colors: [NSColor] {
-		allKeys.compactMap { color(withKey: $0) }
+	var colors: [Color.Resolved] {
+		allKeys.compactMap { color(withKey: $0)?.toResolvedColor }
 	}
 
-	var keysAndColors: [NSColorList.Name: NSColor] {
+	var keysAndColors: [NSColorList.Name: Color.Resolved] {
 		.init(zip(allKeys, colors)) { first, _ in first }
 	}
 }
@@ -3329,4 +3338,71 @@ final class ListenOnlyPublisherObservable: ObservableObject {
 
 extension Publisher {
 	func toListenOnlyObservableObject() -> ListenOnlyPublisherObservable { .init(for: self) }
+}
+
+
+extension Comparable {
+	func clamped(to range: ClosedRange<Self>) -> Self {
+		min(max(self, range.lowerBound), range.upperBound)
+	}
+
+	func clamped(to range: PartialRangeThrough<Self>) -> Self {
+		min(self, range.upperBound)
+	}
+
+	func clamped(to range: PartialRangeFrom<Self>) -> Self {
+		max(self, range.lowerBound)
+	}
+}
+
+extension Strideable where Stride: SignedInteger {
+	func clamped(to range: Range<Self>) -> Self {
+		clamped(to: range.lowerBound...range.upperBound.advanced(by: -1))
+	}
+
+	func clamped(to range: PartialRangeUpTo<Self>) -> Self {
+		min(self, range.upperBound.advanced(by: -1))
+	}
+}
+
+
+extension Color.Resolved {
+	var toColor: Color { .init(self) }
+
+	var toXColor: XColor {
+		.init(
+			red: red.toDouble,
+			green: green.toDouble,
+			blue: blue.toDouble,
+			alpha: opacity.toDouble
+		)
+	}
+}
+
+
+extension Color {
+	/**
+	Convert a `Color` to a `NSColor`/`UIColor`.
+	*/
+	var toXColor: XColor { XColor(self) }
+}
+
+
+extension XColor {
+	/**
+	Convert a `NSColor`/`UIColor` to a `Color`.
+	*/
+	var toColor: Color { Color(self) }
+
+	var toResolvedColor: Color.Resolved { toColor.resolve(in: .init()) }
+}
+
+
+extension NSColorPanel {
+	var resolvedColor: Color.Resolved {
+		get { color.toResolvedColor }
+		set {
+			color = newValue.toXColor
+		}
+	}
 }

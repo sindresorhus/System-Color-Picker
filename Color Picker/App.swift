@@ -1,19 +1,11 @@
 import SwiftUI
 
 /**
-NOTES:
-- The "com.apple.security.files.user-selected.read-only" entitlement is required by the "Open" menu in the "Color Palettes" pane.
+TODO macOS 15:
+- Migrate `recentlyPickedColors` to `Color.Resolved`.
+- Write regex tests using swift-test.
 
-TODO:
- - test the action when not already running:
-  if NSApp.activationPolicy() == .prohibited {
-	  SSApp.url.open()
-  }
-- Show screenshot in App Store of the palette in menu bar.
-
-- Use `Color.Resolved` instead of `XColor` and `RGBA`.
-
-TODO shortcut action ideas;
+TODO shortcut action ideas:
 - Convert color
 - Toggle color panel
 - Toggle color sampler in app
@@ -21,12 +13,17 @@ TODO shortcut action ideas;
 
 @main
 struct AppMain: App {
+	private let appState = AppState.shared
 	@NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-	@StateObject private var appState = AppState.shared
 	@StateObject private var pasteboardObserver = NSPasteboard.SimpleObservable(.general, onlyWhileAppIsActive: true)
 
 	init() {
 		setUpConfig()
+
+		// We set this so we can change it later on.
+		SSApp.runOnce(identifier: "asdsadewr34323432432") {
+			Defaults[.shownColorFormats] = Defaults[.shownColorFormats]
+		}
 	}
 
 	var body: some Scene {
@@ -38,33 +35,31 @@ struct AppMain: App {
 			.commands {
 				CommandGroup(replacing: .newItem) {}
 				CommandMenu("Color") {
+					lazy var color = appState.colorPanel.resolvedColor // It crashes when not lazy.
 					Button("Pick") {
 						appState.pickColor()
 					}
-						.keyboardShortcut("p")
+					.keyboardShortcut("p")
 					Divider()
-					Button("Copy as Hex") {
-						appState.colorPanel.color.hexColorString.copyToPasteboard()
+					ForEach(ColorFormat.allCases) { colorFormat in
+						Button("Copy as \(colorFormat.title)") {
+							color.colorString(for: colorFormat).copyToPasteboard()
+						}
+						.keyboardShortcut(colorFormat.keyboardShortcutKey, modifiers: [.shift, .command])
 					}
-						.keyboardShortcut("h", modifiers: [.shift, .command])
-					Button("Copy as HSL") {
-						appState.colorPanel.color.hslColorString.copyToPasteboard()
-					}
-						.keyboardShortcut("s", modifiers: [.shift, .command])
-					Button("Copy as RGB") {
-						appState.colorPanel.color.rgbColorString.copyToPasteboard()
-					}
-						.keyboardShortcut("r", modifiers: [.shift, .command])
-					Button("Copy as LCH") {
-						appState.colorPanel.color.lchColorString.copyToPasteboard()
-					}
-						.keyboardShortcut("l", modifiers: [.shift, .command])
 					Button("Paste") {
 						appState.pasteColor()
 					}
-						.help("Paste color in the format Hex, HSL, RGB, or LCH")
-						.keyboardShortcut("v", modifiers: [.shift, .command])
-						.disabled(NSColor.fromPasteboardGraceful(.general) == nil)
+					.help("Paste color in the format Hex, HSL, RGB, or LCH")
+					.keyboardShortcut("v", modifiers: [.shift, .command])
+					.disabled(Color.Resolved.fromPasteboardGraceful(.general) == nil)
+					Divider()
+					Button("Reset Opacity") {
+						appState.colorPanel.resolvedColor = color.withOpacity(1)
+					}
+					.keyboardShortcut("o", modifiers: [.shift, .control])
+					// This crashes. (macOS 14.3)
+//					.disabled(color.opacity == 1)
 				}
 				CommandGroup(after: .windowSize) {
 					Defaults.Toggle("Stay on Top", key: .stayOnTop)
@@ -76,7 +71,7 @@ struct AppMain: App {
 					Link("Website", destination: "https://sindresorhus.com/system-color-picker")
 					Divider()
 					Link("Rate App", destination: "macappstore://apps.apple.com/app/id1545870783?action=write-review")
-					// TODO: Doesn't work. (macOS 14.0)
+					// TODO: Doesn't work. (macOS 14.2)
 //					ShareLink("Share App", item: "https://apps.apple.com/app/id1545870783")
 					Link("More Apps by Me", destination: "macappstore://apps.apple.com/developer/id328077650")
 					Divider()
@@ -104,4 +99,19 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
 		AppState.shared.handleAppReopen()
 		return false
 	}
+
+	func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
+		let menu = SSMenu()
+
+		menu.addCallbackItem("Pick Color") {
+			AppState.shared.pickColor()
+		}
+
+		return menu
+	}
 }
+
+/**
+NOTES:
+- The "com.apple.security.files.user-selected.read-only" entitlement is required by the "Open" menu in the "Color Palettes" pane.
+*/

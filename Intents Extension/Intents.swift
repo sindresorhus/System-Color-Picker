@@ -1,19 +1,19 @@
-import AppKit
 import AppIntents
+import SwiftUI
+import AppKit
 
 // Note: This is only in an extension as there is currently no way to detect that the app is running an in-app intent and prevent opening the color panel.
 
-struct GetRandomColorIntent: AppIntent, CustomIntentMigratedAppIntent {
-	static let intentClassName = "GetRandomColorIntent"
-
+struct GetRandomColorIntent: AppIntent {
 	static let title: LocalizedStringResource = "Get Random Color"
 
 	static let description = IntentDescription(
-"""
-Returns a random color.
+		"""
+		Returns a random color.
 
-The color formats Hex, HSL, RGB, and LCH are provided as individual properties.
-"""
+		The color formats Hex, HSL, RGB, and LCH are provided as individual properties.
+		""",
+		resultValueName: "Random Color"
 	)
 
 	func perform() async throws -> some IntentResult & ReturnsValue<Color_AppEntity> {
@@ -21,17 +21,16 @@ The color formats Hex, HSL, RGB, and LCH are provided as individual properties.
 	}
 }
 
-struct SampleColorIntent: AppIntent, CustomIntentMigratedAppIntent {
-	static let intentClassName = "SampleColorIntent"
-
+struct SampleColorIntent: AppIntent {
 	static let title: LocalizedStringResource = "Sample Color from Screen"
 
 	static let description = IntentDescription(
-"""
-Lets you pick a color from the screen.
+		"""
+		Lets you pick a color from the screen.
 
-The color formats Hex, HSL, RGB, and LCH are provided as individual properties.
-"""
+		The color formats Hex, HSL, RGB, and LCH are provided as individual properties.
+		""",
+		resultValueName: "Color from Screen"
 	)
 
 	func perform() async throws -> some IntentResult & ReturnsValue<Color_AppEntity?> {
@@ -39,7 +38,7 @@ The color formats Hex, HSL, RGB, and LCH are provided as individual properties.
 			return .result(value: nil)
 		}
 
-		return .result(value: .init(color))
+		return .result(value: .init(color.toResolvedColor))
 	}
 }
 
@@ -79,16 +78,14 @@ struct Color_AppEntity: TransientAppEntity {
 }
 
 extension Color_AppEntity {
-	init(_ nsColor: NSColor) {
-		let sRGBColor = nsColor.usingColorSpace(.sRGB)!
-
-		self.hex = sRGBColor.format(.hex(hasPrefix: true))
-		self.hexNumber = sRGBColor.hex
-		self.hsl = sRGBColor.format(.cssHSL)
-		self.rgb = sRGBColor.format(.cssRGB)
-		self.lch = nsColor.format(.cssLCH)
-		self.hslLegacy = sRGBColor.format(.cssHSLLegacy)
-		self.rgbLegacy = sRGBColor.format(.cssRGBLegacy)
-		self.image = .init(systemName: "square.fill", tintColor: sRGBColor)
+	init(_ color: Color.Resolved) {
+		self.hex = color.format(.hex(hasPrefix: true))
+		self.hexNumber = color.hex
+		self.hsl = color.format(.cssHSL)
+		self.rgb = color.format(.cssRGB)
+		self.lch = color.format(.cssLCH)
+		self.hslLegacy = color.format(.cssHSLLegacy)
+		self.rgbLegacy = color.format(.cssRGBLegacy)
+		self.image = .init(systemName: "square.fill", tintColor: color.toXColor)
 	}
 }
