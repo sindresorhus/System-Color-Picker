@@ -28,6 +28,7 @@ struct SettingsScreen: View {
 
 private struct GeneralSettings: View {
 	@Default(.showInMenuBar) private var showInMenuBar
+	@Default(.copyColorAfterPicking) private var copyColorAfterPicking
 
 	var body: some View {
 		Form {
@@ -45,6 +46,12 @@ private struct GeneralSettings: View {
 				Defaults.Toggle("Stay on top", key: .stayOnTop)
 					.help("Make the color picker window stay on top of all other windows.")
 				Defaults.Toggle("Copy color in preferred format after picking", key: .copyColorAfterPicking)
+				if
+					copyColorAfterPicking,
+					!showInMenuBar
+				{
+					Defaults.Toggle("Quit after picking", key: .quitAfterPicking)
+				}
 			}
 			Section {} footer: {
 				Button("Feedback & Support") {

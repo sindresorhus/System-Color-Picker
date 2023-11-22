@@ -21,6 +21,7 @@ extension Defaults.Keys {
 	static let shownColorFormats = Key<Set<ColorFormat>>("shownColorFormats", default: [.hex, .hsl, .rgb, .lch])
 	static let largerText = Key<Bool>("largerText", default: false)
 	static let copyColorAfterPicking = Key<Bool>("copyColorAfterPicking", default: false)
+	static let quitAfterPicking = Key<Bool>("quitAfterPicking", default: false)
 	static let showAccessibilityColorName = Key<Bool>("showAccessibilityColorName", default: false)
 	static let stickyPaletteName = Key<String?>("stickyPaletteName")
 }

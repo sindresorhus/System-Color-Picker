@@ -193,6 +193,14 @@ final class AppState: ObservableObject {
 			if NSEvent.modifiers == .shift {
 				pickColor()
 			}
+
+			if
+				Defaults[.quitAfterPicking],
+				Defaults[.copyColorAfterPicking],
+				!Defaults[.showInMenuBar]
+			{
+				SSApp.quit()
+			}
 		}
 	}
 
