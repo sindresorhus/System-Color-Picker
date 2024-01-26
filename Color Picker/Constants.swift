@@ -24,6 +24,9 @@ extension Defaults.Keys {
 	static let quitAfterPicking = Key<Bool>("quitAfterPicking", default: false)
 	static let showAccessibilityColorName = Key<Bool>("showAccessibilityColorName", default: false)
 	static let stickyPaletteName = Key<String?>("stickyPaletteName")
+
+	// Hidden settings
+	static let showOnAllSpaces = Key<Bool>("showOnAllSpaces", default: true)
 }
 
 extension KeyboardShortcuts.Name {
@@ -35,6 +38,7 @@ enum ColorFormat: String, CaseIterable, Defaults.Serializable {
 	case hex
 	case hsl
 	case rgb
+	case oklch
 	case lch
 
 	var title: String {
@@ -45,6 +49,8 @@ enum ColorFormat: String, CaseIterable, Defaults.Serializable {
 			"HSL"
 		case .rgb:
 			"RGB"
+		case .oklch:
+			"OKLCH"
 		case .lch:
 			"LCH"
 		}
@@ -58,6 +64,8 @@ enum ColorFormat: String, CaseIterable, Defaults.Serializable {
 			"s"
 		case .rgb:
 			"r"
+		case .oklch:
+			"o"
 		case .lch:
 			"l"
 		}

@@ -11,7 +11,7 @@ struct GetRandomColorIntent: AppIntent {
 		"""
 		Returns a random color.
 
-		The color formats Hex, HSL, RGB, and LCH are provided as individual properties.
+		The color formats Hex, HSL, RGB, OKLCH, and LCH are provided as individual properties.
 		""",
 		resultValueName: "Random Color"
 	)
@@ -28,7 +28,7 @@ struct SampleColorIntent: AppIntent {
 		"""
 		Lets you pick a color from the screen.
 
-		The color formats Hex, HSL, RGB, and LCH are provided as individual properties.
+		The color formats Hex, HSL, RGB, OKLCH, and LCH are provided as individual properties.
 		""",
 		resultValueName: "Color from Screen"
 	)
@@ -57,6 +57,9 @@ struct Color_AppEntity: TransientAppEntity {
 	@Property(title: "RGB")
 	var rgb: String
 
+	@Property(title: "OKLCH")
+	var oklch: String
+
 	@Property(title: "LCH")
 	var lch: String
 
@@ -83,6 +86,7 @@ extension Color_AppEntity {
 		self.hexNumber = color.hex
 		self.hsl = color.format(.cssHSL)
 		self.rgb = color.format(.cssRGB)
+		self.oklch = color.format(.cssOKLCH)
 		self.lch = color.format(.cssLCH)
 		self.hslLegacy = color.format(.cssHSLLegacy)
 		self.rgbLegacy = color.format(.cssRGBLegacy)

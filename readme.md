@@ -57,6 +57,7 @@ You can use the following keyboard shortcuts in the app:
 - Copy as Hex: <kbd>Shift</kbd> <kbd>Command</kbd> <kbd>h</kbd>
 - Copy as HSL: <kbd>Shift</kbd> <kbd>Command</kbd> <kbd>s</kbd>
 - Copy as RGB: <kbd>Shift</kbd> <kbd>Command</kbd> <kbd>r</kbd>
+- Copy as OKLCH: <kbd>Shift</kbd> <kbd>Command</kbd> <kbd>o</kbd>
 - Copy as LCH: <kbd>Shift</kbd> <kbd>Command</kbd> <kbd>l</kbd>
 - Paste color: <kbd>Shift</kbd> <kbd>Command</kbd> <kbd>v</kbd> *(In the format Hex, HSL, RGB, or LCH)*
 - Reset opacity: <kbd>Control</kbd> <kbd>Shift</kbd> <kbd>o</kbd>
@@ -81,9 +82,13 @@ The built-in color picker supports plugins:
 
 macOS hides menu bar apps when there is no space left in the menu bar. This is a common problem on MacBooks with a notch. Try quitting some menu bar apps to free up space. If this does not solve it, try quitting Bartender if you have it installed.
 
-#### What is LCH color?
+#### What is OKLCH color?
 
-[It's a more human-friendly color format.](https://lea.verou.me/2020/04/lch-colors-in-css-what-why-and-how/)
+[It's a more human-friendly color format.](https://evilmartians.com/chronicles/oklch-in-css-why-quit-rgb-hsl) Prefer this format.
+
+#### How is OKLCH better than LCH?
+
+[OKLCH](https://evilmartians.com/chronicles/oklch-in-css-why-quit-rgb-hsl) improves upon [LCH](https://lea.verou.me/2020/04/lch-colors-in-css-what-why-and-how/) by providing more accurate and consistent colors, particularly in very bright or very saturated areas.
 
 #### The color changes if I copy and then paste it
 

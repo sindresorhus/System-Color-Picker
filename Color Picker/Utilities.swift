@@ -32,6 +32,8 @@ extension Color.Resolved {
 			format(Defaults[.legacyColorSyntax] ? .cssHSLLegacy : .cssHSL)
 		case .rgb:
 			format(Defaults[.legacyColorSyntax] ? .cssRGBLegacy : .cssRGB)
+		case .oklch:
+			format(.cssOKLCH)
 		case .lch:
 			format(.cssLCH)
 		}
@@ -92,6 +94,53 @@ extension Float {
 
 extension Double {
 	var toFloat: Float { .init(self) }
+}
+
+
+protocol SSDictionaryProtocol<Key, Value>: ExpressibleByDictionaryLiteral {
+	subscript(key: Key) -> Value? { get set }
+}
+
+extension Dictionary: SSDictionaryProtocol {}
+
+
+struct EnumCaseMap<Key: CaseIterable & Hashable, Value>: SSDictionaryProtocol {
+	private var storage: [Key: Value]
+
+	/**
+	Use this initializer if you want the same default value for all the cases. If not, specify a dictionary literal.
+	*/
+	init(defaultValue: Value) {
+		storage = Key.allCases.reduce(into: [:]) { result, enumCase in
+			result[enumCase] = defaultValue
+		}
+	}
+
+	// Protocol requirement.
+	@_disfavoredOverload
+	subscript(key: Key) -> Value? {
+		get { storage[key] }
+		set {
+			storage[key] = newValue
+		}
+	}
+
+	subscript(key: Key) -> Value {
+		get { storage[key]! }
+		set {
+			storage[key] = newValue
+		}
+	}
+
+	init(dictionaryLiteral elements: (Key, Value)...) {
+		precondition(elements.count == Key.allCases.count, "Missing enum one or more enum cases.")
+
+		self.storage = [:]
+
+		for (key, value) in elements {
+			self[key] = value
+		}
+	}
 }
 
 
@@ -575,97 +624,25 @@ enum CSSTools {
 
 		return hue // Already in degrees or a plain number
 	}
-}
-
-
-extension Color.Resolved {
-	typealias HSB = (
-		hue: Double,
-		saturation: Double,
-		brightness: Double,
-		opacity: Double
-	)
-
-	var hsb: HSB {
-		// swiftlint:disable no_cgfloat
-		var hue: CGFloat = 0
-		var saturation: CGFloat = 0
-		var brightness: CGFloat = 0
-		var opacity: CGFloat = 0
-		// swiftlint:enable no_cgfloat
-
-		// TODO: Rewrite this to a pure Swift algorithm.
-		toXColor.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &opacity)
-
-		return HSB(
-			hue: hue.toDouble,
-			saturation: saturation.toDouble,
-			brightness: brightness.toDouble,
-			opacity: opacity.toDouble
-		)
-	}
 
 	/**
-	Create from HSB components.
+	Converts a CSS opacity value to a normalized Double in the range `0...1`.
+
+	- Parameter opacityString: A string representing the opacity in CSS format (e.g., `"0.5"`, `"50%"`).
+	- Returns: The opacity as a Double between 0 and 1 if conversion is possible, otherwise nil.
+
+	```
+	let opacity = CSSTools.parseOpacityColorComponent("75%")
+	//=> 0.75
+	```
 	*/
-	init(
-		hue: Double,
-		saturation: Double,
-		brightness: Double,
-		opacity: Double = 1
-	) {
-		// TODO: Rewrite this to a pure Swift algorithm.
-		self = Color(
-			hue: hue,
-			saturation: saturation,
-			brightness: brightness,
-			opacity: opacity
-		)
-		.resolve(in: .init())
-	}
-}
-
-
-extension Color.Resolved {
-	var toHSL: HSL {
-		let hsb = hsb
-
-		var saturation = hsb.saturation * hsb.brightness
-		var lightness = (2.0 - hsb.saturation) * hsb.brightness
-
-		let saturationDivider = (lightness <= 1.0 ? lightness : 2.0 - lightness)
-		if saturationDivider != 0 {
-			saturation /= saturationDivider
+	static func parseOpacityColorComponent(_ opacityString: String) -> Double? {
+		guard let rawOpacity = Double(opacityString.replacing("%", with: "")) else {
+			return nil
 		}
 
-		lightness /= 2.0
-
-		return .init(
-			hue: hsb.hue,
-			saturation: saturation,
-			lightness: lightness,
-			opacity: hsb.opacity
-		)
-	}
-
-	/**
-	Create from HSL components.
-	*/
-	init(
-		hue: Double,
-		saturation: Double,
-		lightness: Double,
-		opacity: Double
-	) {
-		let brightness = lightness + saturation * min(lightness, 1 - lightness)
-		let newSaturation = brightness == 0 ? 0 : (2 * (1 - lightness / brightness))
-
-		self.init(
-			hue: hue,
-			saturation: newSaturation,
-			brightness: brightness,
-			opacity: opacity
-		)
+		let opacity = opacityString.hasSuffix("%") ? (rawOpacity / 100) : rawOpacity
+		return opacity.clamped(to: 0...1)
 	}
 }
 
@@ -675,13 +652,7 @@ extension Color.Resolved {
 	private static let cssHSLRegex = /^\s*hsla?\((?<hue>\d+)(?:deg)?[\s,]*(?<saturation>[\d.]+)%[\s,]*(?<lightness>[\d.]+)%(?:\s*[,\/]\s*(?<opacity>[\d.]+%?))?\);?\s*$/
 
 	fileprivate static func parseMatchOpacity(_ opacityString: String?) -> Double {
-		guard let opacityString else {
-			return 1
-		}
-
-		let rawOpacity = Double(opacityString.replacing("%", with: ""))
-		let opacity = opacityString.hasSuffix("%") ? ((rawOpacity ?? 100) / 100) : (rawOpacity ?? 1)
-		return opacity.clamped(to: 0...1)
+		opacityString.flatMap { CSSTools.parseOpacityColorComponent($0) } ?? 1
 	}
 
 	init?(
@@ -700,7 +671,7 @@ extension Color.Resolved {
 			return nil
 		}
 
-		self.init(
+		self = Self.fromHSL(
 			hue: hue / 360,
 			saturation: saturation / 100,
 			lightness: lightness / 100,
@@ -774,8 +745,45 @@ extension Color.Resolved {
 }
 
 
+// https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/oklch()
+extension Color.Resolved {
+	private static let cssOKLCHRegex = /^\s*oklch\((?<lightness>[\d.]+%?)\s+(?<chroma>[\d.]+%?)\s+(?<hue>[\d.]+(?:deg|rad|grad|turn)?)\s*(?:\/\s*(?<opacity>[\d.]+%?))?\)?;?$/
+
+	init?(cssOKLCHString: String) {
+		guard
+			let match = cssOKLCHString.trimmingCharacters(in: .whitespaces).wholeMatch(of: Self.cssOKLCHRegex)?.output,
+			let lightnessValue = Double(match.lightness.replacing("%", with: "")),
+			let chromaValue = Double(match.chroma.replacing("%", with: "")),
+			let hue = CSSTools.parseAngleColorComponentToDegrees(match.hue.toString)
+		else {
+			return nil
+		}
+
+		let lightness = match.lightness.hasSuffix("%") ? (lightnessValue / 100) : lightnessValue
+		let chroma = match.chroma.hasSuffix("%") ? ((chromaValue / 100) * 0.4) : chromaValue // 100% means 0.4.
+
+		guard
+			(0...1).contains(lightness),
+			chroma >= 0, // Usually max 0.5, but theoretically unbounded.
+			(0...360).contains(hue)
+		else {
+			return nil
+		}
+
+		self = Colors.OKLCH(
+			lightness: lightness,
+			chroma: chroma,
+			hue: hue,
+			opacity: Self.parseMatchOpacity(match.opacity?.toString)
+		)
+		.toResolved
+	}
+}
+
+
 // https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/lch()
 extension Color.Resolved {
+	// This is the exact same regex as OKLCH, just with `lch(` instead.
 	private static let cssLCHRegex = /^\s*lch\((?<lightness>[\d.]+%?)\s+(?<chroma>[\d.]+%?)\s+(?<hue>[\d.]+(?:deg|rad|grad|turn)?)\s*(?:\/\s*(?<opacity>[\d.]+%?))?\)?;?$/
 
 	init?(cssLCHString: String) {
@@ -799,13 +807,13 @@ extension Color.Resolved {
 			return nil
 		}
 
-		self = LCH(
+		self = Colors.LCH(
 			lightness: lightness,
 			chroma: chroma,
 			hue: hue,
 			opacity: Self.parseMatchOpacity(match.opacity?.toString)
 		)
-		.toResolved()
+		.toResolved
 	}
 }
 
@@ -828,6 +836,10 @@ extension Color.Resolved {
 			}
 
 			if let color = Color.Resolved(cssRGBString: cssString) {
+				return color
+			}
+
+			if let color = Color.Resolved(cssOKLCHString: cssString) {
 				return color
 			}
 
@@ -941,15 +953,15 @@ extension Color.Resolved {
 	```
 	*/
 	var hexString: String {
-		let red = Int(red.clamped(to: 0...1) * 255)
-		let green = Int(green.clamped(to: 0...1) * 255)
-		let blue = Int(blue.clamped(to: 0...1) * 255)
+		let red = Int((red.clamped(to: 0...1) * 255).rounded())
+		let green = Int((green.clamped(to: 0...1) * 255).rounded())
+		let blue = Int((blue.clamped(to: 0...1) * 255).rounded())
 
 		var hex = String(format: "#%02x%02x%02x", red, green, blue)
 
 		if opacity < 1 {
 			assert(opacity <= 1)
-			hex = hex.appendingFormat("%02x", Int(opacity.clamped(to: 0...1) * 255))
+			hex = hex.appendingFormat("%02x", Int((opacity.clamped(to: 0...1) * 255).rounded()))
 		}
 
 		return hex
@@ -962,6 +974,7 @@ extension Color.Resolved {
 		case hex(isUppercased: Bool = false, hasPrefix: Bool = false)
 		case cssHSL
 		case cssRGB
+		case cssOKLCH
 		case cssLCH
 		case cssHSLLegacy
 		case cssRGBLegacy
@@ -1004,16 +1017,27 @@ extension Color.Resolved {
 			return opacity < 100
 				? String(format: "rgb(%d %d %d / %d%%)", red, green, blue, opacity)
 				: String(format: "rgb(%d %d %d)", red, green, blue)
+		case .cssOKLCH:
+			let oklch = toOKLCH
+			let lightness = Int((oklch.lightness.clamped(to: 0...1) * 100).rounded())
+			let chroma = (oklch.chroma / 0.4) * 100 // Showing percent is more user-friendly.
+			let hue = oklch.hue
+			let opacity = Int((oklch.opacity.clamped(to: 0...1) * 100).rounded())
+
+			return opacity < 100
+				// TODO: Add setting for how many decimals to show.
+				? String(format: "oklch(%d%% %.0f%% %.0fdeg / %d%%)", lightness, chroma, hue, opacity)
+				: String(format: "oklch(%d%% %.0f%% %.0fdeg)", lightness, chroma, hue)
 		case .cssLCH:
 			let lch = toLCH
 			let lightness = Int(lch.lightness.rounded())
-			let chroma = Int(lch.chroma.rounded())
-			let hue = Int(lch.hue.rounded())
-			let opacity = Int((toHSL.opacity.clamped(to: 0...1) * 100).rounded())
+			let chroma = (lch.chroma / 150) * 100 // Showing percent is more user-friendly.
+			let hue = lch.hue
+			let opacity = Int((lch.opacity.clamped(to: 0...1) * 100).rounded())
 
 			return opacity < 100
-				? String(format: "lch(%d%% %d %ddeg / %d%%)", lightness, chroma, hue, opacity)
-				: String(format: "lch(%d%% %d %ddeg)", lightness, chroma, hue)
+				? String(format: "lch(%d%% %.0f%% %.0fdeg / %d%%)", lightness, chroma, hue, opacity)
+				: String(format: "lch(%d%% %.0f%% %.0fdeg)", lightness, chroma, hue)
 		case .cssHSLLegacy:
 			let hsl = toHSL
 			let hue = Int((hsl.hue.clamped(to: 0...1) * 360).rounded())
@@ -1034,7 +1058,7 @@ extension Color.Resolved {
 				? String(format: "rgb(%d, %d, %d, %.2f)", red, green, blue, opacity)
 				: String(format: "rgb(%d, %d, %d)", red, green, blue)
 		case .hsb:
-			let hsb = hsb
+			let hsb = toHSB
 			let hue = Int((hsb.hue * 360).rounded())
 			let saturation = Int((hsb.saturation * 100).rounded())
 			let brightness = Int((hsb.brightness * 100).rounded())
@@ -2305,8 +2329,21 @@ extension EnumPicker where Label == Text {
 
 enum Colors {}
 
+extension Colors {
+	/**
+	HSB color.
 
-extension Color.Resolved {
+	The components are in the range `0...1`.
+	*/
+	struct HSB {
+		let hue: Double
+		let saturation: Double
+		let brightness: Double
+		let opacity: Double
+	}
+}
+
+extension Colors {
 	/**
 	HSL color.
 
@@ -2318,7 +2355,33 @@ extension Color.Resolved {
 		let lightness: Double
 		let opacity: Double
 	}
+}
 
+extension Colors {
+	struct OKLCH: Hashable {
+		/**
+		Range: `0...1`
+		*/
+		let lightness: Double
+
+		/**
+		Range: `0...0.5` *(Could be higher)*
+		*/
+		let chroma: Double
+
+		/**
+		Range: `0...360`
+		*/
+		let hue: Double
+
+		/**
+		Range: `0...1`
+		*/
+		let opacity: Double
+	}
+}
+
+extension Colors {
 	struct LCH: Hashable {
 		/**
 		Range: `0...100`
@@ -2342,151 +2405,40 @@ extension Color.Resolved {
 	}
 }
 
-
-extension Color.Resolved {
-	/**
-	Convert to LCH.
-	*/
-	var toLCH: LCH {
-		// Algorithm: https://www.w3.org/TR/css-color-4/#rgb-to-lab
-
-		// Convert from linear sRGB to D65-adapted XYZ.
-		let xyz = Colors.linearSRGBToXYZ(
-			red: linearRed.toDouble,
-			green: linearGreen.toDouble,
-			blue: linearBlue.toDouble
-		)
-
-		// Convert from a D65 whitepoint (used by sRGB) to the D50 whitepoint used in Lab, with the Bradford transform.
-		let xyz2 = Colors.d65ToD50(x: xyz.x, y: xyz.y, z: xyz.z)
-
-		// Convert D50-adapted XYZ to Lab.
-		let lab = Colors.xyzToLab(x: xyz2.x, y: xyz2.y, z: xyz2.z)
-
-		// Convert Lab to LCH.
-		let lch = Colors.labToLCH(lightness: lab.lightness, a: lab.a, b: lab.b)
-
+extension Colors.LCH {
+	var toLab: Colors.Lab {
+		let hueRadians = hue * .pi / 180
 		return .init(
-			lightness: lch.lightness,
-			chroma: lch.chroma,
-			hue: lch.hue,
-			opacity: opacity.toDouble
+			lightness: lightness,
+			aDimension: chroma * cos(hueRadians),
+			bDimension: chroma * sin(hueRadians),
+			opacity: opacity
 		)
 	}
 }
 
-extension Color.Resolved.LCH {
-	/**
-	Convert LCH to sRGB.
-	*/
-	func toResolved() -> Color.Resolved {
-		// Algorithm: https://www.w3.org/TR/css-color-4/#lab-to-rgb
-
-		// Convert LCH to Lab.
-		let lab = Colors.lchToLab(lightness: lightness, chroma: chroma, hue: hue)
-
-		// Convert Lab to D50-adapted XYZ.
-		let xyz = Colors.labToXYZ(lightness: lab.lightness, a: lab.a, b: lab.b)
-
-		// Convert from a D50 whitepoint (used by Lab) to the D65 whitepoint used in sRGB, with the Bradford transform.
-		let xyz2 = Colors.d50ToD65(x: xyz.x, y: xyz.y, z: xyz.z)
-
-		// Convert from D65-adapted XYZ to linear-light sRGB.
-		let rgb = Colors.xyzToLinearSRGB(x: xyz2.x, y: xyz2.y, z: xyz2.z)
-
-		return .init(
-			colorSpace: .sRGBLinear,
-			red: rgb.red.toFloat,
-			green: rgb.green.toFloat,
-			blue: rgb.blue.toFloat,
-			opacity: opacity.toFloat
-		)
-
-		// TODO: Remove at some point.
-		// Convert from linear-light sRGB to sRGB (do gamma encoding).
-//		let red = Colors.linearSRGBToSRGB(colorComponent: rgb.red)
-//		let green = Colors.linearSRGBToSRGB(colorComponent: rgb.green)
-//		let blue = Colors.linearSRGBToSRGB(colorComponent: rgb.blue)
-//
-//		return .init(
-//			red: red.toFloat,
-//			green: green.toFloat,
-//			blue: blue.toFloat,
-//			opacity: opacity
-//		)
-	}
-}
 
 extension Colors {
-	/**
-	Convert a color component of a gamma-corrected form of sRGB to linear-light sRGB.
-
-	https://en.wikipedia.org/wiki/SRGB
-	*/
-	fileprivate static func sRGBToLinearSRGB(colorComponent: Double) -> Double {
-		colorComponent > 0.04045
-			? pow((colorComponent + 0.055) / 1.055, 2.40)
-			: (colorComponent / 12.92)
+	struct XYZ: Hashable {
+		let x: Double
+		let y: Double
+		let z: Double
+		let opacity: Double
 	}
+}
 
-	/**
-	Convert a color component of a linear-light sRGB to a gamma-corrected form.
-
-	https://en.wikipedia.org/wiki/SRGB
-	*/
-	fileprivate static func linearSRGBToSRGB(colorComponent: Double) -> Double {
-		colorComponent > 0.0031308
-			? (pow(colorComponent, 1.0 / 2.4) * 1.055 - 0.055)
-			: (colorComponent * 12.92)
-	}
-
-	/**
-	Convert a linear-light sRGB to XYZ, using sRGB's own white, D65 (no chromatic adaptation).
-
-	- http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
-	- https://www.image-engineering.de/library/technotes/958-how-to-convert-between-srgb-and-ciexyz
-	*/
-	fileprivate static func linearSRGBToXYZ(
-		red: Double,
-		green: Double,
-		blue: Double
-	) -> (x: Double, y: Double, z: Double) {
-		(
-			x: (red * 0.4124564) + (green * 0.3575761) + (blue * 0.1804375),
-			y: (red * 0.2126729) + (green * 0.7151522) + (blue * 0.0721750),
-			z: (red * 0.0193339) + (green * 0.1191920) + (blue * 0.9503041)
-		)
-	}
-
-	/**
-	Convert D65-adapted XYZ to linear-light sRGB.
-	*/
-	fileprivate static func xyzToLinearSRGB(
-		x: Double,
-		y: Double,
-		z: Double
-	) -> (red: Double, green: Double, blue: Double) {
-		(
-			red: (x * 3.2404542) + (y * -1.5371385) + (z * -0.4985314),
-			green: (x * -0.9692660) + (y * 1.8760108) + (z * 0.0415560),
-			blue: (x * 0.0556434) + (y * -0.2040259) + (z * 1.0572252)
-		)
-	}
-
+extension Colors.XYZ {
 	/**
 	Bradford chromatic adaptation from D65 to D50 for XYZ.
 
 	http://www.brucelindbloom.com/index.html?Eqn_ChromAdapt.html
 	*/
-	fileprivate static func d65ToD50(
-		x: Double,
-		y: Double,
-		z: Double
-	) -> (x: Double, y: Double, z: Double) {
-		(
+	var d65ToD50: Self {
+		.init(
 			x: (x * 1.0478112) + (y * 0.0228866) + (z * -0.0501270),
 			y: (x * 0.0295424) + (y * 0.9904844) + (z * -0.0170491),
-			z: (x * -0.0092345) + (y * 0.0150436) + (z * 0.7521316)
+			z: (x * -0.0092345) + (y * 0.0150436) + (z * 0.7521316),
+			opacity: opacity
 		)
 	}
 
@@ -2495,26 +2447,21 @@ extension Colors {
 
 	http://www.brucelindbloom.com/index.html?Eqn_ChromAdapt.html
 	*/
-	fileprivate static func d50ToD65(
-		x: Double,
-		y: Double,
-		z: Double
-	) -> (x: Double, y: Double, z: Double) {
-		(
+	var d50ToD65: Self {
+		.init(
 			x: (x * 0.9555766) + (y * -0.0230393) + (z * 0.0631636),
 			y: (x * -0.0282895) + (y * 1.0099416) + (z * 0.0210077),
-			z: (x * 0.0122982) + (y * -0.0204830) + (z * 1.3299098)
+			z: (x * 0.0122982) + (y * -0.0204830) + (z * 1.3299098),
+			opacity: opacity
 		)
 	}
 
 	/**
-	Convert D50-adapted XYZ to Lab.
+	Convert XYZ to Lab.
+
+	- Note: Make sure to use `d65ToD50` first if converting from sRGB.
 	*/
-	fileprivate static func xyzToLab(
-		x: Double,
-		y: Double,
-		z: Double
-	) -> (lightness: Double, a: Double, b: Double) {
+	var toLab: Colors.Lab {
 		// Assuming XYZ is relative to D50, convert to CIE Lab
 		// from CIE standard, which now defines these as a rational fraction.
 		// swiftlint:disable identifier_name
@@ -2535,21 +2482,96 @@ extension Colors {
 		let fY = computeF(scaledY)
 		let fZ = computeF(scaledZ)
 
-		return (
+		return .init(
 			lightness: (116 * fY) - 16,
-			a: 500 * (fX - fY),
-			b: 200 * (fY - fZ)
+			aDimension: 500 * (fX - fY),
+			bDimension: 200 * (fY - fZ),
+			opacity: opacity
 		)
 	}
 
 	/**
-	Convert Lab to D50-adapted XYZ.
+	Convert D65-adapted XYZ to linear-light sRGB.
+
+	- Note: Make sure to use `d50ToD65` first if converting to sRGB.
 	*/
-	fileprivate static func labToXYZ(
-		lightness: Double,
-		a: Double,
-		b: Double
-	) -> (x: Double, y: Double, z: Double) {
+	var toResolved: Color.Resolved {
+		let red = (x * 3.2404542) + (y * -1.5371385) + (z * -0.4985314)
+		let green = (x * -0.9692660) + (y * 1.8760108) + (z * 0.0415560)
+		let blue = (x * 0.0556434) + (y * -0.2040259) + (z * 1.0572252)
+
+		return .init(
+			colorSpace: .sRGBLinear,
+			red: red.toFloat,
+			green: green.toFloat,
+			blue: blue.toFloat,
+			opacity: opacity.toFloat
+		)
+	}
+}
+
+
+extension Colors {
+	struct Oklab: Hashable {
+		let lightness: Double
+		let aDimension: Double
+		let bDimension: Double
+		let opacity: Double
+	}
+}
+
+extension Colors.Oklab {
+	var toOKLCH: Colors.OKLCH {
+		let hueRadians = atan2(bDimension, aDimension)
+		let hueDegrees = hueRadians * 180 / .pi
+		let normalizedHue = hueDegrees >= 0 ? hueDegrees : hueDegrees + 360
+
+		return .init(
+			lightness: lightness,
+			chroma: sqrt((aDimension * aDimension) + (bDimension * bDimension)),
+			hue: normalizedHue,
+			opacity: opacity
+		)
+	}
+
+	var toResolved: Color.Resolved {
+		// From https://bottosson.github.io/posts/oklab/
+
+		let lStar = lightness + (0.3963377774 * aDimension) + (0.2158037573 * bDimension)
+		let mStar = lightness - (0.1055613458 * aDimension) - (0.0638541728 * bDimension)
+		let sStar = lightness - (0.0894841775 * aDimension) - (1.2914855480 * bDimension)
+
+		let linearL = lStar * lStar * lStar
+		let linearM = mStar * mStar * mStar
+		let linearS = sStar * sStar * sStar
+
+		let red = (4.0767416621 * linearL) - (3.3077115913 * linearM) + (0.2309699292 * linearS)
+		let green = (-1.2684380046 * linearL) + (2.6097574011 * linearM) - (0.3413193965 * linearS)
+		let blue = (-0.0041960863 * linearL) - (0.7034186147 * linearM) + (1.7076147010 * linearS)
+
+		return .init(
+			colorSpace: .sRGBLinear,
+			red: red.toFloat,
+			green: green.toFloat,
+			blue: blue.toFloat,
+			opacity: opacity.toFloat
+		)
+	}
+}
+
+
+extension Colors {
+	struct Lab: Hashable {
+		let lightness: Double
+		let aDimension: Double
+		let bDimension: Double
+		let opacity: Double
+	}
+}
+
+extension Colors.Lab {
+	var toXYZ: Colors.XYZ {
+		// Convert Lab to D50-adapted XYZ.
 		// http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
 
 		// swiftlint:disable identifier_name
@@ -2559,52 +2581,201 @@ extension Colors {
 
 		// Compute f, starting with the luminance-related term.
 		let fY = (lightness + 16) / 116
-		let fX = a / 500 + fY
-		let fZ = fY - b / 200
+		let fX = aDimension / 500 + fY
+		let fZ = fY - bDimension / 200
 
 		let x = pow(fX, 3) > ε ? pow(fX, 3) : (116 * fX - 16) / κ
 		let y = lightness > (κ * ε) ? pow((lightness + 16) / 116, 3) : lightness / κ
 		let z = pow(fZ, 3) > ε ? pow(fZ, 3) : (116 * fZ - 16) / κ
 
 		// Scaled by reference white.
-		return (
+		return .init(
 			x: x * 0.96422,
 			y: y * 1.0,
-			z: z * 0.82521
+			z: z * 0.82521,
+			opacity: opacity
+		)
+	}
+
+	var toLCH: Colors.LCH {
+		let hue = atan2(bDimension, aDimension) * 180 / .pi
+
+		return .init(
+			lightness: lightness,
+			chroma: sqrt(pow(aDimension, 2) + pow(bDimension, 2)),
+			hue: hue >= 0 ? hue : hue + 360,
+			opacity: opacity
+		)
+	}
+}
+
+
+extension Color.Resolved {
+	/**
+	Convert to XYZ, using sRGB's own white, D65 (no chromatic adaptation).
+	*/
+	private var toXYZ: Colors.XYZ {
+		let red = linearRed.toDouble
+		let green = linearGreen.toDouble
+		let blue = linearBlue.toDouble
+
+		/*
+		- http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
+		- https://www.image-engineering.de/library/technotes/958-how-to-convert-between-srgb-and-ciexyz
+		*/
+		return .init(
+			x: (red * 0.4124564) + (green * 0.3575761) + (blue * 0.1804375),
+			y: (red * 0.2126729) + (green * 0.7151522) + (blue * 0.0721750),
+			z: (red * 0.0193339) + (green * 0.1191920) + (blue * 0.9503041),
+			opacity: opacity.toDouble
+		)
+	}
+
+	private var toOklab: Colors.Oklab {
+		let red = linearRed.toDouble
+		let green = linearGreen.toDouble
+		let blue = linearBlue.toDouble
+
+		// From: https://bottosson.github.io/posts/oklab/
+
+		// Linear LMS
+		let linearL = (0.4122214708 * red) + (0.5363325363 * green) + (0.0514459929 * blue)
+		let linearM = (0.2119034982 * red) + (0.6806995451 * green) + (0.1073969566 * blue)
+		let linearS = (0.0883024619 * red) + (0.2817188376 * green) + (0.6299787005 * blue)
+
+		let cubicRootL = cbrt(linearL)
+		let cubicRootM = cbrt(linearM)
+		let cubicRootS = cbrt(linearS)
+
+		return .init(
+			lightness: (0.2104542553 * cubicRootL) + (0.7936177850 * cubicRootM) - (0.0040720468 * cubicRootS),
+			aDimension: (1.9779984951 * cubicRootL) - (2.4285922050 * cubicRootM) + (0.4505937099 * cubicRootS),
+			bDimension: (0.0259040371 * cubicRootL) + (0.7827717662 * cubicRootM) - (0.8086757660 * cubicRootS),
+			opacity: opacity.toDouble
 		)
 	}
 
 	/**
-	Convert Lab to LCH.
-
-	The returned `hue` is in degrees (`0...360`).
+	Convert to OKLCH.
 	*/
-	fileprivate static func labToLCH(
-		lightness: Double,
-		a: Double,
-		b: Double
-	) -> (lightness: Double, chroma: Double, hue: Double) {
-		let hue = atan2(b, a) * 180 / .pi
+	var toOKLCH: Colors.OKLCH { toOklab.toOKLCH } // We can skip converting to XYZ first here.
 
-		return (
+	/**
+	Convert to LCH.
+	*/
+	var toLCH: Colors.LCH { toXYZ.d65ToD50.toLab.toLCH }
+}
+
+
+extension Colors.OKLCH {
+	/**
+	Convert OKLCH to OkLab.
+	*/
+	var toOklab: Colors.Oklab {
+		let hueRadians = hue * .pi / 180
+		return .init(
 			lightness: lightness,
-			chroma: sqrt(pow(a, 2) + pow(b, 2)),
-			hue: hue >= 0 ? hue : hue + 360
+			aDimension: chroma * cos(hueRadians),
+			bDimension: chroma * sin(hueRadians),
+			opacity: opacity
 		)
 	}
 
 	/**
-	Convert LCH to Lab.
+	Convert OKLCH to sRGB.
 	*/
-	fileprivate static func lchToLab(
+	var toResolved: Color.Resolved { toOklab.toResolved }
+}
+
+
+extension Colors.LCH {
+	/**
+	Convert LCH to sRGB.
+	*/
+	var toResolved: Color.Resolved { toLab.toXYZ.d50ToD65.toResolved }
+}
+
+
+extension Color.Resolved {
+	/**
+	Create from HSB components.
+	*/
+	static func fromHSB(
+		hue: Double,
+		saturation: Double,
+		brightness: Double,
+		opacity: Double = 1
+	) -> Self {
+		// TODO: Rewrite this to a pure Swift algorithm.
+		Color(
+			hue: hue,
+			saturation: saturation,
+			brightness: brightness,
+			opacity: opacity
+		)
+		.resolve(in: .init())
+	}
+
+	var toHSB: Colors.HSB {
+		// swiftlint:disable no_cgfloat
+		var hue: CGFloat = 0
+		var saturation: CGFloat = 0
+		var brightness: CGFloat = 0
+		var opacity: CGFloat = 0
+		// swiftlint:enable no_cgfloat
+
+		// TODO: Rewrite this to a pure Swift algorithm.
+		toXColor.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &opacity)
+
+		return .init(
+			hue: hue.toDouble,
+			saturation: saturation.toDouble,
+			brightness: brightness.toDouble,
+			opacity: opacity.toDouble
+		)
+	}
+}
+
+
+extension Color.Resolved {
+	/**
+	Create from HSL components.
+	*/
+	static func fromHSL(
+		hue: Double,
+		saturation: Double,
 		lightness: Double,
-		chroma: Double,
-		hue: Double
-	) -> (lightness: Double, a: Double, b: Double) {
-		(
+		opacity: Double
+	) -> Self {
+		let brightness = lightness + saturation * min(lightness, 1 - lightness)
+		let newSaturation = brightness == 0 ? 0 : (2 * (1 - lightness / brightness))
+
+		return fromHSB(
+			hue: hue,
+			saturation: newSaturation,
+			brightness: brightness,
+			opacity: opacity
+		)
+	}
+
+	var toHSL: Colors.HSL {
+		let hsb = toHSB
+
+		var saturation = hsb.saturation * hsb.brightness
+		var lightness = (2.0 - hsb.saturation) * hsb.brightness
+
+		let saturationDivider = (lightness <= 1.0 ? lightness : 2.0 - lightness)
+		if saturationDivider != 0 {
+			saturation /= saturationDivider
+		}
+
+		lightness /= 2.0
+
+		return .init(
+			hue: hsb.hue,
+			saturation: saturation,
 			lightness: lightness,
-			a: chroma * cos(hue * .pi / 180),
-			b: chroma * sin(hue * .pi / 180)
+			opacity: hsb.opacity
 		)
 	}
 }
@@ -2779,28 +2950,6 @@ extension Binding where Value: Equatable {
 
 
 extension Binding {
-	// Keywords: dictionary key binding keybinding
-	/**
-	Creates a binding to a value in a dictionary for a given key.
-
-	- Parameters:
-	 - key: The key for the value in the dictionary.
-	 - default: The default value to use if the key does not exist in the dictionary.
-
-	- Returns: A binding to the value in the dictionary for the given key.
-	*/
-	subscript<T, V>(
-		key: T,
-		default defaultValue: @autoclosure @escaping () -> V
-	) -> Binding<V> where Value == [T: V] {
-		.init(
-			get: { wrappedValue[key, default: defaultValue()] },
-			set: {
-				wrappedValue[key] = $0
-			}
-		)
-	}
-
 	/**
 	Creates a binding to a value in a dictionary for a given key.
 
@@ -2811,7 +2960,7 @@ extension Binding {
 	*/
 	subscript<T, V>(
 		key: T
-	) -> Binding<V?> where Value == [T: V] {
+	) -> Binding<V?> where Value: SSDictionaryProtocol<T, V> {
 		.init(
 			get: { wrappedValue[key] },
 			set: {

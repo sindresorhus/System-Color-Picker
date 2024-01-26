@@ -27,6 +27,7 @@ You can use the following keyboard shortcuts in the app:
 - Copy as Hex: Shift+Command+h
 - Copy as HSL: Shift+Command+s
 - Copy as RGB: Shift+Command+r
+- Copy as OKLCH: Shift+Command+o
 - Copy as LCH: Shift+Command+l
 - Paste color: Shift+Command+v (In the format Hex, HSL, RGB, or LCH)
 - Reset opacity: Control+Shift+o

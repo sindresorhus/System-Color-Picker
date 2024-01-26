@@ -9,13 +9,7 @@ struct MainScreen: View {
 	@Default(.showAccessibilityColorName) private var showAccessibilityColorName
 	@State private var isPreventingUpdate = false
 	@State private var focusedTextField: ColorFormat?
-
-	@State private var colorStrings: [ColorFormat: String] = [
-		.hex: "",
-		.hsl: "",
-		.rgb: "",
-		.lch: ""
-	]
+	@State private var colorStrings = EnumCaseMap<ColorFormat, String>(defaultValue: "")
 
 	let colorPanel: NSColorPanel
 
@@ -98,6 +92,8 @@ struct MainScreen: View {
 			Color.Resolved(cssHSLString: colorString)
 		case .rgb:
 			Color.Resolved(cssRGBString: colorString)
+		case .oklch:
+			Color.Resolved(cssOKLCHString: colorString)
 		case .lch:
 			Color.Resolved(cssLCHString: colorString)
 		}
@@ -114,7 +110,7 @@ struct MainScreen: View {
 		ForEach(ColorFormat.allCases.filter(allowedValues: shownColorFormats)) { colorFormat in
 			ColorInputView(
 				colorFormat: colorFormat,
-				colorString: $colorStrings[colorFormat, default: ""],
+				colorString: $colorStrings[colorFormat],
 				focusedTextField: $focusedTextField
 			) { newColor in
 				updateColorFromTextField(
@@ -222,7 +218,7 @@ private struct PasteColorButton: View {
 				.padding(8)
 		}
 			.contentShape(.rect)
-			.help("Paste color in the format Hex, HSL, RGB, or LCH")
+			.help("Paste color in the format Hex, HSL, RGB, OKLCH, or LCH")
 			.keyboardShortcut("v", modifiers: [.shift, .command])
 			.disabled(Color.Resolved.fromPasteboardGraceful(.general) == nil)
 			.onAppearOnScreen {

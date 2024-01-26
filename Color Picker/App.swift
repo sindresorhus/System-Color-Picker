@@ -23,7 +23,7 @@ struct AppMain: App {
 		// TODO: Change the default from LCH to OKLCH.
 		// We set this so we can change it later on.
 		SSApp.runOnce(identifier: "asdsadewr34323432432") {
-			Defaults[.shownColorFormats] = Defaults[.shownColorFormats]
+			Defaults[.shownColorFormats] = SSApp.isFirstLaunch ? [.hex, .hsl, .rgb, .oklch] : Defaults[.shownColorFormats]
 		}
 	}
 
@@ -51,7 +51,7 @@ struct AppMain: App {
 					Button("Paste") {
 						appState.pasteColor()
 					}
-					.help("Paste color in the format Hex, HSL, RGB, or LCH")
+					.help("Paste color in the format Hex, HSL, RGB, OKLCH, or LCH")
 					.keyboardShortcut("v", modifiers: [.shift, .command])
 					.disabled(Color.Resolved.fromPasteboardGraceful(.general) == nil)
 					Divider()
@@ -67,7 +67,7 @@ struct AppMain: App {
 						.keyboardShortcut("t", modifiers: [.control, .command])
 				}
 				CommandGroup(replacing: .help) {
-					Link("What is LCH color?", destination: "https://lea.verou.me/2020/04/lch-colors-in-css-what-why-and-how/")
+					Link("What is OKLCH color?", destination: "https://evilmartians.com/chronicles/oklch-in-css-why-quit-rgb-hsl")
 					Link("FAQ", destination: "https://github.com/sindresorhus/System-Color-Picker#faq")
 					Link("Website", destination: "https://sindresorhus.com/system-color-picker")
 					Divider()

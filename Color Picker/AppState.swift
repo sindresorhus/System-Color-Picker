@@ -17,12 +17,20 @@ final class AppState {
 		colorPanel.standardWindowButton(.miniaturizeButton)?.isHidden = true
 		colorPanel.standardWindowButton(.zoomButton)?.isHidden = true
 		colorPanel.tabbingMode = .disallowed
-		colorPanel.collectionBehavior = [
-			.canJoinAllSpaces,
+
+		var collectionBehavior: NSWindow.CollectionBehavior = [
 			.fullScreenAuxiliary
 			// We cannot enable tiling as then it doesn't show up in fullscreen spaces. (macOS 12.5)
 //			.fullScreenAllowsTiling
 		]
+
+		if Defaults[.showOnAllSpaces] {
+			// If we remove this, the window cannot be dragged if it's moved into a fullscreen space. (macOS 14.3)
+			collectionBehavior.insert(.canJoinAllSpaces)
+		}
+
+		colorPanel.collectionBehavior = collectionBehavior
+
 		colorPanel.center()
 		colorPanel.makeMain()
 

@@ -78,7 +78,7 @@ private struct ColorSettings: View {
 					.help("Use the legacy “hsl(198, 28%, 50%)” syntax instead of the modern “hsl(198deg 28% 50%)” syntax. This setting is meant for users that need to support older browsers. All modern browsers support the modern syntax.")
 			}
 			Section {} footer: {
-				Link("What is LCH color?", destination: "https://lea.verou.me/2020/04/lch-colors-in-css-what-why-and-how/")
+				Link("What is OKLCH color?", destination: "https://evilmartians.com/chronicles/oklch-in-css-why-quit-rgb-hsl")
 					.controlSize(.small)
 			}
 		}
