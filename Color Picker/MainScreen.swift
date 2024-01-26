@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct ColorPickerScreen: View {
+struct MainScreen: View {
 	@Default(.uppercaseHexColor) private var uppercaseHexColor
 	@Default(.hashPrefixInHexColor) private var hashPrefixInHexColor
 	@Default(.legacyColorSyntax) private var legacyColorSyntax
@@ -23,12 +23,7 @@ struct ColorPickerScreen: View {
 		VStack {
 			BarView()
 			colorInputs
-			if showAccessibilityColorName {
-				Text(colorPanel.color.accessibilityName)
-					.font(.system(largerText ? .title3 : .body))
-					.textSelection(.enabled)
-					.accessibilityHidden(true)
-			}
+			colorName
 		}
 			.padding(9)
 			// 244 makes `HSL` always fit in the text field.
@@ -116,29 +111,39 @@ struct ColorPickerScreen: View {
 	}
 
 	private var colorInputs: some View {
-		ForEach(ColorFormat.allCases.filter(allowedValues: shownColorFormats)) { format in
+		ForEach(ColorFormat.allCases.filter(allowedValues: shownColorFormats)) { colorFormat in
 			ColorInputView(
-				format: format,
-				colorString: $colorStrings[format, default: ""],
+				colorFormat: colorFormat,
+				colorString: $colorStrings[colorFormat, default: ""],
 				focusedTextField: $focusedTextField
 			) { newColor in
 				updateColorFromTextField(
-					colorFormat: format,
+					colorFormat: colorFormat,
 					colorString: newColor
 				)
 			}
 		}
 	}
+
+	@ViewBuilder
+	private var colorName: some View {
+		if showAccessibilityColorName {
+			Text(colorPanel.color.accessibilityName)
+				.font(.system(largerText ? .title3 : .body))
+				.textSelection(.enabled)
+				.accessibilityHidden(true)
+		}
+	}
 }
 
 #Preview {
-	ColorPickerScreen(colorPanel: .shared)
+	MainScreen(colorPanel: .shared)
 }
 
 private struct ColorInputView: View {
 	@Default(.largerText) private var largerText
 
-	let format: ColorFormat
+	let colorFormat: ColorFormat
 	@Binding var colorString: String
 	@Binding var focusedTextField: ColorFormat?
 	let updateColor: (String) -> Void
@@ -147,22 +152,22 @@ private struct ColorInputView: View {
 		HStack {
 			NativeTextField(
 				text: $colorString,
-				placeholder: format.title,
+				placeholder: colorFormat.title,
 				font: .monospacedSystemFont(ofSize: largerText ? 16 : 0, weight: .regular),
-				isFocused: .conditionalSetOrClearBinding(to: format, with: $focusedTextField)
+				isFocused: .conditionalSetOrClearBinding(to: colorFormat, with: $focusedTextField)
 			)
 			.controlSize(.large)
 			.onChange(of: colorString) {
 				updateColor(colorString)
 			}
-			Button("Copy \(format.title)", systemImage: "doc.on.doc.fill") {
+			Button("Copy \(colorFormat.title)", systemImage: "doc.on.doc.fill") {
 				colorString.copyToPasteboard()
 			}
 			.labelStyle(.iconOnly)
 			.symbolRenderingMode(.hierarchical)
 			.buttonStyle(.borderless)
 			.contentShape(.rect)
-			.keyboardShortcut(format.keyboardShortcutKey, modifiers: [.shift, .command])
+			.keyboardShortcut(colorFormat.keyboardShortcutKey, modifiers: [.shift, .command])
 		}
 	}
 }

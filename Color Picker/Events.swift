@@ -45,18 +45,5 @@ extension AppState {
 		KeyboardShortcuts.onKeyUp(for: .toggleWindow) { [self] in
 			colorPanel.toggle()
 		}
-
-		if #unavailable(macOS 14) {
-			// Workaround for the color picker window not becoming active after the settings window closes. (macOS 11.3)
-			NotificationCenter.default.publisher(for: NSWindow.willCloseNotification)
-				.sink { [self] _ in
-					DispatchQueue.main.async { [self] in
-						if colorPanel.isVisible, SSApp.settingsWindow?.isVisible != true {
-							colorPanel.makeKeyAndOrderFront(nil)
-						}
-					}
-				}
-				.store(in: &cancellables)
-		}
 	}
 }

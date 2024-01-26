@@ -26,7 +26,7 @@ final class AppState {
 		colorPanel.center()
 		colorPanel.makeMain()
 
-		let view = ColorPickerScreen(colorPanel: colorPanel)
+		let view = MainScreen(colorPanel: colorPanel)
 //			.environment(self)
 		let accessoryView = NSHostingView(rootView: view)
 		colorPanel.accessoryView = accessoryView

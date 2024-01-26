@@ -16,7 +16,7 @@
 		E38D432F263AAE8500701B82 /* SettingsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = E38D432E263AAE8500701B82 /* SettingsScreen.swift */; };
 		E38D4331263AAEA900701B82 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = E38D4330263AAEA900701B82 /* Constants.swift */; };
 		E38D4333263AB24E00701B82 /* Utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = E38D4332263AB24E00701B82 /* Utilities.swift */; };
-		E38D4335263AEE3700701B82 /* ColorPickerScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = E38D4334263AEE3700701B82 /* ColorPickerScreen.swift */; };
+		E38D4335263AEE3700701B82 /* MainScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = E38D4334263AEE3700701B82 /* MainScreen.swift */; };
 		E390D734263B3C71005FCB34 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = E390D733263B3C71005FCB34 /* AppState.swift */; };
 		E390D736263C6ACD005FCB34 /* ColorPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E390D735263C6ACD005FCB34 /* ColorPanel.swift */; };
 		E390D738263C74C2005FCB34 /* WelcomeScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = E390D737263C74C2005FCB34 /* WelcomeScreen.swift */; };
@@ -72,7 +72,7 @@
 		E38D432E263AAE8500701B82 /* SettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreen.swift; sourceTree = "<group>"; };
 		E38D4330263AAEA900701B82 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		E38D4332263AB24E00701B82 /* Utilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities.swift; sourceTree = "<group>"; };
-		E38D4334263AEE3700701B82 /* ColorPickerScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPickerScreen.swift; sourceTree = "<group>"; };
+		E38D4334263AEE3700701B82 /* MainScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainScreen.swift; sourceTree = "<group>"; };
 		E390D733263B3C71005FCB34 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		E390D735263C6ACD005FCB34 /* ColorPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPanel.swift; sourceTree = "<group>"; };
 		E390D737263C74C2005FCB34 /* WelcomeScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeScreen.swift; sourceTree = "<group>"; };
@@ -166,7 +166,7 @@
 				E38D4330263AAEA900701B82 /* Constants.swift */,
 				E390D733263B3C71005FCB34 /* AppState.swift */,
 				E3DFA8C82662514800D2623E /* Events.swift */,
-				E38D4334263AEE3700701B82 /* ColorPickerScreen.swift */,
+				E38D4334263AEE3700701B82 /* MainScreen.swift */,
 				E390D735263C6ACD005FCB34 /* ColorPanel.swift */,
 				E38D432E263AAE8500701B82 /* SettingsScreen.swift */,
 				E390D737263C74C2005FCB34 /* WelcomeScreen.swift */,
@@ -335,7 +335,7 @@
 				E38D4331263AAEA900701B82 /* Constants.swift in Sources */,
 				E3DFA8C92662514800D2623E /* Events.swift in Sources */,
 				E390D736263C6ACD005FCB34 /* ColorPanel.swift in Sources */,
-				E38D4335263AEE3700701B82 /* ColorPickerScreen.swift in Sources */,
+				E38D4335263AEE3700701B82 /* MainScreen.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -20,6 +20,7 @@ struct AppMain: App {
 	init() {
 		setUpConfig()
 
+		// TODO: Change the default from LCH to OKLCH.
 		// We set this so we can change it later on.
 		SSApp.runOnce(identifier: "asdsadewr34323432432") {
 			Defaults[.shownColorFormats] = Defaults[.shownColorFormats]
