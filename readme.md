@@ -29,7 +29,7 @@ Requires macOS 14 or later.
 
 A special version for users that cannot access the App Store. It won't receive automatic updates. I will update it here once a year.
 
-[Download]() *(2.0.0 · macOS 14+)*
+[Download](https://www.dropbox.com/scl/fi/v5g3wgxwipx7x05dkc4oh/Color-Picker-2.0.0-1706349638.zip?rlkey=zk983dubrc2t0gh9pc2bimoaa&raw=1) *(2.0.0 · macOS 14+)*
 
 ## Features
 
