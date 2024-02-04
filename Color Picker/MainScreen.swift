@@ -1,6 +1,9 @@
 import SwiftUI
+import TipKit
 
 struct MainScreen: View {
+	// Note to self: Do not access the color picker here as it would create an infinite loop.
+
 	@Default(.uppercaseHexColor) private var uppercaseHexColor
 	@Default(.hashPrefixInHexColor) private var hashPrefixInHexColor
 	@Default(.legacyColorSyntax) private var legacyColorSyntax
@@ -10,6 +13,7 @@ struct MainScreen: View {
 	@State private var isPreventingUpdate = false
 	@State private var focusedTextField: ColorFormat?
 	@State private var colorStrings = EnumCaseMap<ColorFormat, String>(defaultValue: "")
+	@State private var colorAccessibilityName: String?
 
 	let colorPanel: NSColorPanel
 
@@ -18,6 +22,9 @@ struct MainScreen: View {
 			BarView()
 			colorInputs
 			colorName
+			if SSApp.isFirstLaunch { // Note: We only show it on first launch as TipKit doesn't currently preserve the dismissed state. (macOS 14.3)
+				TipView(ColorPaletteTip())
+			}
 		}
 			.padding(9)
 			// 244 makes `HSL` always fit in the text field.
@@ -35,12 +42,17 @@ struct MainScreen: View {
 			.onChange(of: legacyColorSyntax) {
 				updateColorsFromPanel()
 			}
-			.onReceive(colorPanel.colorDidChangePublisher) {
+			.onReceive(colorPanel.colorDidChange) {
+				colorAccessibilityName = colorPanel.color.accessibilityName
+
 				guard focusedTextField == nil else {
 					return
 				}
 
 				updateColorsFromPanel(preventUpdate: true)
+			}
+			.task {
+				try? Tips.configure()
 			}
 	}
 
@@ -124,7 +136,7 @@ struct MainScreen: View {
 	@ViewBuilder
 	private var colorName: some View {
 		if showAccessibilityColorName {
-			Text(colorPanel.color.accessibilityName)
+			Text(colorAccessibilityName ?? colorPanel.color.accessibilityName)
 				.font(.system(largerText ? .title3 : .body))
 				.textSelection(.enabled)
 				.accessibilityHidden(true)
@@ -356,5 +368,19 @@ private struct PalettesButton: View {
 					.labelStyle(.titleAndIcon)
 			}
 		}
+	}
+}
+
+private struct ColorPaletteTip: Tip {
+	var title: Text {
+		Text("Creating a Color Palette")
+	}
+
+	var message: Text? {
+		Text("To create a new color palette, click the third tab at the top of the window, click the \(Image(systemName: "ellipsis.circle")) button, and then select “New”.")
+	}
+
+	var image: Image? {
+		Image(systemName: "swatchpalette")
 	}
 }

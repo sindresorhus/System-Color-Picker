@@ -298,7 +298,7 @@ extension SSApp {
 	Initialize Sentry.
 	*/
 	static func initSentry(_ dsn: String) {
-		#if !DEBUG && canImport(Sentry)
+		#if !DEBUG && !APP_EXTENSION && canImport(Sentry)
 		SentrySDK.start {
 			$0.dsn = dsn
 			$0.enableSwizzling = false
@@ -1278,7 +1278,7 @@ extension NSColorPanel {
 	/**
 	Publishes when the color in the color panel changes.
 	*/
-	var colorDidChangePublisher: some Publisher<Void, Never> {
+	var colorDidChange: some Publisher<Void, Never> {
 		NotificationCenter.default
 			.publisher(for: Self.colorDidChangeNotification, object: self)
 			.map { _ in }
@@ -2054,7 +2054,7 @@ extension NSObject {
 }
 
 
-enum SSPublishers {
+enum SSEvents {
 	/**
 	Publishes when the app becomes active/inactive.
 	*/
@@ -2157,7 +2157,10 @@ extension NSPasteboard {
 
 		@Published var pasteboard: NSPasteboard {
 			didSet {
-				if onlyWhenAppIsActive, !NSApp.isActive {
+				if
+					onlyWhenAppIsActive,
+					!NSApp.isActive
+				{
 					stop()
 					return
 				}
@@ -2178,7 +2181,7 @@ extension NSPasteboard {
 			self.onlyWhenAppIsActive = onlyWhileAppIsActive
 
 			if onlyWhileAppIsActive {
-				SSPublishers.appIsActive
+				SSEvents.appIsActive
 					.sink { [weak self] isActive in
 						guard let self else {
 							return
@@ -3302,6 +3305,7 @@ extension NSStatusItem {
 	/**
 	Show a one-time menu from the status item.
 	*/
+	@MainActor
 	func showMenu(_ menu: NSMenu) {
 		self.menu = menu
 		button!.performClick(nil)
@@ -3459,6 +3463,7 @@ extension NSColorList {
 			.filter { !$0.allKeys.isEmpty }
 			// `availableColorLists` returns duplicates after editing a palette, for example, adding a color to it.
 			.removingDuplicates()
+			.sorted(using: .keyPath(\.name))
 	}
 
 	var colors: [Color.Resolved] {
@@ -3553,5 +3558,22 @@ extension NSColorPanel {
 		set {
 			color = newValue.toXColor
 		}
+	}
+}
+
+
+extension SortComparator {
+	static func keyPath<Compared, Value: Comparable>(
+		_ keyPath: KeyPath<Compared, Value>,
+		order: SortOrder = .forward
+	) -> KeyPathComparator<Compared> where Self == KeyPathComparator<Compared> {
+		.init(keyPath, order: order)
+	}
+
+	static func keyPath<Compared, Value: Comparable>(
+		_ keyPath: KeyPath<Compared, Value?>,
+		order: SortOrder = .forward
+	) -> KeyPathComparator<Compared> where Self == KeyPathComparator<Compared> {
+		.init(keyPath, order: order)
 	}
 }

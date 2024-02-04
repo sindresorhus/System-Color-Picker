@@ -15,7 +15,7 @@ The macOS color picker as an app with lots of extra features.
 
 ## Download
 
-[![](https://tools.applemediaservices.com/api/badges/download-on-the-mac-app-store/black/en-us?size=250x83&releaseDate=1615852800)](https://apps.apple.com/app/id1545870783)
+[![](https://sindresorhus.com/assets/download-on-app-store-badge.svg)](https://apps.apple.com/app/id1545870783)
 
 Requires macOS 14 or later.
 
@@ -66,7 +66,7 @@ You can use the following keyboard shortcuts in the app:
 
 The built-in color picker supports plugins:
 
-- [Scala Color](https://bjango.com/mac/skalacolor/)
+- [Skala Color](https://bjango.com/mac/skalacolor/)
 - [Pro Picker](https://formulae.brew.sh/cask/colorpicker-propicker)
 - [Material Design](https://github.com/johnyanarella/MaterialDesignColorPicker)
 - [Color Picker Plus](https://github.com/viktorstrate/color-picker-plus)
