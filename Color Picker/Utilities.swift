@@ -327,6 +327,10 @@ enum Device {
 		sysctlbyname("hw.model", &model, &size, nil, 0)
 		return String(cString: model)
 	}()
+
+	static var uptimeIncludingSleep: Duration {
+		.nanoseconds(clock_gettime_nsec_np(CLOCK_MONOTONIC_RAW_APPROX))
+	}
 }
 
 
@@ -356,6 +360,38 @@ extension Dictionary where Key: ExpressibleByStringLiteral, Value: ExpressibleBy
 		components.queryItems = asQueryItems
 		return components.query!
 	}
+}
+
+
+extension Duration {
+	enum ConversionUnit: Double {
+		case days = 86_400_000_000_000
+		case hours = 3_600_000_000_000
+		case minutes = 60_000_000_000
+		case seconds = 1_000_000_000
+		case milliseconds = 1_000_000
+		case microseconds = 1000
+	}
+
+	/**
+	Nanoseconds representation.
+	*/
+	var nanoseconds: Int64 {
+		let (seconds, attoseconds) = components
+		let secondsNanos = seconds * 1_000_000_000
+		let attosecondsNanons = attoseconds / 1_000_000_000
+		let (totalNanos, isOverflow) = secondsNanos.addingReportingOverflow(attosecondsNanons)
+		return isOverflow ? .max : totalNanos
+	}
+
+	func `in`(_ unit: ConversionUnit) -> Double {
+		Double(nanoseconds) / unit.rawValue
+	}
+}
+
+
+extension Duration {
+	var toTimeInterval: TimeInterval { self.in(.seconds) }
 }
 
 
@@ -1393,6 +1429,26 @@ extension View {
 }
 
 
+extension NSEvent {
+	/**
+	Creates a noop mouse event that can be used as a fallback when you cannot get a real mouse event.
+	*/
+	static func noopMouseEvent(_ type: EventType) -> NSEvent {
+		mouseEvent(
+			with: type,
+			location: .zero,
+			modifierFlags: modifierFlags,
+			timestamp: Device.uptimeIncludingSleep.toTimeInterval,
+			windowNumber: 0,
+			context: nil,
+			eventNumber: 0,
+			clickCount: 1,
+			pressure: 1
+		)!
+	}
+}
+
+
 private var controlActionClosureProtocolAssociatedObjectKey: UInt8 = 0
 
 protocol ControlActionClosureProtocol: NSObjectProtocol {
@@ -1409,7 +1465,7 @@ private final class ActionTrampoline: NSObject {
 
 	@objc
 	fileprivate func handleAction(_ sender: AnyObject) {
-		action(NSApp.currentEvent!)
+		action(NSApp?.currentEvent ?? .noopMouseEvent(.leftMouseDown))
 	}
 }
 
@@ -2306,7 +2362,7 @@ struct EnumPicker<Enum, Label, Content>: View where Enum: CaseIterable & Equatab
 	@ViewBuilder let label: () -> Label
 
 	var body: some View {
-		Picker(selection: selection.caseIndex) { // swiftlint:disable:this multiline_arguments
+		Picker(selection: selection.caseIndex) {
 			ForEach(Array(Enum.allCases).indexed(), id: \.0) { index, element in
 				content(element)
 					.tag(index)
@@ -2864,6 +2920,7 @@ Store a value persistently in a `View` like with `@State`, but without updating 
 
 You can use it for storing both value and reference types.
 */
+@MainActor
 @propertyWrapper
 struct ViewStorage<Value>: DynamicProperty {
 	private final class ValueBox: ObservableObject {
@@ -3228,12 +3285,11 @@ extension View {
 		isPresented: Binding<Bool>,
 		@ViewBuilder actions: () -> some View
 	) -> some View {
-		// swiftlint:disable:next trailing_closure
 		alert2(
 			title,
 			isPresented: isPresented,
 			actions: actions,
-			message: {
+			message: { // swiftlint:disable:this trailing_closure
 				if let message {
 					Text(message)
 				}
@@ -3251,12 +3307,11 @@ extension View {
 		isPresented: Binding<Bool>,
 		@ViewBuilder actions: () -> some View
 	) -> some View {
-		// swiftlint:disable:next trailing_closure
 		alert2(
 			title,
 			isPresented: isPresented,
 			actions: actions,
-			message: {
+			message: { // swiftlint:disable:this trailing_closure
 				if let message {
 					Text(message)
 				}
@@ -3272,12 +3327,11 @@ extension View {
 		message: String? = nil,
 		isPresented: Binding<Bool>
 	) -> some View {
-		// swiftlint:disable:next trailing_closure
 		alert2(
 			title,
 			message: message,
 			isPresented: isPresented,
-			actions: {}
+			actions: {} // swiftlint:disable:this trailing_closure
 		)
 	}
 
@@ -3290,12 +3344,11 @@ extension View {
 		message: String? = nil,
 		isPresented: Binding<Bool>
 	) -> some View {
-		// swiftlint:disable:next trailing_closure
 		alert2(
 			title,
 			message: message,
 			isPresented: isPresented,
-			actions: {}
+			actions: {} // swiftlint:disable:this trailing_closure
 		)
 	}
 }
@@ -3470,8 +3523,8 @@ extension NSColorList {
 		allKeys.compactMap { color(withKey: $0)?.toResolvedColor }
 	}
 
-	var keysAndColors: [NSColorList.Name: Color.Resolved] {
-		.init(zip(allKeys, colors)) { first, _ in first }
+	var keysAndColors: [(key: NSColorList.Name, color: Color.Resolved)] {
+		Array(zip(allKeys, colors))
 	}
 }
 
