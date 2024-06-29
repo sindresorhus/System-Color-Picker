@@ -377,7 +377,7 @@ private struct ColorPaletteTip: Tip {
 	}
 
 	var message: Text? {
-		Text("To create a new color palette, click the third tab at the top of the window, click the \(Image(systemName: "ellipsis.circle")) button, and then select “New”.")
+		Text("Click the third tab at the top of the window, click the \(Image(systemName: "ellipsis.circle")) button, and then select “New”.")
 	}
 
 	var image: Image? {

@@ -3605,9 +3605,57 @@ extension XColor {
 }
 
 
+extension XColor {
+	/**
+	Returns the color space of the color if it is component-based.
+
+	The normal property throws an exception on invalid access.
+	*/
+	var colorSpaceSafe: NSColorSpace? {
+		type == .componentBased ? colorSpace : nil
+	}
+}
+
+
+extension XColor {
+	/**
+	Reinterprets the color as sRGB if it is in a generic RGB or generic gray color space.
+
+	Use-case: Color palettes on macOS are usually in generic RGB, while the author actually intended them to be sRGB. This corrects that.
+	*/
+	func reinterpretedAsSRGBIfGeneric() -> Self {
+		guard [.genericGray, .genericRGB].contains(colorSpaceSafe) else {
+			return self
+		}
+
+		// For `.genericGray`.
+		guard let color = usingColorSpace(.genericRGB) else {
+			return self
+		}
+
+		// swiftlint:disable no_cgfloat
+		var red: CGFloat = 0
+		var green: CGFloat = 0
+		var blue: CGFloat = 0
+		var alpha: CGFloat = 0
+		// swiftlint:enable no_cgfloat
+
+		color.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+
+		return .init(
+			srgbRed: red,
+			green: green,
+			blue: blue,
+			alpha: alpha
+		)
+	}
+}
+
+
 extension NSColorPanel {
 	var resolvedColor: Color.Resolved {
-		get { color.toResolvedColor }
+		// Most palettes are in generic RGB color space, and the conversion to sRGB is lossy and suprising. Do what the user expects and reinterpret the values as sRGB.
+		get { color.reinterpretedAsSRGBIfGeneric().toResolvedColor }
 		set {
 			color = newValue.toXColor
 		}
