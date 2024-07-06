@@ -104,6 +104,10 @@ Palettes can be accessed both from the app and the menu bar icon (if enabled). Y
 
 You can find palettes on [Coolors](https://coolors.co/palettes/trending).
 
+#### How do I remove a color in a palette or swatch?
+
+Drag and drop the color onto the trash icon in the Dock.
+
 #### How do I change the color space?
 
 Right-click the color wheel. You want to select “Display P3” if you use LCH or “sRGB” if you use Hex, HSL, or RGB.
