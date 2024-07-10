@@ -89,6 +89,7 @@ struct AppMain: App {
 
 	private func setUpConfig() {
 		SSApp.initSentry("https://e89cb93d693444ee8829f521ab75025a@o844094.ingest.sentry.io/6139060")
+		SSApp.setUpExternalEventListeners()
 	}
 }
 

@@ -4,6 +4,8 @@ import Carbon
 import StoreKit
 import Defaults
 import UniformTypeIdentifiers
+import AppIntents
+import AppKit
 
 #if !APP_EXTENSION
 import Sentry
@@ -12,6 +14,8 @@ import Sentry
 typealias Defaults = _Defaults
 typealias Default = _Default
 typealias AnyCancellable = Combine.AnyCancellable
+
+extension NSColorSampler: @retroactive @unchecked Sendable {}
 
 /*
 Non-reusable utilities
@@ -217,17 +221,17 @@ enum SSApp {
 		return true
 	}()
 
-	static func openSendFeedbackPage() {
-		let metadata =
-			"""
-			\(name) \(versionWithBuild) - \(idString)
-			macOS \(Device.osVersion)
-			\(Device.hardwareModel)
-			"""
+	static let debugInfo =
+		"""
+		\(name) \(versionWithBuild) - \(idString)
+		macOS \(Device.osVersion)
+		\(Device.hardwareModel)
+		"""
 
+	static func openSendFeedbackPage() {
 		let query: [String: String] = [
 			"product": name,
-			"metadata": metadata
+			"metadata": debugInfo
 		]
 
 		URL("https://sindresorhus.com/feedback").addingDictionaryAsQuery(query).open()
@@ -238,6 +242,36 @@ enum SSApp {
 		set {
 			NSApp.setActivationPolicy(newValue ? .regular : .accessory)
 		}
+	}
+}
+
+
+extension SSApp {
+	static func setUpExternalEventListeners() {
+		DistributedNotificationCenter.default.publisher(for: .init("\(SSApp.idString):showSettings"))
+			.sink { _ in
+				DispatchQueue.main.async { // Should not be needed, but just to be safe.
+					SSApp.showSettingsWindow()
+				}
+			}
+			.storeForever()
+
+		DistributedNotificationCenter.default.publisher(for: .init("\(SSApp.idString):openSendFeedback"))
+			.sink { _ in
+				DispatchQueue.main.async {
+					SSApp.openSendFeedbackPage()
+				}
+			}
+			.storeForever()
+
+		DistributedNotificationCenter.default.publisher(for: .init("\(SSApp.idString):copyDebugInfo"))
+			.sink { _ in
+				DispatchQueue.main.async {
+					NSPasteboard.general.prepareForNewContents()
+					NSPasteboard.general.setString(SSApp.debugInfo, forType: .string)
+				}
+			}
+			.storeForever()
 	}
 }
 
@@ -412,7 +446,7 @@ extension URL {
 
 
 @discardableResult
-func with<T>(_ value: T, update: (inout T) throws -> Void) rethrows -> T {
+func with<T, E>(_ value: T, update: (inout T) throws(E) -> Void) throws(E) -> T {
 	var copy = value
 	try update(&copy)
 	return copy
@@ -691,10 +725,7 @@ extension Color.Resolved {
 		opacityString.flatMap { CSSTools.parseOpacityColorComponent($0) } ?? 1
 	}
 
-	init?(
-		cssHSLString: String,
-		colorSpace: Color.RGBColorSpace = .sRGB
-	) {
+	init?(cssHSLString: String) {
 		guard
 			let match = cssHSLString.trimmingCharacters(in: .whitespaces).wholeMatch(of: Self.cssHSLRegex)?.output,
 			let hue = Double(match.hue),
@@ -1867,6 +1898,7 @@ extension NSMenu {
 			isHidden: isHidden,
 			action: action
 		)
+		menuItem.isChecked = isChecked
 		addItem(menuItem)
 		return menuItem
 	}
@@ -1965,7 +1997,7 @@ extension String {
 }
 
 
-extension URL: ExpressibleByStringLiteral {
+extension URL: @retroactive ExpressibleByStringLiteral {
 	/**
 	Example:
 
@@ -3799,5 +3831,58 @@ extension String {
 			.max() ?? 0
 
 		return "\(baseName) (\(highestIndex + 1))"
+	}
+}
+
+
+struct Color_AppEntity: TransientAppEntity {
+	static let typeDisplayRepresentation: TypeDisplayRepresentation = "Color"
+
+	@Property(title: "Hex")
+	var hex: String
+
+	@Property(title: "Hex Number")
+	var hexNumber: Int
+
+	@Property(title: "HSL")
+	var hsl: String
+
+	@Property(title: "RGB")
+	var rgb: String
+
+	@Property(title: "OKLCH")
+	var oklch: String
+
+	@Property(title: "LCH")
+	var lch: String
+
+	@Property(title: "HSL Legacy")
+	var hslLegacy: String
+
+	@Property(title: "RGB Legacy")
+	var rgbLegacy: String
+
+	private var image: DisplayRepresentation.Image?
+
+	var displayRepresentation: DisplayRepresentation {
+		.init(
+			title: "\(hex)",
+			subtitle: "\(rgb)",
+			image: image
+		)
+	}
+}
+
+extension Color_AppEntity {
+	init(_ color: Color.Resolved) {
+		self.hex = color.format(.hex(hasPrefix: true))
+		self.hexNumber = color.hex
+		self.hsl = color.format(.cssHSL)
+		self.rgb = color.format(.cssRGB)
+		self.oklch = color.format(.cssOKLCH)
+		self.lch = color.format(.cssLCH)
+		self.hslLegacy = color.format(.cssHSLLegacy)
+		self.rgbLegacy = color.format(.cssRGBLegacy)
+		self.image = .init(systemName: "square.fill", tintColor: color.toXColor)
 	}
 }

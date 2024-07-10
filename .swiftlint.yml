@@ -9,7 +9,8 @@ only_rules:
   - closure_parameter_position
   - closure_spacing
   - collection_alignment
-  - colon
+  # Broken in Swift 6.
+  # - colon
   - comma
   - comma_inheritance
   - compiler_protocol_init
@@ -92,6 +93,7 @@ only_rules:
   - operator_usage_whitespace
   - operator_whitespace
   - overridden_super_call
+  - prefer_key_path
   - prefer_self_in_static_references
   - prefer_self_type_over_type_of_self
   - prefer_zero_over_explicit_init
@@ -153,7 +155,8 @@ only_rules:
   - vertical_parameter_alignment_on_call
   - vertical_whitespace_closing_braces
   - vertical_whitespace_opening_braces
-  - void_function_in_ternary
+  # Does not handle "return"-less functions.
+  # - void_function_in_ternary
   - void_return
   - xct_specific_matcher
   - xctfail_message
@@ -220,6 +223,12 @@ custom_rules:
   swiftui_environment_private:
     regex: '@Environment\(\\\.\w+\)\s+var'
     message: 'SwiftUI @Environment properties should be private'
+  swiftui_scaledtofit:
+    regex: 'aspectRatio\(contentMode: \.fit\)'
+    message: 'Prefer `scaledToFit()`'
+  swiftui_scaledtofill:
+      regex: 'aspectRatio\(contentMode: \.fill\)'
+      message: 'Prefer `scaledToFill()`'
   final_class:
     regex: '^class [a-zA-Z\d]+[^{]+\{'
     message: 'Classes should be marked as final whenever possible. If you actually need it to be subclassable, just add `// swiftlint:disable:next final_class`.'

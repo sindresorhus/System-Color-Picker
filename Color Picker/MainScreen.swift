@@ -69,6 +69,8 @@ struct MainScreen: View {
 
 		let color = colorPanel.resolvedColor
 
+		assert(!color.red.isNaN)
+
 		for format in ColorFormat.allCases where format != excludedFormat {
 			colorStrings[format] = color.colorString(for: format)
 		}
@@ -206,7 +208,6 @@ private struct BarView: View {
 			.buttonStyle(.borderless)
 	}
 
-	@MainActor
 	private var pickColorButton: some View {
 		Button {
 			AppState.shared.pickColor()
@@ -264,6 +265,10 @@ private struct MoreButton: View {
 			if showInMenuBar {
 				Divider()
 				Defaults.Toggle("Stay on Top", key: .stayOnTop)
+				Divider()
+				Button("Feedback & Support") {
+					SSApp.openSendFeedbackPage()
+				}
 				Divider()
 				Button("Settings…") {
 					SSApp.showSettingsWindow()

@@ -1,6 +1,5 @@
 import Cocoa
 
-@MainActor
 final class ColorPanel: NSColorPanel, NSWindowDelegate {
 	override var canBecomeMain: Bool { true }
 	override var canBecomeKey: Bool { true }

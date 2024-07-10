@@ -22,6 +22,7 @@ final class AppState: ObservableObject {
 		colorPanel.tabbingMode = .disallowed
 
 		var collectionBehavior: NSWindow.CollectionBehavior = [
+			.managed, // When it's floating window level, it loses this, so we add it back. People generally want to be able to access it in mission control.
 			.fullScreenAuxiliary
 			// We cannot enable tiling as then it doesn't show up in fullscreen spaces. (macOS 12.5)
 //			.fullScreenAllowsTiling
@@ -144,6 +145,7 @@ final class AppState: ObservableObject {
 	}
 
 	private func didLaunch() {
+		setUpConfig()
 		setUpEvents()
 		handleMenuBarIcon()
 		showWelcomeScreenIfNeeded()
@@ -159,6 +161,11 @@ final class AppState: ObservableObject {
 		#if DEBUG
 //		SSApp.showSettingsWindow()
 		#endif
+	}
+
+	private func setUpConfig() {
+		ProcessInfo.processInfo.disableAutomaticTermination("")
+		ProcessInfo.processInfo.disableSuddenTermination()
 	}
 
 	private func requestReview() {

@@ -29,7 +29,7 @@ Requires macOS 14 or later.
 
 A special version for users that cannot access the App Store. It won't receive automatic updates. I will update it here once a year.
 
-[Download](https://www.dropbox.com/scl/fi/reztjse2ei8xsegdb3iic/Color-Picker-2.0.2-1718996226.zip?rlkey=1bi5zf6r1jb2wcrheve8tddya&raw=1) *(2.0.2 · macOS 14+)*
+[Download](https://www.dropbox.com/scl/fi/x1bu814c4i8je38zqfswo/Color-Picker-2.0.3-1721346942.zip?rlkey=m1eh6nuxn8ww70cdj6u3b07jv&raw=1) *(2.0.3 · macOS 14+)*
 
 ## Features
 
@@ -105,11 +105,11 @@ Palettes can be accessed both from the app and the menu bar icon (if enabled). Y
 
 You can find palettes on [Coolors](https://coolors.co/palettes/trending). Download the ASE palette type, right-click the file, and select “Open In › Color Picker”.
 
-#### How do I remove a color in a palette or swatch?
+#### How can I remove a color in a palette or swatch?
 
-Drag and drop the color onto the trash icon in the Dock.
+Select the color and press the <kbd>delete</kbd> key or drag and drop the color onto the trash icon in the Dock.
 
-#### How do I change the color space?
+#### How can I change the color space?
 
 Right-click the color wheel. You want to select “Display P3” if you use LCH or “sRGB” if you use Hex, HSL, or RGB.
 
@@ -119,11 +119,35 @@ Note that the HSL and RGB format will always be clamped to [sRGB](https://en.wik
 
 The best practice is to use [Asset Catalog for colors](https://devblog.xero.com/managing-ui-colours-with-ios-11-asset-catalogs-16500ba48205) instead of hard-coding the values in code. If you really want to hard-code colors, the [Scala color picker plugin](https://bjango.com/mac/skalacolor/) supports `UIColor` and `NSColor`.
 
+#### Why does the OKLCH chroma value differ from other sources?
+
+The app displays the OKLCH chroma value as a percentage instead of an absolute value for better user-friendliness. For example, `oklch(70% 25% 135)` in the app corresponds to `oklch(70% 0.1 135)` on [oklch.com](https://oklch.com). Both are correct: the percentage form (0-100%) and the decimal form (0-0.4) are standard ways to express [OKLCH chroma](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/oklch#c).
+
+#### How can I export color palettes?
+
+1. Open Finder
+1. Press <kbd>Command</kbd> + <kbd>Shift</kbd> + <kbd>G</kbd>
+1. Enter `~/Library/Colors`
+1. Copy the desired palette files
+
+#### How can I export swatches?
+
+1. Go to the color palettes folder (see above)
+1. Copy `NSColorPanelSwatches.plist`
+
+This file is not viewable or editable. It can only be used for backup or transfer between Macs.
+
 #### Can I contribute localizations?
 
 I don't plan to localize the app.
 
 #### [More FAQs…](https://sindresorhus.com/apps/faq)
+
+## Scripting
+
+You can use the "Sample Color from Screen" action for Shortcuts to sample color from the screen and then do something with it.
+
+Tip: You can [run shortcuts from the command-line](https://support.apple.com/guide/shortcuts-mac/run-shortcuts-from-the-command-line-apd455c82f02/mac).
 
 ## Built with
 
