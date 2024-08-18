@@ -1,9 +1,11 @@
 import SwiftUI
 import TipKit
+import ColorPaletteCodable
 
 struct MainScreen: View {
 	// Note to self: Do not access the color picker here as it would create an infinite loop.
 
+	@StateObject private var appState = AppState.shared
 	@Default(.uppercaseHexColor) private var uppercaseHexColor
 	@Default(.hashPrefixInHexColor) private var hashPrefixInHexColor
 	@Default(.legacyColorSyntax) private var legacyColorSyntax
@@ -54,6 +56,7 @@ struct MainScreen: View {
 			.task {
 				try? Tips.configure()
 			}
+			.alert(error: $appState.error)
 	}
 
 	private func updateColorsFromPanel(
@@ -244,11 +247,19 @@ private struct PasteColorButton: View {
 
 private struct MoreButton: View {
 	@Default(.showInMenuBar) private var showInMenuBar
+	@State private var isFileImporterPresented = false
+	@State private var error: Error?
 
 	var body: some View {
 		Menu {
 			Button("Copy as HSB") {
 				AppState.shared.colorPanel.resolvedColor.ss_hsbColorString.copyToPasteboard()
+			}
+			Section {
+				// TODO: This should exist in the "File" menu too.
+				Button("Import Color Palette…") {
+					isFileImporterPresented = true
+				}
 			}
 			if showInMenuBar {
 				Divider()
@@ -268,6 +279,26 @@ private struct MoreButton: View {
 			.padding(8)
 			.contentShape(.rect)
 			.opacity(0.6) // Try to match the other buttons.
+			.fileImporter(
+				isPresented: $isFileImporterPresented,
+				allowedContentTypes: [
+					.clr,
+					.adobeSwatchExchange
+				]
+			) { result in
+				Task {
+					do {
+						let url = try result.get()
+						AppState.shared.importColorPalette(url)
+					} catch {
+						self.error = error
+					}
+				}
+			}
+			.fileDialogCustomizationID("importColorPalette")
+			.fileDialogMessage("Import a Apple Color List (.clr) or Adobe Swatch Exchange (.ase)")
+			.fileDialogDefaultDirectory(.downloadsDirectory)
+			.fileDialogConfirmationLabel("Import")
 	}
 }
 

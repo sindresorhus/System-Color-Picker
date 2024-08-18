@@ -6,5 +6,36 @@
 	<false/>
 	<key>MDItemKeywords</key>
 	<string>color,picker,system,pick,colour,colors,colours,sampler</string>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Apple Color List</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.apple.color-file</string>
+			</array>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>clr</string>
+			</array>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Adobe Swatch Exchange</string>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>ase</string>
+			</array>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+		</dict>
+	</array>
 </dict>
 </plist>

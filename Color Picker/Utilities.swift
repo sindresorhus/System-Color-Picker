@@ -3031,6 +3031,20 @@ extension Binding {
 }
 
 
+extension Binding {
+	func isPresent<Wrapped>() -> Binding<Bool> where Value == Wrapped? {
+		.init(
+			get: { wrappedValue != nil },
+			set: { isPresented in
+				if !isPresented {
+					wrappedValue = nil
+				}
+			}
+		)
+	}
+}
+
+
 struct MultiTogglePicker<Data: RandomAccessCollection, ElementLabel: View>: View where Data.Element: Hashable & Identifiable {
 	let data: Data
 	@Binding var selection: Set<Data.Element>
@@ -3349,6 +3363,95 @@ extension View {
 			message: message,
 			isPresented: isPresented,
 			actions: {} // swiftlint:disable:this trailing_closure
+		)
+	}
+}
+
+
+extension View {
+	func alert2<T>(
+		title: (T) -> Text,
+		presenting data: Binding<T?>,
+		@ViewBuilder actions: (T) -> some View,
+		@ViewBuilder message: (T) -> some View
+	) -> some View {
+		background(
+			EmptyView()
+				.alert(
+					data.wrappedValue.map(title) ?? Text(""),
+					isPresented: data.isPresent(),
+					presenting: data.wrappedValue,
+					actions: actions,
+					message: message
+				)
+		)
+	}
+
+	func alert2<T>(
+		title: (T) -> Text,
+		message: ((T) -> String?)? = nil,
+		presenting data: Binding<T?>,
+		@ViewBuilder actions: (T) -> some View
+	) -> some View {
+		alert2(
+			title: { title($0) },
+			presenting: data,
+			actions: actions,
+			message: { // swiftlint:disable:this trailing_closure
+				if let message = message?($0) {
+					Text(message)
+				}
+			}
+		)
+	}
+
+	func alert2<T>(
+		title: (T) -> String,
+		message: ((T) -> String?)? = nil,
+		presenting data: Binding<T?>,
+		@ViewBuilder actions: (T) -> some View
+	) -> some View {
+		alert2(
+			title: { Text(title($0)) },
+			message: message,
+			presenting: data,
+			actions: actions
+		)
+	}
+
+	func alert2<T>(
+		title: (T) -> Text,
+		message: ((T) -> String?)? = nil,
+		presenting data: Binding<T?>
+	) -> some View {
+		alert2(
+			title: title,
+			message: message,
+			presenting: data,
+			actions: { _ in } // swiftlint:disable:this trailing_closure
+		)
+	}
+
+	func alert2<T>(
+		title: (T) -> String,
+		message: ((T) -> String?)? = nil,
+		presenting data: Binding<T?>
+	) -> some View {
+		alert2(
+			title: { Text(title($0)) },
+			message: message,
+			presenting: data
+		)
+	}
+}
+
+
+extension View {
+	func alert(error: Binding<Error?>) -> some View {
+		alert2(
+			title: { ($0 as NSError).localizedDescription },
+			message: { ($0 as NSError).localizedRecoverySuggestion },
+			presenting: error
 		)
 	}
 }
@@ -3676,5 +3779,25 @@ extension SortComparator {
 		order: SortOrder = .forward
 	) -> KeyPathComparator<Compared> where Self == KeyPathComparator<Compared> {
 		.init(keyPath, order: order)
+	}
+}
+
+
+extension String {
+	func withHighestNumberUniqueName(existingNames: some Sequence<String>) -> Self {
+		let regex = /^(?<baseName>.+?)(?: \((?<index>\d+)\))?$/
+
+		guard let match = wholeMatch(of: regex) else {
+			return self
+		}
+
+		let baseName = match.baseName
+		let highestIndex = existingNames
+			.compactMap { $0.wholeMatch(of: regex) }
+			.filter { $0.baseName == baseName }
+			.compactMap { $0.index.flatMap { Int($0) } }
+			.max() ?? 0
+
+		return "\(baseName) (\(highestIndex + 1))"
 	}
 }

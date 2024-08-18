@@ -12,6 +12,7 @@ Pick colors from anywhere using the built-in color picker.
 - Launch it at login (when in the menu bar)
 - Hide menu bar icon
 - Shortcuts support
+- Import Adobe Swatch Exchange (ASE) palettes
 
 
 ■ Tip

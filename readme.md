@@ -42,6 +42,7 @@ A special version for users that cannot access the App Store. It won't receive a
 - Launch it at login (when in the menu bar)
 - Hide menu bar icon
 - Shortcuts support
+- Import Adobe Swatch Exchange (ASE) palettes
 
 ## Tips
 
@@ -102,7 +103,7 @@ The fastest way to add a color to a palette is to paste a Hex color value into t
 
 Palettes can be accessed both from the app and the menu bar icon (if enabled). You can even access them in other apps that use the system color picker.
 
-You can find palettes on [Coolors](https://coolors.co/palettes/trending).
+You can find palettes on [Coolors](https://coolors.co/palettes/trending). Download the ASE palette type, right-click the file, and select “Open In › Color Picker”.
 
 #### How do I remove a color in a palette or swatch?
 

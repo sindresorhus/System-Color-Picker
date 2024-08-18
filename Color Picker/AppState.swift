@@ -1,10 +1,13 @@
 import SwiftUI
+import ColorPaletteCodable
 
 @MainActor
-final class AppState {
+final class AppState: ObservableObject {
 	static let shared = AppState()
 
 	var cancellables = Set<AnyCancellable>()
+
+	@Published var error: Error?
 
 	private(set) lazy var colorPanel: ColorPanel = {
 		let colorPanel = ColorPanel()
@@ -225,6 +228,50 @@ final class AppState {
 
 	func handleAppReopen() {
 		handleMenuBarIcon()
+	}
+
+	private func paletteName(_ url: URL) -> String {
+		// NSColorList happily overwrites existing palettes, so we ensure a unique name.
+		url
+			.deletingPathExtension()
+			.lastPathComponent
+			.withHighestNumberUniqueName(existingNames: NSColorList.availableColorLists.compactMap(\.name))
+	}
+
+	private func importCLRColorPalette(_ url: URL) throws {
+		_ = url.startAccessingSecurityScopedResource()
+
+		guard let colorList = NSColorList(name: paletteName(url), fromFile: url.path) else {
+			throw NSError.appError("Failed to load Apple Color List file.")
+		}
+
+		try colorList.write(to: nil)
+		colorPanel.attachColorList(colorList)
+	}
+
+	private func importASEColorPalette(_ url: URL) throws {
+		_ = url.startAccessingSecurityScopedResource()
+
+		var palette = try PAL.Palette.Decode(from: url)
+		palette.name = paletteName(url)
+
+		let colorList = palette.colorListFromAllColors()
+		try colorList.write(to: nil)
+		colorPanel.attachColorList(colorList)
+	}
+
+	func importColorPalette(_ url: URL) {
+		do {
+			if url.pathExtension == "clr" {
+				try importCLRColorPalette(url)
+			}
+
+			if url.pathExtension == "ase" {
+				try importASEColorPalette(url)
+			}
+		} catch {
+			self.error = error
+		}
 	}
 
 	private func addPalettes(_ menu: NSMenu) {

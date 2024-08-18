@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		E31561302988E515009B0A37 /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = E315612F2988E515009B0A37 /* LaunchAtLogin */; };
+		E3334FBE2C71FD7F00F0791D /* ColorPaletteCodable in Frameworks */ = {isa = PBXBuildFile; productRef = E3334FBD2C71FD7F00F0791D /* ColorPaletteCodable */; };
+		E3334FC02C7209C800F0791D /* Licenses.txt in Resources */ = {isa = PBXBuildFile; fileRef = E3334FBF2C7209C800F0791D /* Licenses.txt */; };
 		E34BFA972988F3AF002AB421 /* Main.swift in Sources */ = {isa = PBXBuildFile; fileRef = E34BFA962988F3AF002AB421 /* Main.swift */; };
 		E34BFA9E2988F3AF002AB421 /* Intents Extension.appex in Embed ExtensionKit Extensions */ = {isa = PBXBuildFile; fileRef = E34BFA942988F3AF002AB421 /* Intents Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		E34BFAA32988F3CA002AB421 /* Intents.swift in Sources */ = {isa = PBXBuildFile; fileRef = E31561312988ECF4009B0A37 /* Intents.swift */; };
@@ -65,6 +67,7 @@
 
 /* Begin PBXFileReference section */
 		E31561312988ECF4009B0A37 /* Intents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Intents.swift; sourceTree = "<group>"; };
+		E3334FBF2C7209C800F0791D /* Licenses.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Licenses.txt; sourceTree = "<group>"; };
 		E34BFA942988F3AF002AB421 /* Intents Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.extensionkit-extension"; includeInIndex = 0; path = "Intents Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 		E34BFA962988F3AF002AB421 /* Main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Main.swift; sourceTree = "<group>"; };
 		E34BFA9A2988F3AF002AB421 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -103,6 +106,7 @@
 				E3F4BC872788A5780075DC52 /* Sentry in Frameworks */,
 				E394DAB2263E965500F5B042 /* KeyboardShortcuts in Frameworks */,
 				E31561302988E515009B0A37 /* LaunchAtLogin in Frameworks */,
+				E3334FBE2C71FD7F00F0791D /* ColorPaletteCodable in Frameworks */,
 				E3F4BC892788A64F0075DC52 /* Defaults in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -116,6 +120,7 @@
 				E3A3B12525904E7D001B4D0C /* Info.plist */,
 				E3A3B12625904E7D001B4D0C /* Color_Picker.entitlements */,
 				E394C2F52642BE4C006B51CF /* InternetAccessPolicy.json */,
+				E3334FBF2C7209C800F0791D /* Licenses.txt */,
 			);
 			name = Other;
 			sourceTree = "<group>";
@@ -222,6 +227,7 @@
 				E3F4BC862788A5780075DC52 /* Sentry */,
 				E3F4BC882788A64F0075DC52 /* Defaults */,
 				E315612F2988E515009B0A37 /* LaunchAtLogin */,
+				E3334FBD2C71FD7F00F0791D /* ColorPaletteCodable */,
 			);
 			productName = "Color Picker";
 			productReference = E3A3B11925904E7B001B4D0C /* Color Picker.app */;
@@ -259,6 +265,7 @@
 				E394DAB0263E965500F5B042 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
 				E3F4BC852788A5780075DC52 /* XCRemoteSwiftPackageReference "sentry-cocoa" */,
 				E315612E2988E515009B0A37 /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */,
+				E3334FBC2C71FD7F00F0791D /* XCRemoteSwiftPackageReference "ColorPaletteCodable" */,
 			);
 			productRefGroup = E3A3B11A25904E7B001B4D0C /* Products */;
 			projectDirPath = "";
@@ -283,6 +290,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E394C2F62642BE4C006B51CF /* InternetAccessPolicy.json in Resources */,
+				E3334FC02C7209C800F0791D /* Licenses.txt in Resources */,
 				E3A3B12125904E7D001B4D0C /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -626,6 +634,14 @@
 				minimumVersion = 1.0.0;
 			};
 		};
+		E3334FBC2C71FD7F00F0791D /* XCRemoteSwiftPackageReference "ColorPaletteCodable" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/dagronf/ColorPaletteCodable";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.0.1;
+			};
+		};
 		E394DAB0263E965500F5B042 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/sindresorhus/KeyboardShortcuts";
@@ -657,6 +673,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = E315612E2988E515009B0A37 /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */;
 			productName = LaunchAtLogin;
+		};
+		E3334FBD2C71FD7F00F0791D /* ColorPaletteCodable */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E3334FBC2C71FD7F00F0791D /* XCRemoteSwiftPackageReference "ColorPaletteCodable" */;
+			productName = ColorPaletteCodable;
 		};
 		E34BFAA52988F4C7002AB421 /* Defaults */ = {
 			isa = XCSwiftPackageProductDependency;

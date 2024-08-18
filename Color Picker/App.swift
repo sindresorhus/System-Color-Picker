@@ -31,6 +31,7 @@ struct AppMain: App {
 		WindowGroup {
 			if false {}
 		}
+			.handlesExternalEvents(matching: []) // Makes sure it does not open a new window when dragging files onto the Dock icon.
 			// TODO: How to replace `File` menu with `Color`?
 			// TODO: Would be nice to be able to remove the `View` menu: https://github.com/feedback-assistant/reports/issues/252
 			.commands {
@@ -99,6 +100,12 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
 	func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
 		AppState.shared.handleAppReopen()
 		return false
+	}
+
+	func application(_ application: NSApplication, open urls: [URL]) {
+		for url in urls {
+			AppState.shared.importColorPalette(url)
+		}
 	}
 
 	func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
