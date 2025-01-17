@@ -36,6 +36,8 @@ extension Color.Resolved {
 			format(Defaults[.legacyColorSyntax] ? .cssHSLLegacy : .cssHSL)
 		case .rgb:
 			format(Defaults[.legacyColorSyntax] ? .cssRGBLegacy : .cssRGB)
+		case .unitRGB:
+			format(.unitRGB)
 		case .oklch:
 			format(.cssOKLCH)
 		case .lch:
@@ -928,6 +930,57 @@ extension Color.Resolved {
 
 extension Color.Resolved {
 	/**
+	Creates a color from unit RGB values (0-1).
+
+	Format: `0.5, 0.5, 0.5` or `0.5 0.5 0.5` with optional alpha.
+	*/
+	init?(unitRGBString: String) {
+		let components = unitRGBString
+			.components(separatedBy: CharacterSet(charactersIn: ", "))
+			.filter { !$0.isEmpty }
+
+		guard components.count == 3 || components.count == 4 else {
+			return nil
+		}
+
+		guard
+			let red = Double(components[0]),
+			let green = Double(components[1]),
+			let blue = Double(components[2]),
+			red > -100 && red < 100, // 100 is just a sanity check. It rarely is above 2.
+			green > -100 && green < 100,
+			blue > -100 && blue < 100
+		else {
+			return nil
+		}
+
+		let opacity: Double
+		if components.count == 4 {
+			guard
+				let alpha = Double(components[3]),
+				alpha >= 0 && alpha <= 1
+			else {
+				return nil
+			}
+
+			opacity = alpha
+		} else {
+			opacity = 1
+		}
+
+		self.init(
+			colorSpace: .sRGB,
+			red: red.toFloat,
+			green: green.toFloat,
+			blue: blue.toFloat,
+			opacity: opacity.toFloat
+		)
+	}
+}
+
+
+extension Color.Resolved {
+	/**
 	Loosely gets a color from the pasteboard.
 
 	It first tries to get an actual color object and then tries to parse a CSS string (ignoring leading/trailing whitespace) for Hex, HSL, and RGB.
@@ -1046,6 +1099,7 @@ extension Color.Resolved {
 		case cssHSLLegacy
 		case cssRGBLegacy
 		case hsb
+		case unitRGB
 	}
 
 	/**
@@ -1134,6 +1188,10 @@ extension Color.Resolved {
 			return opacity < 100
 				? String(format: "%d %d%% %d%% / %d%%", hue, saturation, brightness, opacity)
 				: String(format: "%d %d%% %d%%", hue, saturation, brightness)
+		case .unitRGB:
+			return opacity < 1
+				? String(format: "%.3f, %.3f, %.3f, %.3f", red, green, blue, opacity)
+				: String(format: "%.3f, %.3f, %.3f", red, green, blue)
 		}
 	}
 }
@@ -3862,6 +3920,9 @@ struct Color_AppEntity: TransientAppEntity {
 	@Property(title: "RGB Legacy")
 	var rgbLegacy: String
 
+	@Property(title: "Unit RGB")
+	var unitRGB: String
+
 	private var image: DisplayRepresentation.Image?
 
 	var displayRepresentation: DisplayRepresentation {
@@ -3883,6 +3944,7 @@ extension Color_AppEntity {
 		self.lch = color.format(.cssLCH)
 		self.hslLegacy = color.format(.cssHSLLegacy)
 		self.rgbLegacy = color.format(.cssRGBLegacy)
+		self.unitRGB = color.format(.unitRGB)
 		self.image = .init(systemName: "square.fill", tintColor: color.toXColor)
 	}
 }

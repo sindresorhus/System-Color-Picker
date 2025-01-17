@@ -161,9 +161,10 @@ private struct ShownColorFormatsSetting: View {
 				data: ColorFormat.allCases
 			) {
 				Text($0.title)
+//					.help($0 == .unitRGB ? "Extended sRGB colors in the format “1.0, 1.0, 1.0” or “1.0 1.0 1.0”." : "")
 			}
 		}
-			.help("Choose which color formats to show in the color picker window. Disabled formats will still show up in the “Color” menu.")
+			.help("Choose which color formats to show in the color picker window. Disabled formats will still show up in the “Color” menu.\n\nUnit RGB is extended sRGB color in the format “1.0, 1.0, 1.0” or “1.0 1.0 1.0”.")
 	}
 }
 

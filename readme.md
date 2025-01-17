@@ -35,7 +35,7 @@ A special version for users that cannot access the App Store. It won't receive a
 
 - Palettes
 - Recently picked colors
-- Quickly copy, paste, and convert colors in Hex, HSL, RGB, LCH format
+- Quickly copy, paste, and convert colors in Hex, HSL, RGB, Unit RGB (0-1), OKLCH, LCH format
 - Show as a normal app or in the menu bar
 - Pick a color or toggle the window from anywhere with a global keyboard shortcut
 - Make the window stay on top of all other windows
@@ -58,9 +58,10 @@ You can use the following keyboard shortcuts in the app:
 - Copy as Hex: <kbd>Shift</kbd> <kbd>Command</kbd> <kbd>h</kbd>
 - Copy as HSL: <kbd>Shift</kbd> <kbd>Command</kbd> <kbd>s</kbd>
 - Copy as RGB: <kbd>Shift</kbd> <kbd>Command</kbd> <kbd>r</kbd>
+- Copy as Unit RGB: <kbd>Shift</kbd> <kbd>Command</kbd> <kbd>u</kbd>
 - Copy as OKLCH: <kbd>Shift</kbd> <kbd>Command</kbd> <kbd>o</kbd>
 - Copy as LCH: <kbd>Shift</kbd> <kbd>Command</kbd> <kbd>l</kbd>
-- Paste color: <kbd>Shift</kbd> <kbd>Command</kbd> <kbd>v</kbd> *(In the format Hex, HSL, RGB, or LCH)*
+- Paste color: <kbd>Shift</kbd> <kbd>Command</kbd> <kbd>v</kbd> *(In the format Hex, HSL, RGB, Unit RGB, OKLCH, or LCH)*
 - Reset opacity: <kbd>Control</kbd> <kbd>Shift</kbd> <kbd>o</kbd>
 
 ## Plugins
@@ -82,6 +83,10 @@ The built-in color picker supports plugins:
 #### The app does not show up in the menu bar
 
 macOS hides menu bar apps when there is no space left in the menu bar. This is a common problem on MacBooks with a notch. Try quitting some menu bar apps to free up space. If this does not solve it, try quitting Bartender if you have it installed.
+
+#### What is Unit RGB?
+
+It represents RGB values in the range 0-1 instead of 0-255. This format is commonly used for programming (SwiftUI, AppKit, UIKit, etc.) and other graphics programming contexts. For example, `0.5, 0.5, 0.5` in [unit RGB](https://rgbcolorpicker.com/0-1) is equivalent to `rgb(128, 128, 128)` in standard RGB. It accepts values in the format `0.1, 0.1, 0.1` and `0.1 0.1 0.1`, including with opacity `0.1, 0.1, 0.1, 0.5`.
 
 #### What is OKLCH color?
 

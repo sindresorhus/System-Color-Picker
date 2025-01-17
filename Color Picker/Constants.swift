@@ -42,6 +42,7 @@ enum ColorFormat: String, CaseIterable, Defaults.Serializable {
 	case hex
 	case hsl
 	case rgb
+	case unitRGB
 	case oklch
 	case lch
 
@@ -53,6 +54,8 @@ enum ColorFormat: String, CaseIterable, Defaults.Serializable {
 			"HSL"
 		case .rgb:
 			"RGB"
+		case .unitRGB:
+			"Unit RGB"
 		case .oklch:
 			"OKLCH"
 		case .lch:
@@ -68,6 +71,8 @@ enum ColorFormat: String, CaseIterable, Defaults.Serializable {
 			"s"
 		case .rgb:
 			"r"
+		case .unitRGB:
+			"u"
 		case .oklch:
 			"o"
 		case .lch:

@@ -109,6 +109,8 @@ struct MainScreen: View {
 			Color.Resolved(cssHSLString: colorString)
 		case .rgb:
 			Color.Resolved(cssRGBString: colorString)
+		case .unitRGB:
+			Color.Resolved(unitRGBString: colorString)
 		case .oklch:
 			Color.Resolved(cssOKLCHString: colorString)
 		case .lch:
