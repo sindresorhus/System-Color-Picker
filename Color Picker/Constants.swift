@@ -19,7 +19,7 @@ extension Defaults.Keys {
 	static let uppercaseHexColor = Key<Bool>("uppercaseHexColor", default: false)
 	static let hashPrefixInHexColor = Key<Bool>("hashPrefixInHexColor", default: false)
 	static let legacyColorSyntax = Key<Bool>("legacyColorSyntax", default: false)
-	static let shownColorFormats = Key<Set<ColorFormat>>("shownColorFormats", default: [.hex, .hsl, .rgb, .lch])
+	static let shownColorFormats = Key<Set<ColorFormat>>("shownColorFormats", default: [.hex, .hsl, .rgb, .oklch])
 	static let largerText = Key<Bool>("largerText", default: false)
 	static let copyColorAfterPicking = Key<Bool>("copyColorAfterPicking", default: false)
 	static let quitAfterPicking = Key<Bool>("quitAfterPicking", default: false)

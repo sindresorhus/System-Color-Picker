@@ -9,8 +9,7 @@ only_rules:
   - closure_parameter_position
   - closure_spacing
   - collection_alignment
-  # Broken in Swift 6.
-  # - colon
+  - colon
   - comma
   - comma_inheritance
   - compiler_protocol_init
@@ -92,6 +91,7 @@ only_rules:
   - number_separator
   - operator_usage_whitespace
   - operator_whitespace
+  - optional_data_string_conversion
   - overridden_super_call
   - prefer_key_path
   - prefer_self_in_static_references
@@ -110,6 +110,7 @@ only_rules:
   - redundant_nil_coalescing
   - redundant_objc_attribute
   - redundant_optional_initialization
+  - redundant_sendable
   - redundant_set_access_control
   - redundant_string_enum_value
   - redundant_type_annotation
@@ -155,8 +156,7 @@ only_rules:
   - vertical_parameter_alignment_on_call
   - vertical_whitespace_closing_braces
   - vertical_whitespace_opening_braces
-  # Does not handle "return"-less functions.
-  # - void_function_in_ternary
+  - void_function_in_ternary
   - void_return
   - xct_specific_matcher
   - xctfail_message
@@ -167,6 +167,8 @@ analyzer_rules:
   - unneeded_synthesized_initializer
   - unused_declaration
   - unused_import
+redundant_discardable_let:
+  ignore_swiftui_view_bodies: true
 for_where:
   allow_for_as_filter: true
 number_separator:

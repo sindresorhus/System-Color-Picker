@@ -81,14 +81,7 @@ typealias XColor = UIColor
 #endif
 
 
-//func delay(seconds: TimeInterval, closure: @escaping () -> Void) {
-//	Task.detached {
-//		try? await Task.sleep(seconds: seconds)
-//		closure()
-//	}
-//}
-
-// TODO: Don't make this use `Task` for at least another two years (2025). There are a lot of things that don't work with `Task`.
+// TODO: Don't make this use `Task` for at least another two years (2027). There are a lot of things that don't work with `Task`.
 func delay(seconds: TimeInterval, closure: @escaping () -> Void) {
 	DispatchQueue.main.asyncAfter(deadline: .now() + seconds, execute: closure)
 }
@@ -117,7 +110,7 @@ struct EnumCaseMap<Key: CaseIterable & Hashable, Value>: SSDictionaryProtocol {
 	Use this initializer if you want the same default value for all the cases. If not, specify a dictionary literal.
 	*/
 	init(defaultValue: Value) {
-		storage = Key.allCases.reduce(into: [:]) { result, enumCase in
+		self.storage = Key.allCases.reduce(into: [:]) { result, enumCase in
 			result[enumCase] = defaultValue
 		}
 	}
@@ -279,7 +272,7 @@ extension SSApp {
 
 
 extension SSApp {
-	//	@MainActor
+	@MainActor
 	static func forceActivate() {
 		NSApp.yieldActivation(toApplicationWithBundleIdentifier: idString)
 		NSApp.activate()
@@ -313,9 +306,7 @@ extension SSApp {
 		// Run in the next runloop so it doesn't conflict with SwiftUI if run at startup.
 		DispatchQueue.main.async {
 			SSApp.activateIfAccessory()
-
-			let menuItem = NSApp.mainMenu?.items.first?.submenu?.item(withTitle: "Settings…")
-			menuItem?.performAction()
+			EnvironmentValues().openSettings()
 		}
 	}
 
@@ -947,9 +938,12 @@ extension Color.Resolved {
 			let red = Double(components[0]),
 			let green = Double(components[1]),
 			let blue = Double(components[2]),
-			red > -100 && red < 100, // 100 is just a sanity check. It rarely is above 2.
-			green > -100 && green < 100,
-			blue > -100 && blue < 100
+			red > -100,
+			red < 100, // 100 is just a sanity check. It rarely is above 2.
+			green > -100,
+			green < 100,
+			blue > -100,
+			blue < 100
 		else {
 			return nil
 		}
@@ -958,7 +952,8 @@ extension Color.Resolved {
 		if components.count == 4 {
 			guard
 				let alpha = Double(components[3]),
-				alpha >= 0 && alpha <= 1
+				alpha >= 0,
+				alpha <= 1
 			else {
 				return nil
 			}
@@ -1283,7 +1278,8 @@ struct NativeTextField: NSViewRepresentable {
 				}
 
 				unfocus()
-			}.start()
+			}
+			.start()
 
 			// Cannot be `.leftMouseUp` as the color wheel swallows it.
 			localEventMonitor = LocalEventMonitor(events: [.leftMouseDown, .rightMouseDown, .keyDown]) { [weak self] event in
@@ -1309,7 +1305,8 @@ struct NativeTextField: NSViewRepresentable {
 				}
 
 				return event
-			}.start()
+			}
+			.start()
 
 			return super.becomeFirstResponder()
 		}
@@ -1431,7 +1428,7 @@ extension NSAlert {
 			buttonTitles: buttonTitles,
 			defaultButtonIndex: defaultButtonIndex
 		)
-			.runModal(for: window)
+		.runModal(for: window)
 	}
 
 	/**
@@ -1668,7 +1665,7 @@ extension NSMenuItem {
 				menu.items.removeAll()
 				emptyMenu.items = items
 			}
-				.store(forTheLifetimeOf: self)
+			.store(forTheLifetimeOf: self)
 		}
 
 		return self
@@ -2176,7 +2173,10 @@ extension NSView {
 				return subview
 			}
 
-			if deep, let match = subview.firstSubview(deep: deep, where: matches) {
+			if
+				deep,
+				let match = subview.firstSubview(deep: deep, where: matches)
+			{
 				return match
 			}
 		}
@@ -2991,15 +2991,19 @@ extension SSApp {
 	/**
 	Requests a review only after this method has been called the given amount of times.
 	*/
-	static func requestReviewAfterBeingCalledThisManyTimes(_ counts: [Int]) {
+	@MainActor
+	static func requestReviewAfterBeingCalledThisManyTimes(
+		_ counts: [Int],
+		_ requestReview: RequestReviewAction
+	) {
 		guard
-			!SSApp.isFirstLaunch,
+			!isFirstLaunch,
 			counts.contains(Defaults[key].increment())
 		else {
 			return
 		}
 
-		SKStoreReviewController.requestReview()
+		requestReview()
 	}
 }
 #endif
@@ -3179,9 +3183,9 @@ extension Defaults {
 			) {
 				elementLabel($0)
 			}
-				.onChange(of: selection) {
-					onChange?(selection)
-				}
+			.onChange(of: selection) {
+				onChange?(selection)
+			}
 		}
 	}
 }
@@ -3654,9 +3658,9 @@ extension OperatingSystem {
 	/**
 	- Note: Only use this when you cannot use an `if #available` check. For example, inline in function calls.
 	*/
-	static let isMacOS16OrLater: Bool = {
+	static let isMacOS17OrLater: Bool = {
 		#if os(macOS)
-		if #available(macOS 16, *) {
+		if #available(macOS 17, *) {
 			return true
 		}
 
@@ -3669,9 +3673,9 @@ extension OperatingSystem {
 	/**
 	- Note: Only use this when you cannot use an `if #available` check. For example, inline in function calls.
 	*/
-	static let isMacOS15OrLater: Bool = {
+	static let isMacOS16OrLater: Bool = {
 		#if os(macOS)
-		if #available(macOS 15, *) {
+		if #available(macOS 16, *) {
 			return true
 		}
 
@@ -3857,15 +3861,15 @@ extension NSColorPanel {
 
 
 extension SortComparator {
-	static func keyPath<Compared, Value: Comparable>(
-		_ keyPath: KeyPath<Compared, Value>,
+	static func keyPath<Compared>(
+		_ keyPath: KeyPath<Compared, some Comparable>,
 		order: SortOrder = .forward
 	) -> KeyPathComparator<Compared> where Self == KeyPathComparator<Compared> {
 		.init(keyPath, order: order)
 	}
 
-	static func keyPath<Compared, Value: Comparable>(
-		_ keyPath: KeyPath<Compared, Value?>,
+	static func keyPath<Compared>(
+		_ keyPath: KeyPath<Compared, (some Comparable)?>,
 		order: SortOrder = .forward
 	) -> KeyPathComparator<Compared> where Self == KeyPathComparator<Compared> {
 		.init(keyPath, order: order)

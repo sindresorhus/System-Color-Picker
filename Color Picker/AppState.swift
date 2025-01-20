@@ -2,13 +2,15 @@ import SwiftUI
 import ColorPaletteCodable
 
 @MainActor
-final class AppState: ObservableObject {
+@Observable
+final class AppState {
 	static let shared = AppState()
 
 	var cancellables = Set<AnyCancellable>()
 
-	@Published var error: Error?
+	var error: Error?
 
+	@ObservationIgnored
 	private(set) lazy var colorPanel: ColorPanel = {
 		let colorPanel = ColorPanel()
 		colorPanel.titleVisibility = .hidden
@@ -22,7 +24,6 @@ final class AppState: ObservableObject {
 		colorPanel.tabbingMode = .disallowed
 
 		var collectionBehavior: NSWindow.CollectionBehavior = [
-			.managed, // When it's floating window level, it loses this, so we add it back. People generally want to be able to access it in mission control.
 			.fullScreenAuxiliary
 			// We cannot enable tiling as then it doesn't show up in fullscreen spaces. (macOS 12.5)
 //			.fullScreenAllowsTiling
@@ -31,6 +32,13 @@ final class AppState: ObservableObject {
 		if Defaults[.showOnAllSpaces] {
 			// If we remove this, the window cannot be dragged if it's moved into a fullscreen space. (macOS 14.3)
 			collectionBehavior.insert(.canJoinAllSpaces)
+		}
+
+		if !Defaults[.showInMenuBar] {
+			// When it's floating window level, it loses this, so we add it back. People generally want to be able to access it in mission control. We cannot add this when in menu bar mode as then it doesn't show in fullscreen spaces.
+			collectionBehavior.insert(.managed)
+
+			// You may think we can use `.auxiliary` instead of `.fullScreenAuxiliary` for menu bar mode, but then it doesn't open when in a fullscreen space, even though its docs says it will.
 		}
 
 		colorPanel.collectionBehavior = collectionBehavior
@@ -53,6 +61,7 @@ final class AppState: ObservableObject {
 		return colorPanel
 	}()
 
+	// TODO: Use NSHostingMenu when targeting macOS 16.
 	private func createMenu() -> NSMenu {
 		let menu = NSMenu()
 
@@ -60,14 +69,14 @@ final class AppState: ObservableObject {
 			menu.addCallbackItem("Pick Color") { [self] in
 				pickColor()
 			}
-				.setShortcut(for: .pickColor)
+			.setShortcut(for: .pickColor)
 		}
 
 		if Defaults[.menuBarItemClickAction] != .toggleWindow {
 			menu.addCallbackItem("Toggle Window") { [self] in
 				colorPanel.toggle()
 			}
-				.setShortcut(for: .toggleWindow)
+			.setShortcut(for: .toggleWindow)
 		}
 
 		menu.addSeparator()
@@ -98,6 +107,7 @@ final class AppState: ObservableObject {
 		return menu
 	}
 
+	@ObservationIgnored
 	private(set) lazy var statusItem = with(NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)) {
 		$0.isVisible = false
 		$0.button!.image = NSImage(systemSymbolName: "drop.fill", accessibilityDescription: nil)
@@ -149,7 +159,6 @@ final class AppState: ObservableObject {
 		setUpEvents()
 		handleMenuBarIcon()
 		showWelcomeScreenIfNeeded()
-		requestReview()
 
 		if Defaults[.showInMenuBar] {
 			SSApp.isDockIconVisible = false
@@ -166,10 +175,6 @@ final class AppState: ObservableObject {
 	private func setUpConfig() {
 		ProcessInfo.processInfo.disableAutomaticTermination("")
 		ProcessInfo.processInfo.disableSuddenTermination()
-	}
-
-	private func requestReview() {
-		SSApp.requestReviewAfterBeingCalledThisManyTimes([6, 100, 200, 1000])
 	}
 
 	private func addToRecentlyPickedColor(_ color: Color.Resolved) {
@@ -205,7 +210,6 @@ final class AppState: ObservableObject {
 
 			colorPanel.resolvedColor = color
 			addToRecentlyPickedColor(color)
-			requestReview()
 
 			if Defaults[.copyColorAfterPicking] {
 				color.ss_stringRepresentation.copyToPasteboard()
@@ -276,6 +280,8 @@ final class AppState: ObservableObject {
 			if url.pathExtension == "ase" {
 				try importASEColorPalette(url)
 			}
+
+			NSColorPanel.setPickerMode(.colorList)
 		} catch {
 			self.error = error
 		}

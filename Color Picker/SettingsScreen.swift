@@ -14,11 +14,11 @@ struct SettingsScreen: View {
 			AdvancedSettings()
 				.settingsTabItem(.advanced)
 		}
-			.formStyle(.grouped)
-			.frame(width: 460)
-			.frame(maxHeight: 480)
-			.fixedSize()
-			.windowLevel(.utility + 1) // Ensure it's always above the color picker.
+		.formStyle(.grouped)
+		.frame(width: 460)
+		.frame(maxHeight: 480)
+		.fixedSize()
+		.windowLevel(.utility + 1) // Ensure it's always above the color picker.
 	}
 }
 
@@ -57,8 +57,8 @@ private struct GeneralSettings: View {
 				Button("Feedback & Support") {
 					SSApp.openSendFeedbackPage()
 				}
-					.buttonStyle(.link)
-					.controlSize(.small)
+				.buttonStyle(.link)
+				.controlSize(.small)
 			}
 		}
 	}
@@ -97,7 +97,7 @@ private struct ShortcutsSettings: View {
 					Text("Requires “Show in menu bar” to be enabled")
 				}
 			}
-				.disabled(!showInMenuBar)
+			.disabled(!showInMenuBar)
 		}
 	}
 }
@@ -164,7 +164,7 @@ private struct ShownColorFormatsSetting: View {
 //					.help($0 == .unitRGB ? "Extended sRGB colors in the format “1.0, 1.0, 1.0” or “1.0 1.0 1.0”." : "")
 			}
 		}
-			.help("Choose which color formats to show in the color picker window. Disabled formats will still show up in the “Color” menu.\n\nUnit RGB is extended sRGB color in the format “1.0, 1.0, 1.0” or “1.0 1.0 1.0”.")
+		.help("Choose which color formats to show in the color picker window. Disabled formats will still show up in the “Color” menu.\n\nUnit RGB is extended sRGB color in the format “1.0, 1.0, 1.0” or “1.0 1.0 1.0”.")
 	}
 }
 
@@ -180,7 +180,7 @@ private struct StickyPaletteSetting: View {
 			ForEach(NSColorList.all, id: \.self) { colorList in
 				if let name = colorList.name {
 					Text(name)
-						.tag(name as String?)
+						.tag(name)
 				}
 			}
 		} label: {

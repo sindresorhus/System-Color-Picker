@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/dagronf/ColorPaletteCodable",
       "state" : {
-        "revision" : "b1df8fef4ad93218d5322621a04fe4f179a7a7ab",
-        "version" : "3.1.1"
+        "revision" : "81f7e4017bd47e992ca92a5e3e7d49879a401fde",
+        "version" : "3.10.2"
       }
     },
     {
@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/sindresorhus/KeyboardShortcuts",
       "state" : {
-        "revision" : "c3c361f409b8dbe1eab186078b41c330a6a82c9a",
-        "version" : "2.2.2"
+        "revision" : "7ecc38bb6edf7d087d30e737057b8d8a9b7f51eb",
+        "version" : "2.2.4"
       }
     },
     {
@@ -51,8 +51,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/getsentry/sentry-cocoa",
       "state" : {
-        "revision" : "56bfb7e723c76614be4c0861ee820ccbaed14c6d",
-        "version" : "8.41.0"
+        "revision" : "3640aaf7849a9fc39996d777e6df866251bb98d6",
+        "version" : "8.45.0"
       }
     },
     {

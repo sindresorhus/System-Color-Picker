@@ -17,10 +17,11 @@ The macOS color picker as an app with lots of extra features.
 
 [![](https://sindresorhus.com/assets/download-on-app-store-badge.svg)](https://apps.apple.com/app/id1545870783)
 
-Requires macOS 14 or later.
+Requires macOS 15 or later.
 
 **Older versions**
 
+- [2.0.3](https://github.com/sindresorhus/System-Color-Picker/releases/download/v2.0.3/Color.Picker.2.0.3.-.macOS.14.zip) for macOS 14+
 - [1.15.0](https://github.com/sindresorhus/System-Color-Picker/releases/download/v1.15.0/Color.Picker.1.15.0.-.macOS.13.zip) for macOS 13+
 - [1.12.1](https://github.com/sindresorhus/System-Color-Picker/releases/download/v1.12.1/Color.Picker.1.12.1.-.macOS.12.zip) for macOS 12+
 - [1.9.6](https://github.com/sindresorhus/System-Color-Picker/releases/download/v1.9.6/Color.Picker.1.9.6.-.macOS.11.zip) for macOS 11+
@@ -29,7 +30,7 @@ Requires macOS 14 or later.
 
 A special version for users that cannot access the App Store. It won't receive automatic updates. I will update it here once a year.
 
-[Download](https://www.dropbox.com/scl/fi/x1bu814c4i8je38zqfswo/Color-Picker-2.0.3-1721346942.zip?rlkey=m1eh6nuxn8ww70cdj6u3b07jv&raw=1) *(2.0.3 · macOS 14+)*
+[Download](https://www.dropbox.com/scl/fi/2lvdt09widz0p3jzfrwd8/Color-Picker-2.1.0-1740424285.zip?rlkey=yuzrr4abjfty60oscd3pcdyvc&raw=1) *(2.1.0 · macOS 15+)*
 
 ## Features
 
@@ -150,7 +151,7 @@ I don't plan to localize the app.
 
 ## Scripting
 
-You can use the "Sample Color from Screen" action for Shortcuts to sample color from the screen and then do something with it.
+You can use the “Sample Color from Screen” action for Shortcuts to sample color from the screen and then do something with it.
 
 Tip: You can [run shortcuts from the command-line](https://support.apple.com/guide/shortcuts-mac/run-shortcuts-from-the-command-line-apd455c82f02/mac).
 

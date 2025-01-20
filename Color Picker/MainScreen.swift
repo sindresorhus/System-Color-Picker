@@ -5,7 +5,7 @@ import ColorPaletteCodable
 struct MainScreen: View {
 	// Note to self: Do not access the color picker here as it would create an infinite loop.
 
-	@StateObject private var appState = AppState.shared
+	@Environment(\.requestReview) private var requestReview
 	@Default(.uppercaseHexColor) private var uppercaseHexColor
 	@Default(.hashPrefixInHexColor) private var hashPrefixInHexColor
 	@Default(.legacyColorSyntax) private var legacyColorSyntax
@@ -20,6 +20,7 @@ struct MainScreen: View {
 	let colorPanel: NSColorPanel
 
 	var body: some View {
+		@Bindable var appState = AppState.shared
 		VStack {
 			BarView()
 			colorInputs
@@ -28,35 +29,36 @@ struct MainScreen: View {
 				TipView(ColorPaletteTip())
 			}
 		}
-			.padding(9)
-			// 244 makes `HSL` always fit in the text field.
-			.frame(minWidth: 244, maxWidth: .infinity)
-			.task {
-				updateColorsFromPanel()
-			}
-			// TODO: Use a tuple here when tuples can be equatable.
-			.onChange(of: uppercaseHexColor) {
-				updateColorsFromPanel()
-			}
-			.onChange(of: hashPrefixInHexColor) {
-				updateColorsFromPanel()
-			}
-			.onChange(of: legacyColorSyntax) {
-				updateColorsFromPanel()
-			}
-			.onReceive(colorPanel.colorDidChange) {
-				colorAccessibilityName = colorPanel.color.accessibilityName
+		.padding(9)
+		// 244 makes `HSL` always fit in the text field.
+		.frame(minWidth: 244, maxWidth: .infinity)
+		.task {
+			updateColorsFromPanel()
+		}
+		// TODO: Use a tuple here when tuples can be equatable.
+		.onChange(of: uppercaseHexColor) {
+			updateColorsFromPanel()
+		}
+		.onChange(of: hashPrefixInHexColor) {
+			updateColorsFromPanel()
+		}
+		.onChange(of: legacyColorSyntax) {
+			updateColorsFromPanel()
+		}
+		.onReceive(colorPanel.colorDidChange) {
+			colorAccessibilityName = colorPanel.color.accessibilityName
 
-				guard focusedTextField == nil else {
-					return
-				}
+			guard focusedTextField == nil else {
+				return
+			}
 
-				updateColorsFromPanel(preventUpdate: true)
-			}
-			.task {
-				try? Tips.configure()
-			}
-			.alert(error: $appState.error)
+			updateColorsFromPanel(preventUpdate: true)
+		}
+		.onAppear {
+			try? Tips.configure()
+			SSApp.requestReviewAfterBeingCalledThisManyTimes([4, 100, 200, 1000], requestReview)
+		}
+		.alert(error: $appState.error)
 	}
 
 	private func updateColorsFromPanel(
@@ -199,15 +201,15 @@ private struct BarView: View {
 			MoreButton()
 			Spacer()
 		}
-			// Cannot do this as the `Menu` buttons don't respect it. (macOS 13.2)
-			// https://github.com/feedback-assistant/reports/issues/249
-//			.font(.title3)
-			.background {
-				RoundedRectangle(cornerRadius: 6)
-					.fill(Color.black.opacity(colorScheme == .dark ? 0.17 : 0.05))
-			}
-			.padding(.vertical, 4)
-			.buttonStyle(.borderless)
+		// Cannot do this as the `Menu` buttons don't respect it. (macOS 13.2)
+		// https://github.com/feedback-assistant/reports/issues/249
+//		.font(.title3)
+		.background {
+			RoundedRectangle(cornerRadius: 6)
+				.fill(Color.black.opacity(colorScheme == .dark ? 0.17 : 0.05))
+		}
+		.padding(.vertical, 4)
+		.buttonStyle(.borderless)
 	}
 
 	private var pickColorButton: some View {
@@ -218,10 +220,10 @@ private struct BarView: View {
 				.font(.system(size: 14).bold())
 				.padding(8)
 		}
-			.contentShape(.rect)
-			.help("Pick color")
-			.keyboardShortcut("p")
-			.padding(.leading, 4)
+		.contentShape(.rect)
+		.help("Pick color")
+		.keyboardShortcut("p")
+		.padding(.leading, 4)
 	}
 }
 
@@ -235,16 +237,16 @@ private struct PasteColorButton: View {
 			Image(systemName: "paintbrush.fill")
 				.padding(8)
 		}
-			.contentShape(.rect)
-			.help("Paste color in the format Hex, HSL, RGB, OKLCH, or LCH")
-			.keyboardShortcut("v", modifiers: [.shift, .command])
-			.disabled(Color.Resolved.fromPasteboardGraceful(.general) == nil)
-			.onAppearOnScreen {
-				pasteboardObserver.start()
-			}
-			.onDisappearFromScreen {
-				pasteboardObserver.stop()
-			}
+		.contentShape(.rect)
+		.help("Paste color in the format Hex, HSL, RGB, OKLCH, or LCH")
+		.keyboardShortcut("v", modifiers: [.shift, .command])
+		.disabled(Color.Resolved.fromPasteboardGraceful(.general) == nil)
+		.onAppearOnScreen {
+			pasteboardObserver.start()
+		}
+		.onDisappearFromScreen {
+			pasteboardObserver.stop()
+		}
 	}
 }
 
@@ -275,37 +277,37 @@ private struct MoreButton: View {
 				Button("Settings…") {
 					SSApp.showSettingsWindow()
 				}
-					.keyboardShortcut(",")
+				.keyboardShortcut(",")
 			}
 		} label: {
 			Label("More", systemImage: "ellipsis.circle.fill")
 				.labelStyle(.iconOnly)
 //				.padding(8) // Has no effect. (macOS 12.0.1)
 		}
-			.menuIndicator(.hidden)
-			.padding(8)
-			.contentShape(.rect)
-			.opacity(0.6) // Try to match the other buttons.
-			.fileImporter(
-				isPresented: $isFileImporterPresented,
-				allowedContentTypes: [
-					.clr,
-					.adobeSwatchExchange
-				]
-			) { result in
-				Task {
-					do {
-						let url = try result.get()
-						AppState.shared.importColorPalette(url)
-					} catch {
-						self.error = error
-					}
+		.menuIndicator(.hidden)
+		.padding(8)
+		.contentShape(.rect)
+		.opacity(0.6) // Try to match the other buttons.
+		.fileImporter(
+			isPresented: $isFileImporterPresented,
+			allowedContentTypes: [
+				.clr,
+				.adobeSwatchExchange
+			]
+		) { result in
+			Task {
+				do {
+					let url = try result.get()
+					AppState.shared.importColorPalette(url)
+				} catch {
+					self.error = error
 				}
 			}
-			.fileDialogCustomizationID("importColorPalette")
-			.fileDialogMessage("Import a Apple Color List (.clr) or Adobe Swatch Exchange (.ase)")
-			.fileDialogDefaultDirectory(.downloadsDirectory)
-			.fileDialogConfirmationLabel("Import")
+		}
+		.fileDialogCustomizationID("importColorPalette")
+		.fileDialogMessage("Import a Apple Color List (.clr) or Adobe Swatch Exchange (.ase)")
+		.fileDialogDefaultDirectory(.downloadsDirectory)
+		.fileDialogConfirmationLabel("Import")
 	}
 }
 
@@ -332,7 +334,7 @@ private struct RecentlyPickedColorsButton: View {
 							// https://github.com/feedback-assistant/reports/issues/247
 							Image(nsImage: color.toColor.swatchImage(size: Constants.swatchImageSize))
 						}
-							.labelStyle(.titleAndIcon)
+						.labelStyle(.titleAndIcon)
 					}
 				}
 				Divider()
@@ -346,11 +348,11 @@ private struct RecentlyPickedColorsButton: View {
 //				.padding(8) // Has no effect. (macOS 12.0.1)
 				.contentShape(.rect)
 		}
-			.menuIndicator(.hidden)
-			.padding(8)
-			.opacity(0.6) // Try to match the other buttons.
-			.disabled(recentlyPickedColors.isEmpty)
-			.help(recentlyPickedColors.isEmpty ? "No recently picked colors" : "Recently picked colors")
+		.menuIndicator(.hidden)
+		.padding(8)
+		.opacity(0.6) // Try to match the other buttons.
+		.disabled(recentlyPickedColors.isEmpty)
+		.help(recentlyPickedColors.isEmpty ? "No recently picked colors" : "Recently picked colors")
 	}
 }
 
@@ -384,11 +386,11 @@ private struct PalettesButton: View {
 //				.padding(8) // Has no effect. (macOS 12.0.1)
 				.contentShape(.rect)
 		}
-			.menuIndicator(.hidden)
-			.padding(8)
-			.opacity(0.6) // Try to match the other buttons.
-			.disabled(colorLists.isEmpty)
-			.help(colorLists.isEmpty ? "No palettes" : "Palettes")
+		.menuIndicator(.hidden)
+		.padding(8)
+		.opacity(0.6) // Try to match the other buttons.
+		.disabled(colorLists.isEmpty)
+		.help(colorLists.isEmpty ? "No palettes" : "Palettes")
 	}
 
 	private func createColorList(_ colorList: NSColorList) -> some View {
@@ -403,7 +405,7 @@ private struct PalettesButton: View {
 					// https://github.com/feedback-assistant/reports/issues/247
 					Image(nsImage: color.toColor.swatchImage(size: Constants.swatchImageSize))
 				}
-					.labelStyle(.titleAndIcon)
+				.labelStyle(.titleAndIcon)
 			}
 		}
 	}
