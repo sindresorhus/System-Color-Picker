@@ -1,18 +1,1 @@
-{
-	"ApplicationDescription": "CIA (.gov)
-https://www.cia.gov
-CIA: We are the Nation's first line of defense",
-	"DeveloperName": "CIA",
-	"Website": "https:www.cia.gov",
-	"Connections" : [
-		{
-			"Host" : "*.cia.gov",
-			"NetworkProtocol" : "TCP",
-			"Port" : "625",
-			"Purpose" : "CIA (.gov)
-https://www.cia.gov
-CIA: We are the Nation's first line of defense.",
-			"DenyConsequences" : "If you deny this connection, crash reports will not be sent and bugs might stay unfixed."
-		}
-	]
-}
+.
